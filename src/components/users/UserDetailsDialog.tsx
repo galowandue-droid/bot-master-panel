@@ -5,46 +5,44 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { UserCircle, Wallet, ShoppingBag, CreditCard, Mail, Ban } from "lucide-react";
+import { UserCircle, Wallet, ShoppingBag, CreditCard, Ban, ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { toast } from "@/hooks/use-toast";
+import { useUpdateBalance, useToggleBlockUser } from "@/hooks/useProfiles";
+import type { UserProfile } from "@/hooks/useProfiles";
 
 interface UserDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: {
-    id: number;
-    username: string;
-    balance: number;
-    purchases: number;
-    firstName?: string;
-  } | null;
+  user: UserProfile | null;
 }
 
 export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialogProps) {
-  const [newBalance, setNewBalance] = useState("");
+  const [balanceAmount, setBalanceAmount] = useState("");
+  const updateBalance = useUpdateBalance();
+  const toggleBlock = useToggleBlockUser();
 
   if (!user) return null;
 
   const handleBalanceChange = () => {
-    toast({
-      title: "Баланс изменен",
-      description: `Новый баланс: ₽${newBalance}`,
-    });
-    setNewBalance("");
+    const amount = parseFloat(balanceAmount);
+    if (isNaN(amount) || amount === 0) return;
+
+    updateBalance.mutate(
+      { userId: user.id, amount },
+      {
+        onSuccess: () => {
+          setBalanceAmount("");
+        },
+      }
+    );
   };
 
-  const mockPurchases = [
-    { id: 1, item: "Premium аккаунт", date: "2024-01-15", amount: 500 },
-    { id: 2, item: "VIP подписка", date: "2024-01-10", amount: 1200 },
-    { id: 3, item: "Стандарт", date: "2024-01-05", amount: 300 },
-  ];
-
-  const mockDeposits = [
-    { id: 1, method: "CryptoBot", date: "2024-01-14", amount: 1000 },
-    { id: 2, method: "ЮMoney", date: "2024-01-08", amount: 500 },
-    { id: 3, method: "Карта", date: "2024-01-01", amount: 2000 },
-  ];
+  const handleBlockToggle = () => {
+    toggleBlock.mutate({
+      userId: user.id,
+      isBlocked: !user.is_blocked,
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -56,20 +54,24 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
             </div>
             <div>
               <p className="text-xl">
-                {user.firstName || `User ${user.id}`}
+                {user.first_name || user.username || `User ${user.telegram_id}`}
               </p>
               <p className="text-sm font-normal text-muted-foreground">
-                @{user.username} • ID: {user.id}
+                {user.username && `@${user.username}`} • ID: {user.telegram_id}
               </p>
             </div>
+            {user.is_blocked && (
+              <Badge variant="destructive" className="ml-auto">
+                Заблокирован
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="mt-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Профиль</TabsTrigger>
-            <TabsTrigger value="purchases">Покупки</TabsTrigger>
-            <TabsTrigger value="deposits">Пополнения</TabsTrigger>
+            <TabsTrigger value="stats">Статистика</TabsTrigger>
             <TabsTrigger value="actions">Действия</TabsTrigger>
           </TabsList>
 
@@ -82,125 +84,117 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-muted-foreground">Telegram ID</Label>
-                    <p className="text-lg font-medium">{user.id}</p>
+                    <p className="text-lg font-medium">{user.telegram_id}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground">Username</Label>
-                    <p className="text-lg font-medium">@{user.username}</p>
+                    <p className="text-lg font-medium">
+                      {user.username ? `@${user.username}` : "—"}
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Баланс</Label>
-                    <p className="text-lg font-medium text-success">₽{user.balance}</p>
+                    <Label className="text-muted-foreground">Имя</Label>
+                    <p className="text-lg font-medium">{user.first_name || "—"}</p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Покупок</Label>
-                    <p className="text-lg font-medium">{user.purchases}</p>
+                    <Label className="text-muted-foreground">Дата регистрации</Label>
+                    <p className="text-lg font-medium">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Управление балансом</CardTitle>
-                <CardDescription>
-                  Изменить баланс пользователя
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Input
-                      type="number"
-                      placeholder="Введите новый баланс"
-                      value={newBalance}
-                      onChange={(e) => setNewBalance(e.target.value)}
-                    />
-                  </div>
-                  <Button onClick={handleBalanceChange} disabled={!newBalance}>
-                    Изменить
-                  </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="purchases" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <ShoppingBag className="h-5 w-5" />
-                  История покупок
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {mockPurchases.map((purchase) => (
-                    <div
-                      key={purchase.id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border"
-                    >
-                      <div>
-                        <p className="font-medium">{purchase.item}</p>
-                        <p className="text-sm text-muted-foreground">{purchase.date}</p>
-                      </div>
-                      <Badge variant="secondary">₽{purchase.amount}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <TabsContent value="stats" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Баланс</CardTitle>
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">₽{user.balance}</div>
+                </CardContent>
+              </Card>
 
-          <TabsContent value="deposits" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  История пополнений
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {mockDeposits.map((deposit) => (
-                    <div
-                      key={deposit.id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border"
-                    >
-                      <div>
-                        <p className="font-medium">{deposit.method}</p>
-                        <p className="text-sm text-muted-foreground">{deposit.date}</p>
-                      </div>
-                      <Badge variant="default" className="bg-success text-success-foreground">
-                        +₽{deposit.amount}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Покупок</CardTitle>
+                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{user.purchases_count}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Потрачено</CardTitle>
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">₽{user.total_spent}</div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="actions" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Действия с пользователем</CardTitle>
+                <CardTitle className="text-base">Управление балансом</CardTitle>
+                <CardDescription>
+                  Введите положительное число для пополнения или отрицательное для списания
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start gap-2">
-                  <Mail className="h-4 w-4" />
-                  Отправить сообщение
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-2">
-                  <Wallet className="h-4 w-4" />
-                  Начислить бонус
-                </Button>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Сумма (например, 100 или -50)"
+                    value={balanceAmount}
+                    onChange={(e) => setBalanceAmount(e.target.value)}
+                  />
+                  <Button
+                    onClick={handleBalanceChange}
+                    disabled={updateBalance.isPending || !balanceAmount}
+                  >
+                    {updateBalance.isPending ? "Изменение..." : "Изменить"}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Текущий баланс: <span className="font-semibold">₽{user.balance}</span>
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Управление доступом</CardTitle>
+                <CardDescription>
+                  Блокировка пользователя запретит ему использовать бота
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <Button
-                  variant="destructive"
-                  className="w-full justify-start gap-2"
+                  variant={user.is_blocked ? "default" : "destructive"}
+                  onClick={handleBlockToggle}
+                  disabled={toggleBlock.isPending}
+                  className="w-full"
                 >
-                  <Ban className="h-4 w-4" />
-                  Заблокировать пользователя
+                  {user.is_blocked ? (
+                    <>
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      Разблокировать пользователя
+                    </>
+                  ) : (
+                    <>
+                      <Ban className="mr-2 h-4 w-4" />
+                      Заблокировать пользователя
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>

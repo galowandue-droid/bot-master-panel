@@ -4,56 +4,41 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Search, UserCircle, Mail, Wallet, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, UserCircle, Wallet, ChevronLeft, ChevronRight } from "lucide-react";
 import { UserDetailsDialog } from "@/components/users/UserDetailsDialog";
+import { useProfiles } from "@/hooks/useProfiles";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedUser, setSelectedUser] = useState<{
-    id: number;
-    username: string;
-    balance: number;
-    purchases: number;
-    firstName?: string;
-  } | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const { data: profiles, isLoading } = useProfiles(searchQuery);
 
   const itemsPerPage = 10;
 
-  // Mock data
-  const mockUsers = Array.from({ length: 25 }, (_, i) => ({
-    id: 123456789 + i,
-    username: `user${i + 1}`,
-    firstName: `User ${i + 1}`,
-    balance: Math.floor(Math.random() * 5000),
-    purchases: Math.floor(Math.random() * 20),
-    registrationDate: new Date(2024, 0, Math.floor(Math.random() * 30) + 1).toLocaleDateString(),
-  }));
-
-  const filteredUsers = mockUsers.filter((user) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      user.id.toString().includes(searchQuery) ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase());
-
+  const filteredUsers = (profiles || []).filter((user) => {
     const matchesFilter =
       filterType === "all" ||
-      (filterType === "active" && user.purchases > 0) ||
-      (filterType === "new" && user.purchases === 0);
+      (filterType === "active" && user.purchases_count > 0) ||
+      (filterType === "new" && user.purchases_count === 0);
 
-    return matchesSearch && matchesFilter;
+    return matchesFilter;
   });
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
-  const handleUserClick = (user: typeof mockUsers[0]) => {
-    setSelectedUser(user);
+  const handleUserClick = (userId: string) => {
+    setSelectedUserId(userId);
     setDialogOpen(true);
   };
+
+  const selectedUser = profiles?.find((p) => p.id === selectedUserId) || null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,7 +61,7 @@ export default function Users() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Поиск по ID, логину или номеру чека..."
+                placeholder="Поиск по ID, логину..."
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => {
@@ -101,127 +86,119 @@ export default function Users() {
           </div>
         </Card>
 
-        {/* Users List */}
-        <Card>
-          <div className="p-4 border-b border-border">
-            <div className="grid grid-cols-5 gap-4 font-medium text-sm text-muted-foreground">
-              <div>Пользователь</div>
-              <div>ID / Username</div>
-              <div>Баланс</div>
-              <div>Покупки</div>
-              <div className="text-right">Действия</div>
-            </div>
+        {/* User Cards Grid */}
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="p-4">
+                <Skeleton className="h-20 w-full" />
+              </Card>
+            ))}
           </div>
-          <div className="divide-y divide-border">
+        ) : paginatedUsers.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">Пользователи не найдены</p>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
             {paginatedUsers.map((user) => (
-              <div
+              <Card
                 key={user.id}
-                className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => handleUserClick(user)}
+                className="p-4 cursor-pointer hover:bg-accent transition-colors"
+                onClick={() => handleUserClick(user.id)}
               >
-                <div className="grid grid-cols-5 gap-4 items-center">
+                <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="rounded-full bg-primary/10 p-2">
-                      <UserCircle className="h-6 w-6 text-primary" />
+                      <UserCircle className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{user.firstName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {user.registrationDate}
+                      <p className="font-medium text-foreground">
+                        {user.first_name || user.username || `User ${user.telegram_id}`}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {user.username ? `@${user.username}` : `ID: ${user.telegram_id}`}
                       </p>
                     </div>
                   </div>
-                  <div className="text-sm">
-                    <p className="text-foreground">{user.id}</p>
-                    <p className="text-muted-foreground">@{user.username}</p>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-semibold text-foreground">
-                      ₽{user.balance}
+                  {user.is_blocked && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-destructive/10 text-destructive">
+                      Заблокирован
                     </span>
+                  )}
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Wallet className="h-3 w-3" />
+                      Баланс
+                    </p>
+                    <p className="text-sm font-medium">₽{user.balance}</p>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {user.purchases} покупок
+                  <div>
+                    <p className="text-xs text-muted-foreground">Покупок</p>
+                    <p className="text-sm font-medium">{user.purchases_count}</p>
                   </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUserClick(user);
-                      }}
-                    >
-                      Профиль
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                    >
-                      <Mail className="h-4 w-4" />
-                    </Button>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Потрачено</p>
+                    <p className="text-sm font-medium">₽{user.total_spent}</p>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
+        )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-border">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Показано {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} из {filteredUsers.length}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                      .filter(
-                        (page) =>
-                          page === 1 ||
-                          page === totalPages ||
-                          Math.abs(page - currentPage) <= 1
-                      )
-                      .map((page, idx, arr) => (
-                        <div key={page} className="flex items-center">
-                          {idx > 0 && arr[idx - 1] !== page - 1 && (
-                            <span className="px-2 text-muted-foreground">...</span>
-                          )}
-                          <Button
-                            variant={currentPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(page)}
-                          >
-                            {page}
-                          </Button>
-                        </div>
-                      ))}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Показано {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} из {filteredUsers.length}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(
+                    (page) =>
+                      page === 1 ||
+                      page === totalPages ||
+                      Math.abs(page - currentPage) <= 1
+                  )
+                  .map((page, idx, arr) => (
+                    <div key={page} className="flex items-center">
+                      {idx > 0 && arr[idx - 1] !== page - 1 && (
+                        <span className="px-2 text-muted-foreground">...</span>
+                      )}
+                      <Button
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </Button>
+                    </div>
+                  ))}
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-          )}
-        </Card>
+          </div>
+        )}
       </div>
 
       <UserDetailsDialog
