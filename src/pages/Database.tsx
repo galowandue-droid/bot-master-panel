@@ -25,7 +25,14 @@ export default function Database() {
         body: { table: tableName },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Не удалось экспортировать таблицу: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('Нет данных для экспорта');
+      }
 
       // Create blob and download
       const blob = new Blob([data], { type: 'text/csv' });
@@ -45,8 +52,8 @@ export default function Database() {
     } catch (error: any) {
       console.error('Error downloading table:', error);
       toast({
-        title: "Ошибка",
-        description: error.message,
+        title: "Ошибка экспорта",
+        description: error.message || 'Не удалось экспортировать таблицу',
         variant: "destructive",
       });
     } finally {
