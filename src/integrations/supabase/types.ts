@@ -147,6 +147,30 @@ export type Database = {
           },
         ]
       }
+      logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          level: string
+          message: string
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       positions: {
         Row: {
           category_id: string
@@ -255,6 +279,13 @@ export type Database = {
             referencedRelation: "purchases"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "recent_activity"
+            referencedColumns: ["id"]
+          },
         ]
       }
       purchases: {
@@ -351,7 +382,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      recent_activity: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          first_name: string | null
+          id: string | null
+          item_name: string | null
+          type: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
