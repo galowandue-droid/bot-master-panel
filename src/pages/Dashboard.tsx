@@ -1,40 +1,36 @@
-import { StatsCard } from "@/components/dashboard/StatsCard";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Users,
-  ShoppingCart,
-  Wallet,
-  Package,
-  TrendingUp,
-  Download,
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Users, ShoppingCart, TrendingUp, DollarSign, Package, Download, Send } from "lucide-react";
+import { StatsCard } from "@/components/dashboard/StatsCard";
+import { useStatistics } from "@/hooks/useStatistics";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import { BroadcastDialog } from "@/components/broadcasts/BroadcastDialog";
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 
 export default function Dashboard() {
-  // Mock data - replace with actual API calls
-  const stats = {
-    users: {
-      total: 1247,
-      today: 23,
-      week: 156,
-    },
-    sales: {
-      total: 892,
-      today: 15,
-      week: 98,
-    },
-    revenue: {
-      total: 45680,
-      today: 2340,
-      week: 12560,
-    },
-    products: {
-      total: 156,
-      categories: 8,
-      positions: 45,
-    },
-  };
+  const { statistics, totals, isLoading } = useStatistics(30);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+
+  const chartData = statistics?.map((stat) => ({
+    date: format(new Date(stat.date), "dd MMM", { locale: ru }),
+    users: stat.new_users,
+    purchases: stat.purchases_count,
+    revenue: Number(stat.purchases_amount),
+  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -42,9 +38,9 @@ export default function Dashboard() {
         <div className="flex h-16 items-center gap-4 px-6">
           <SidebarTrigger />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Дашборд</h1>
+            <h1 className="text-2xl font-bold text-foreground">Панель управления</h1>
             <p className="text-sm text-muted-foreground">
-              Общая статистика и аналитика
+              Обзор статистики за последние 30 дней
             </p>
           </div>
           <Button variant="outline" size="sm">
@@ -55,116 +51,169 @@ export default function Dashboard() {
       </header>
 
       <div className="p-6 space-y-6">
-        {/* Quick Stats */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatsCard
-            title="Пользователи"
-            value={stats.users.total.toLocaleString()}
-            change={`+${stats.users.today} сегодня`}
-            changeType="positive"
-            icon={Users}
-            description={`${stats.users.week} за неделю`}
-          />
-          <StatsCard
-            title="Продажи"
-            value={stats.sales.total.toLocaleString()}
-            change={`+${stats.sales.today} сегодня`}
-            changeType="positive"
-            icon={ShoppingCart}
-            description={`${stats.sales.week} за неделю`}
-          />
-          <StatsCard
-            title="Доход"
-            value={`₽${stats.revenue.total.toLocaleString()}`}
-            change={`+₽${stats.revenue.today.toLocaleString()} сегодня`}
-            changeType="positive"
-            icon={Wallet}
-            description={`₽${stats.revenue.week.toLocaleString()} за неделю`}
-          />
-          <StatsCard
-            title="Товары"
-            value={stats.products.total}
-            icon={Package}
-            description={`${stats.products.categories} категорий, ${stats.products.positions} позиций`}
-          />
-        </div>
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatsCard
+              title="Всего пользователей"
+              value={totals?.users || 0}
+              icon={Users}
+              description={`+${totals?.newUsers || 0} новых`}
+            />
+            <StatsCard
+              title="Продажи"
+              value={totals?.purchases || 0}
+              icon={ShoppingCart}
+              description={`₽${(totals?.revenue || 0).toFixed(0)} выручка`}
+            />
+            <StatsCard
+              title="Выручка"
+              value={`₽${(totals?.revenue || 0).toFixed(0)}`}
+              icon={DollarSign}
+              description={`${totals?.purchases || 0} заказов`}
+            />
+            <StatsCard
+              title="Пополнения"
+              value={totals?.deposits || 0}
+              icon={TrendingUp}
+              description={`₽${(totals?.depositsAmount || 0).toFixed(0)} сумма`}
+            />
+          </div>
+        )}
 
-        {/* Charts & Details */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">
-                Динамика продаж
-              </h3>
-              <TrendingUp className="h-5 w-5 text-success" />
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-foreground">Новые пользователи</h3>
+              <p className="text-sm text-muted-foreground">Регистрации по дням</p>
             </div>
-            <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-              График динамики (интеграция с Chart.js)
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "0.5rem",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="users"
+                    stroke="hsl(var(--primary))"
+                    fillOpacity={1}
+                    fill="url(#colorUsers)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              Последние транзакции
-            </h3>
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between py-2 border-b border-border last:border-0"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      Покупка #{1000 + i}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Пользователь @user{i}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-foreground">
-                      ₽{(Math.random() * 1000 + 100).toFixed(0)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date().toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-foreground">Продажи и выручка</h3>
+              <p className="text-sm text-muted-foreground">Динамика по дням</p>
             </div>
+            {isLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "0.5rem",
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="purchases"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    name="Продажи"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="hsl(var(--chart-2))"
+                    strokeWidth={2}
+                    name="Выручка (₽)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </Card>
         </div>
 
-        {/* System Status */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">
-            Статус системы
-          </h3>
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-foreground">Быстрые действия</h3>
+            <p className="text-sm text-muted-foreground">Управление ботом</p>
+          </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="flex items-center gap-3">
-              <div className="h-3 w-3 rounded-full bg-success" />
-              <div>
-                <p className="text-sm font-medium text-foreground">Бот активен</p>
-                <p className="text-xs text-muted-foreground">Работает нормально</p>
+            <button className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left">
+              <div className="rounded-lg bg-primary/10 p-3">
+                <Package className="h-6 w-6 text-primary" />
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="h-3 w-3 rounded-full bg-success" />
               <div>
-                <p className="text-sm font-medium text-foreground">Платежи</p>
-                <p className="text-xs text-muted-foreground">Все системы работают</p>
+                <div className="font-medium text-foreground">Добавить товары</div>
+                <div className="text-sm text-muted-foreground">Пополнить каталог</div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="h-3 w-3 rounded-full bg-success" />
+            </button>
+            <button 
+              onClick={() => setBroadcastOpen(true)}
+              className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left"
+            >
+              <div className="rounded-lg bg-primary/10 p-3">
+                <Send className="h-6 w-6 text-primary" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-foreground">База данных</p>
-                <p className="text-xs text-muted-foreground">Подключена</p>
+                <div className="font-medium text-foreground">Рассылка</div>
+                <div className="text-sm text-muted-foreground">Отправить сообщение всем</div>
               </div>
-            </div>
+            </button>
+            <button className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left">
+              <div className="rounded-lg bg-primary/10 p-3">
+                <TrendingUp className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <div className="font-medium text-foreground">Отчеты</div>
+                <div className="text-sm text-muted-foreground">Скачать статистику</div>
+              </div>
+            </button>
           </div>
         </Card>
       </div>
+
+      <BroadcastDialog open={broadcastOpen} onOpenChange={setBroadcastOpen} />
     </div>
   );
 }
