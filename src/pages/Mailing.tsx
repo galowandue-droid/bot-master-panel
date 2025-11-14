@@ -6,27 +6,48 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Send, Users, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export default function Mailing() {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const [progress, setProgress] = useState(0);
 
-  const handleSend = () => {
-    setSending(true);
-    setProgress(0);
-
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setSending(false);
-          setMessage("");
-          return 0;
-        }
-        return prev + 10;
+  const handleSend = async () => {
+    if (!message.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Введите текст сообщения",
+        variant: "destructive",
       });
-    }, 200);
+      return;
+    }
+
+    try {
+      setSending(true);
+
+      const { data, error } = await supabase.functions.invoke('send-broadcast', {
+        body: { message: message.trim() },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Рассылка отправлена",
+        description: `Сообщение отправлено ${data.sent_count} пользователям`,
+      });
+
+      setMessage("");
+    } catch (error: any) {
+      console.error('Error sending broadcast:', error);
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -57,24 +78,14 @@ export default function Mailing() {
                 disabled={sending}
               />
 
-              {sending ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Отправка...</span>
-                    <span className="font-medium text-foreground">{progress}%</span>
-                  </div>
-                  <Progress value={progress} className="h-2" />
-                </div>
-              ) : (
-                <Button
-                  onClick={handleSend}
-                  disabled={!message.trim()}
-                  className="w-full gap-2"
-                >
-                  <Send className="h-4 w-4" />
-                  Отправить рассылку
-                </Button>
-              )}
+              <Button
+                onClick={handleSend}
+                disabled={!message.trim() || sending}
+                className="w-full gap-2"
+              >
+                <Send className="h-4 w-4" />
+                {sending ? "Отправка..." : "Отправить рассылку"}
+              </Button>
             </CardContent>
           </Card>
 
