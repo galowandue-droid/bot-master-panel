@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,12 +6,14 @@ import { Label } from "@/components/ui/label";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Bitcoin, Wallet, Star, CreditCard, Check, X, Loader2 } from "lucide-react";
+import { Bitcoin, Wallet, Star, CreditCard, Check, X, Loader2, TrendingUp, DollarSign } from "lucide-react";
 import { useBotSettings } from "@/hooks/useBotSettings";
+import { usePaymentStats } from "@/hooks/usePaymentStats";
 import { toast } from "@/hooks/use-toast";
 
 export default function Payments() {
   const { getSetting, updateSetting } = useBotSettings();
+  const { data: paymentStats } = usePaymentStats();
   const [testingStatus, setTestingStatus] = useState<Record<string, boolean>>({});
 
   const paymentSystems = [
@@ -120,6 +122,16 @@ export default function Payments() {
     return <Badge variant="default" className="gap-1 bg-success text-success-foreground"><Check className="h-3 w-3" />Подключен</Badge>;
   };
 
+  const depositStats = useMemo(() => {
+    if (!paymentStats?.depositsByMethod) return null;
+    
+    const methods = Object.entries(paymentStats.depositsByMethod);
+    const totalDeposits = methods.reduce((acc, [, stats]) => acc + stats.total, 0);
+    const totalCount = methods.reduce((acc, [, stats]) => acc + stats.count, 0);
+    
+    return { methods, totalDeposits, totalCount };
+  }, [paymentStats]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-xl">
@@ -169,6 +181,103 @@ export default function Payments() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Статистика депозитов */}
+        {depositStats && (
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Статистика депозитов
+              </CardTitle>
+              <CardDescription>Данные из локальной базы</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3 mb-6">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Всего депозитов</p>
+                  <p className="text-2xl font-bold">{depositStats.totalCount}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Общая сумма</p>
+                  <p className="text-2xl font-bold">{depositStats.totalDeposits.toFixed(2)} ₽</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Средний чек</p>
+                  <p className="text-2xl font-bold">
+                    {(depositStats.totalDeposits / depositStats.totalCount).toFixed(2)} ₽
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                {depositStats.methods.map(([method, stats]) => (
+                  <div key={method} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="space-y-1">
+                      <p className="font-medium capitalize">{method}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {stats.count} транзакций • {stats.completed} завершено
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{stats.total.toFixed(2)} ₽</p>
+                      <p className="text-sm text-muted-foreground">
+                        {((stats.completed / stats.count) * 100).toFixed(0)}% успех
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Балансы платежных систем */}
+        {paymentStats?.paymentStats && paymentStats.paymentStats.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {paymentStats.paymentStats.map((stat) => (
+              <Card key={stat.system} className="shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-primary" />
+                      {stat.system}
+                    </span>
+                    <Badge variant={stat.status === 'connected' ? 'default' : 'secondary'}>
+                      {stat.status}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    {stat.enabled ? 'Система активна' : 'Система отключена'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {stat.status === 'connected' && Array.isArray(stat.balance) ? (
+                    <div className="space-y-2">
+                      {stat.balance.length > 0 ? (
+                        stat.balance.map((b: any, idx: number) => (
+                          <div key={idx} className="flex justify-between p-2 bg-muted/50 rounded">
+                            <span className="uppercase font-medium">{b.currency_code}</span>
+                            <span className="font-bold">{parseFloat(b.available).toFixed(8)}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Нет доступных балансов</p>
+                      )}
+                    </div>
+                  ) : stat.status === 'error' ? (
+                    <p className="text-sm text-destructive">{stat.error || 'Ошибка подключения'}</p>
+                  ) : stat.status === 'disabled' ? (
+                    <p className="text-sm text-muted-foreground">Система отключена</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{stat.balance}</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
         {paymentSystems.map((system) => {
           const Icon = system.icon;
           const isEnabled = getSetting(system.enabledKey) === "true";
