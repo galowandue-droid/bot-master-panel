@@ -60,13 +60,15 @@ All colors MUST be HSL.
     --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(158 64% 52%));
     --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 95% 53%));
     --gradient-card: linear-gradient(to bottom right, hsl(0 0% 100%), hsl(220 14% 98%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 14% 96%));
     
     /* Modern shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
-    --shadow-glow: 0 0 20px hsl(250 95% 63% / 0.3);
+    --shadow-glow: 0 0 40px hsl(250 95% 63% / 0.4);
+    --shadow-card: 0 4px 20px -4px hsl(222 47% 11% / 0.08);
   }
 
   .dark {
@@ -116,9 +118,12 @@ All colors MUST be HSL.
     --sidebar-ring: 239 84% 67%;
 
     --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%), hsl(262 83% 58%));
+    --gradient-subtle: linear-gradient(180deg, hsl(222 47% 11%), hsl(217 33% 17%));
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.20);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.30);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.30);
+    --shadow-glow: 0 0 40px hsl(239 84% 67% / 0.5);
+    --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
   }
 }
 

@@ -74,14 +74,37 @@ export default function Payments() {
   const handleTest = async (systemId: string) => {
     setTestingStatus({ ...testingStatus, [systemId]: true });
     
-    // Симуляция проверки подключения
-    setTimeout(() => {
+    const system = paymentSystems.find(s => s.id === systemId);
+    const token = system ? getSetting(system.tokenKey) : null;
+
+    if (!token) {
+      toast({
+        title: "Ошибка",
+        description: "Токен не настроен",
+        variant: "destructive",
+      });
       setTestingStatus({ ...testingStatus, [systemId]: false });
+      return;
+    }
+
+    try {
+      // В реальном приложении здесь был бы запрос к API платежной системы
+      // Для демонстрации используем задержку
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       toast({
         title: "Проверка завершена",
         description: "Подключение успешно",
       });
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "Ошибка подключения",
+        description: "Не удалось подключиться к платежной системе",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingStatus({ ...testingStatus, [systemId]: false });
+    }
   };
 
   const getStatusBadge = (system: { enabledKey: string; tokenKey: string }) => {
@@ -98,12 +121,12 @@ export default function Payments() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="flex h-16 items-center gap-4 px-6">
           <SidebarTrigger />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Платежи</h1>
+            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">Платежи</h1>
             <p className="text-sm text-muted-foreground">
               Управление платежными системами
             </p>
@@ -112,6 +135,40 @@ export default function Payments() {
       </header>
 
       <div className="p-6 space-y-6">
+        <Card className="border-border/40 shadow-lg">
+          <CardHeader>
+            <CardTitle>Статистика платежей</CardTitle>
+            <CardDescription>Информация о подключенных системах</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40">
+                <div className="text-sm text-muted-foreground">Активных систем</div>
+                <div className="text-2xl font-bold text-foreground">
+                  {paymentSystems.filter(s => getSetting(s.enabledKey) === "true").length}
+                </div>
+              </div>
+              <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40">
+                <div className="text-sm text-muted-foreground">Настроенных</div>
+                <div className="text-2xl font-bold text-foreground">
+                  {paymentSystems.filter(s => !!getSetting(s.tokenKey)).length}
+                </div>
+              </div>
+              <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40">
+                <div className="text-sm text-muted-foreground">Всего систем</div>
+                <div className="text-2xl font-bold text-foreground">
+                  {paymentSystems.length}
+                </div>
+              </div>
+              <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40">
+                <div className="text-sm text-muted-foreground">Готово к работе</div>
+                <div className="text-2xl font-bold text-success">
+                  {paymentSystems.filter(s => getSetting(s.enabledKey) === "true" && !!getSetting(s.tokenKey)).length}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         {paymentSystems.map((system) => {
           const Icon = system.icon;
           const isEnabled = getSetting(system.enabledKey) === "true";
@@ -119,12 +176,12 @@ export default function Payments() {
           const isTesting = testingStatus[system.id];
 
           return (
-            <Card key={system.id}>
+            <Card key={system.id} className="border-border/40 shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="rounded-lg bg-primary/10 p-3">
-                      <Icon className="h-6 w-6 text-primary" />
+                    <div className="rounded-lg bg-gradient-primary p-3 shadow-glow">
+                      <Icon className="h-6 w-6 text-primary-foreground" />
                     </div>
                     <div>
                       <CardTitle className="text-lg">{system.name}</CardTitle>
