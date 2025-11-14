@@ -24,16 +24,22 @@ serve(async (req) => {
       .from(table)
       .select('*');
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching data:', error);
+      throw error;
+    }
 
+    // If no data, return empty CSV with table name as header
     if (!data || data.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'No data found' }),
-        { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      const csvContent = `# No data in table: ${table}\n# Export date: ${new Date().toISOString()}`;
+      
+      return new Response(csvContent, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="${table}_${new Date().toISOString().split('T')[0]}.csv"`,
+        },
+      });
     }
 
     // Convert to CSV
