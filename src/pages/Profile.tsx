@@ -10,7 +10,7 @@ import { Loader2, User, Mail, Lock, Shield } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 export default function Profile() {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
@@ -157,14 +157,10 @@ export default function Profile() {
           </div>
           <div className="space-y-2">
             <Label className="text-muted-foreground">Роль</Label>
-            {isAdmin ? (
-              <p className="text-lg font-medium flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                Администратор
-              </p>
-            ) : (
-              <p className="text-lg">Пользователь</p>
-            )}
+            <p className="text-lg font-medium flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              Администратор
+            </p>
           </div>
         </CardContent>
       </Card>
