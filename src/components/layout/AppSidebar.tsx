@@ -8,6 +8,11 @@ import {
   Settings,
   ChevronRight,
   Bot,
+  BarChart3,
+  Search,
+  Send,
+  Database,
+  FileText,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,9 +30,17 @@ import {
 const menuItems = [
   { title: "Дашборд", url: "/", icon: LayoutDashboard },
   { title: "Каталог", url: "/catalog", icon: Package },
+  { title: "Статистика", url: "/statistics", icon: BarChart3 },
+  { title: "Поиск", url: "/search", icon: Search },
+  { title: "Рассылка", url: "/mailing", icon: Send },
   { title: "Пользователи", url: "/users", icon: Users },
   { title: "Платежи", url: "/payments", icon: CreditCard },
   { title: "Настройки", url: "/settings", icon: Settings },
+];
+
+const toolsItems = [
+  { title: "База данных", url: "/database", icon: Database },
+  { title: "Логи", url: "/logs", icon: FileText },
 ];
 
 export function AppSidebar() {
@@ -56,6 +69,35 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
+                const isActive = location.pathname === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                        }`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                        {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Инструменты</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {toolsItems.map((item) => {
                 const isActive = location.pathname === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>

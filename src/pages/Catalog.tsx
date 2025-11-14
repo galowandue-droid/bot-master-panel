@@ -6,8 +6,10 @@ import { Plus, Package, FolderOpen, Box, Pencil, Trash2, ArrowLeft } from "lucid
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCategories } from "@/hooks/useCategories";
 import { usePositions } from "@/hooks/usePositions";
+import { useItems } from "@/hooks/useItems";
 import { CategoryDialog } from "@/components/catalog/CategoryDialog";
 import { PositionDialog } from "@/components/catalog/PositionDialog";
+import { ItemDialog } from "@/components/catalog/ItemDialog";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Category } from "@/hooks/useCategories";
@@ -17,13 +19,16 @@ export default function Catalog() {
   const [activeTab, setActiveTab] = useState("categories");
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [positionDialogOpen, setPositionDialogOpen] = useState(false);
+  const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>();
   const [selectedPosition, setSelectedPosition] = useState<Position | undefined>();
-  const [deleteTarget, setDeleteTarget] = useState<{ type: "category" | "position"; id: string } | null>(null);
+  const [selectedPositionForItems, setSelectedPositionForItems] = useState<string | undefined>();
+  const [deleteTarget, setDeleteTarget] = useState<{ type: "category" | "position" | "item"; id: string } | null>(null);
 
   const { categories, isLoading: categoriesLoading, deleteCategory } = useCategories();
   const { positions, isLoading: positionsLoading, deletePosition } = usePositions();
+  const { items, isLoading: itemsLoading, deleteItem } = useItems();
 
   const handleEditCategory = (category: Category) => {
     setSelectedCategory(category);
@@ -45,13 +50,20 @@ export default function Catalog() {
     setDeleteDialogOpen(true);
   };
 
+  const handleDeleteItem = (id: string) => {
+    setDeleteTarget({ type: "item", id });
+    setDeleteDialogOpen(true);
+  };
+
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
 
     if (deleteTarget.type === "category") {
       await deleteCategory.mutateAsync(deleteTarget.id);
-    } else {
+    } else if (deleteTarget.type === "position") {
       await deletePosition.mutateAsync(deleteTarget.id);
+    } else {
+      await deleteItem.mutateAsync(deleteTarget.id);
     }
 
     setDeleteDialogOpen(false);
@@ -246,20 +258,65 @@ export default function Catalog() {
               <div>
                 <h2 className="text-xl font-semibold text-foreground">Товары</h2>
                 <p className="text-sm text-muted-foreground">
-                  Управление конкретными товарами и ключами
+                  Всего: {items?.length || 0} товаров
                 </p>
               </div>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Добавить товары
-              </Button>
             </div>
 
-            <Card className="p-6">
-              <p className="text-center text-muted-foreground">
-                Выберите категорию и позицию для управления товарами
-              </p>
-            </Card>
+            {itemsLoading ? (
+              <Card className="p-6">
+                <Skeleton className="h-64 w-full" />
+              </Card>
+            ) : (
+              <Card>
+                <div className="p-4 border-b border-border">
+                  <div className="grid grid-cols-5 gap-4 font-medium text-sm text-muted-foreground">
+                    <div>Содержимое</div>
+                    <div>Позиция</div>
+                    <div>Статус</div>
+                    <div>Дата</div>
+                    <div className="text-right">Действия</div>
+                  </div>
+                </div>
+                <div className="divide-y divide-border">
+                  {items?.map((item) => {
+                    const position = positions?.find((p) => p.id === item.position_id);
+                    return (
+                      <div key={item.id} className="p-4 hover:bg-muted/50 transition-colors">
+                        <div className="grid grid-cols-5 gap-4 items-center">
+                          <div className="font-mono text-sm text-foreground truncate">
+                            {item.content}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {position?.name || "—"}
+                          </div>
+                          <div className="text-sm">
+                            {item.is_sold ? (
+                              <span className="text-muted-foreground">Продан</span>
+                            ) : (
+                              <span className="text-success">В наличии</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(item.created_at).toLocaleDateString()}
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteItem(item.id)}
+                              disabled={item.is_sold}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
@@ -276,12 +333,26 @@ export default function Catalog() {
         position={selectedPosition}
       />
 
+      {selectedPositionForItems && (
+        <ItemDialog
+          open={itemDialogOpen}
+          onOpenChange={setItemDialogOpen}
+          positionId={selectedPositionForItems}
+        />
+      )}
+
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
-        title={`Удалить ${deleteTarget?.type === "category" ? "категорию" : "позицию"}?`}
-        description={`Это действие удалит ${deleteTarget?.type === "category" ? "категорию и все связанные позиции" : "позицию и все связанные товары"}. Данные будут удалены безвозвратно.`}
+        title={`Удалить ${deleteTarget?.type === "category" ? "категорию" : deleteTarget?.type === "position" ? "позицию" : "товар"}?`}
+        description={`Это действие удалит ${
+          deleteTarget?.type === "category" 
+            ? "категорию и все связанные позиции" 
+            : deleteTarget?.type === "position"
+            ? "позицию и все связанные товары" 
+            : "товар"
+        }. Данные будут удалены безвозвратно.`}
       />
     </div>
   );

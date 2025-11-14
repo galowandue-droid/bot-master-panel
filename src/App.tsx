@@ -6,9 +6,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Catalog from "./pages/Catalog";
+import Statistics from "./pages/Statistics";
+import Search from "./pages/Search";
+import Mailing from "./pages/Mailing";
 import Users from "./pages/Users";
 import Payments from "./pages/Payments";
 import Settings from "./pages/Settings";
+import Database from "./pages/Database";
+import Logs from "./pages/Logs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,9 +28,14 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/catalog" element={<Catalog />} />
+            <Route path="/statistics" element={<Statistics />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/mailing" element={<Mailing />} />
             <Route path="/users" element={<Users />} />
             <Route path="/payments" element={<Payments />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/database" element={<Database />} />
+            <Route path="/logs" element={<Logs />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
