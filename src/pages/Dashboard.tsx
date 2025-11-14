@@ -34,17 +34,19 @@ export default function Dashboard() {
   }));
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="flex h-16 items-center gap-4 px-6">
           <SidebarTrigger />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Панель управления</h1>
+            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Панель управления
+            </h1>
             <p className="text-sm text-muted-foreground">
               Обзор статистики за последние 30 дней
             </p>
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="border-primary/20 hover:bg-primary/10">
             <Download className="mr-2 h-4 w-4" />
             Скачать БД
           </Button>
@@ -88,9 +90,12 @@ export default function Dashboard() {
         )}
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="p-6">
+          <Card className="p-6 border-border/40 shadow-lg hover:shadow-xl transition-shadow">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-foreground">Новые пользователи</h3>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Новые пользователи
+              </h3>
               <p className="text-sm text-muted-foreground">Регистрации по дням</p>
             </div>
             {isLoading ? (
@@ -100,11 +105,11 @@ export default function Dashboard() {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      <stop offset="5%" stopColor="hsl(250, 95%, 63%)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(250, 95%, 63%)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                   <XAxis 
                     dataKey="date" 
                     stroke="hsl(var(--muted-foreground))"
@@ -121,18 +126,22 @@ export default function Dashboard() {
                   <Area
                     type="monotone"
                     dataKey="users"
-                    stroke="hsl(var(--primary))"
+                    stroke="hsl(250, 95%, 63%)"
                     fillOpacity={1}
                     fill="url(#colorUsers)"
+                    name="Пользователи"
                   />
                 </AreaChart>
               </ResponsiveContainer>
             )}
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-6 border-border/40 shadow-lg hover:shadow-xl transition-shadow">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-foreground">Продажи и выручка</h3>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5 text-success" />
+                Продажи и выручка
+              </h3>
               <p className="text-sm text-muted-foreground">Динамика по дням</p>
             </div>
             {isLoading ? (
@@ -140,7 +149,7 @@ export default function Dashboard() {
             ) : (
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                   <XAxis 
                     dataKey="date" 
                     stroke="hsl(var(--muted-foreground))"
@@ -157,14 +166,14 @@ export default function Dashboard() {
                   <Line
                     type="monotone"
                     dataKey="purchases"
-                    stroke="hsl(var(--primary))"
+                    stroke="hsl(142, 76%, 36%)"
                     strokeWidth={2}
                     name="Продажи"
                   />
                   <Line
                     type="monotone"
                     dataKey="revenue"
-                    stroke="hsl(var(--chart-2))"
+                    stroke="hsl(280, 89%, 66%)"
                     strokeWidth={2}
                     name="Выручка (₽)"
                   />
