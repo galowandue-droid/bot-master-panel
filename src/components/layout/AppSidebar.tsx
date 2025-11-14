@@ -15,6 +15,7 @@ import {
   Database,
   FileText,
   LogOut,
+  Shield,
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +39,7 @@ const menuItems = [
   { title: "Поиск", url: "/search", icon: Search },
   { title: "Рассылка", url: "/mailing", icon: Send },
   { title: "Пользователи", url: "/users", icon: Users },
+  { title: "Роли", url: "/roles", icon: Shield },
   { title: "Платежи", url: "/payments", icon: CreditCard },
   { title: "Настройки", url: "/settings", icon: Settings },
 ];
