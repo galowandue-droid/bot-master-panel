@@ -1,5 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard,
   Package,
@@ -13,6 +14,7 @@ import {
   Send,
   Database,
   FileText,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,8 +26,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { title: "Дашборд", url: "/", icon: LayoutDashboard },
@@ -46,6 +50,7 @@ const toolsItems = [
 export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
+  const { signOut } = useAuth();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -122,6 +127,17 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border p-4">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          onClick={signOut}
+        >
+          <LogOut className="h-4 w-4" />
+          {open && <span>Выход</span>}
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }
