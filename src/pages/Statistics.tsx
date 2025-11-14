@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useStatistics } from "@/hooks/useStatistics";
-import { usePaymentStats } from "@/hooks/usePaymentStats";
 import { useCategories } from "@/hooks/useCategories";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -41,7 +40,6 @@ export default function Statistics() {
   
   const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
   const { statistics, totals, isLoading } = useStatistics(days);
-  const { data: paymentStats, isLoading: paymentStatsLoading } = usePaymentStats();
   const { categories } = useCategories();
 
   const filteredStatistics = useMemo(() => {
@@ -63,16 +61,6 @@ export default function Statistics() {
     })) || [],
     [filteredStatistics]
   );
-
-  const pieData = useMemo(() => {
-    if (!paymentStats?.depositsByMethod) return [];
-    
-    return Object.entries(paymentStats.depositsByMethod).map(([method, data]) => ({
-      name: method === 'unknown' ? 'Неизвестно' : method,
-      value: data.total,
-      count: data.count,
-    }));
-  }, [paymentStats]);
 
   const handleExportData = async () => {
     try {
@@ -312,120 +300,6 @@ export default function Statistics() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Payment Systems Stats */}
-        <Card className="border-border/40 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-primary" />
-              Статистика платежных систем
-            </CardTitle>
-            <CardDescription>Данные с API платежных систем и локальной базы</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {paymentStatsLoading ? (
-              <Skeleton className="h-[300px]" />
-            ) : (
-              <div className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  {paymentStats?.paymentStats.map((stat) => (
-                    <Card key={stat.system} className="border-border/40">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">{stat.system}</CardTitle>
-                        <CardDescription>
-                          {stat.status === 'connected' && <span className="text-success">✓ Подключен</span>}
-                          {stat.status === 'disabled' && <span className="text-muted-foreground">○ Отключен</span>}
-                          {stat.status === 'error' && <span className="text-destructive">✗ Ошибка</span>}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {stat.enabled && stat.status === 'connected' && (
-                          <div className="text-sm space-y-1">
-                            {Array.isArray(stat.balance) ? (
-                              stat.balance.length > 0 ? (
-                                stat.balance.map((b: any, i: number) => (
-                                  <div key={i}>
-                                    {b.currency_code}: {b.available}
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="text-muted-foreground">Нет данных</div>
-                              )
-                            ) : (
-                              <div>{stat.balance}</div>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Распределение по методам</h3>
-                    {pieData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
-                            isAnimationActive={false}
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip animationDuration={200} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                        Нет данных о платежах
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Детали по методам</h3>
-                    {Object.keys(paymentStats?.depositsByMethod || {}).length > 0 ? (
-                      <div className="space-y-3">
-                        {Object.entries(paymentStats?.depositsByMethod || {}).map(([method, data]) => (
-                          <Card key={method} className="p-4 border-border/40">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="font-medium">{method === 'unknown' ? 'Неизвестно' : method}</span>
-                              <span className="text-sm text-muted-foreground">{data.count} транзакций</span>
-                            </div>
-                            <div className="space-y-1 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Всего:</span>
-                                <span className="font-medium">₽{data.total.toFixed(2)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Завершено:</span>
-                                <span className="text-success">{data.completed}</span>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-muted-foreground">
-                        Нет данных о платежах
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
