@@ -1,15 +1,22 @@
 import { useState, useMemo } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatsCard } from "@/components/dashboard/StatsCard";
-import { Users, ShoppingCart, DollarSign, Wallet, TrendingUp, Activity } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { useStatistics } from "@/hooks/useStatistics";
+import { usePaymentStats } from "@/hooks/usePaymentStats";
+import { useCategories } from "@/hooks/useCategories";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarIcon, TrendingUp, DollarSign, Wallet, Download } from "lucide-react";
+import { format, subDays } from "date-fns";
+import { ru } from "date-fns/locale";
 import {
-  BarChart,
-  Bar,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   PieChart,
   Pie,
   Cell,
@@ -17,90 +24,86 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+
+const COLORS = ['hsl(250, 95%, 63%)', 'hsl(280, 89%, 66%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)'];
 
 export default function Statistics() {
-  const [period, setPeriod] = useState("month");
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  
+  const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+  const { statistics, totals, isLoading } = useStatistics(days);
+  const { data: paymentStats, isLoading: paymentStatsLoading } = usePaymentStats();
+  const { categories } = useCategories();
 
-  const stats = useMemo(() => ({
-    day: {
-      newUsers: 45,
-      purchases: 23,
-      revenue: 3420,
-      deposits: 12,
-      depositsAmount: 5600,
-      growth: 12.5,
-    },
-    week: {
-      newUsers: 234,
-      purchases: 156,
-      revenue: 24530,
-      deposits: 89,
-      depositsAmount: 42100,
-      growth: 18.3,
-    },
-    month: {
-      newUsers: 892,
-      purchases: 634,
-      revenue: 98450,
-      deposits: 367,
-      depositsAmount: 165200,
-      growth: 24.7,
-    },
-    all: {
-      newUsers: 8945,
-      purchases: 6334,
-      revenue: 945230,
-      deposits: 3421,
-      depositsAmount: 1523400,
-      growth: 156.2,
-    },
-  }), []);
+  const filteredStatistics = useMemo(() => {
+    if (!statistics) return [];
+    
+    return statistics.filter(stat => {
+      const statDate = new Date(stat.date);
+      return statDate >= dateRange.from && statDate <= dateRange.to;
+    });
+  }, [statistics, dateRange]);
 
-  const currentStats = useMemo(() => stats[period as keyof typeof stats], [period, stats]);
+  const chartData = useMemo(() => 
+    filteredStatistics?.map((stat) => ({
+      date: format(new Date(stat.date), "dd MMM", { locale: ru }),
+      users: stat.new_users,
+      purchases: stat.purchases_count,
+      revenue: Number(stat.purchases_amount),
+      deposits: stat.deposits_count,
+    })) || [],
+    [filteredStatistics]
+  );
 
-  const salesData = useMemo(() => [
-    { date: "01", sales: 45, revenue: 6800 },
-    { date: "05", sales: 52, revenue: 7900 },
-    { date: "10", sales: 38, revenue: 5700 },
-    { date: "15", sales: 71, revenue: 10800 },
-    { date: "20", sales: 63, revenue: 9500 },
-    { date: "25", sales: 89, revenue: 13500 },
-    { date: "30", sales: 95, revenue: 14300 },
-  ], []);
+  const pieData = useMemo(() => {
+    if (!paymentStats?.depositsByMethod) return [];
+    
+    return Object.entries(paymentStats.depositsByMethod).map(([method, data]) => ({
+      name: method === 'unknown' ? 'Неизвестно' : method,
+      value: data.total,
+      count: data.count,
+    }));
+  }, [paymentStats]);
 
-  const usersGrowthData = useMemo(() => [
-    { month: "Июл", users: 145 },
-    { month: "Авг", users: 234 },
-    { month: "Сен", users: 389 },
-    { month: "Окт", users: 567 },
-    { month: "Ноя", users: 892 },
-    { month: "Дек", users: 1245 },
-  ], []);
+  const handleExportData = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('export-database', {
+        body: { table: 'statistics' }
+      });
 
-  const categoriesData = useMemo(() => [
-    { name: "Промокоды", value: 35, color: "hsl(250, 95%, 63%)" },
-    { name: "Аккаунты", value: 28, color: "hsl(280, 89%, 66%)" },
-    { name: "Подписки", value: 22, color: "hsl(142, 76%, 36%)" },
-    { name: "Игры", value: 15, color: "hsl(38, 92%, 50%)" },
-  ], []);
+      if (error) throw error;
 
-  const paymentMethodsData = useMemo(() => [
-    { method: "CryptoBot", amount: 45200 },
-    { method: "ЮMoney", amount: 38100 },
-    { method: "Telegram Stars", amount: 28900 },
-    { method: "Карты", amount: 22800 },
-  ], []);
+      const blob = new Blob([data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `statistics_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
 
-  const topProducts = useMemo(() => [
-    { name: "Промокод Самокат", category: "Промокоды", sales: 145, revenue: 21750 },
-    { name: "Spotify Premium", category: "Аккаунты", sales: 112, revenue: 16800 },
-    { name: "Discord Nitro", category: "Подписки", sales: 98, revenue: 14700 },
-    { name: "Netflix 4K", category: "Подписки", sales: 87, revenue: 13050 },
-    { name: "Steam Wallet", category: "Игры", sales: 76, revenue: 11400 },
-  ], []);
+      toast({
+        title: "Успешно",
+        description: "Статистика экспортирована",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -109,268 +112,320 @@ export default function Statistics() {
           <SidebarTrigger />
           <div className="flex-1">
             <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Статистика
+              Детальная аналитика
             </h1>
-            <p className="text-sm text-muted-foreground">Детальная аналитика и визуализация данных</p>
+            <p className="text-sm text-muted-foreground">
+              Статистика продаж и платежей
+            </p>
           </div>
+          <Button variant="outline" size="sm" onClick={handleExportData}>
+            <Download className="mr-2 h-4 w-4" />
+            Экспорт
+          </Button>
         </div>
       </header>
 
-      <div className="p-6">
-        <Tabs value={period} onValueChange={setPeriod} className="space-y-6">
-          <TabsList className="bg-card border shadow-sm">
-            <TabsTrigger value="day">За день</TabsTrigger>
-            <TabsTrigger value="week">За неделю</TabsTrigger>
-            <TabsTrigger value="month">За месяц</TabsTrigger>
-            <TabsTrigger value="all">Всё время</TabsTrigger>
-          </TabsList>
+      <div className="p-6 space-y-6">
+        {/* Filters */}
+        <Card className="border-border/40 shadow-lg">
+          <CardHeader>
+            <CardTitle>Фильтры</CardTitle>
+            <CardDescription>Настройте период и категорию для анализа</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-4">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !dateRange && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "dd MMM yyyy", { locale: ru })} -{" "}
+                        {format(dateRange.to, "dd MMM yyyy", { locale: ru })}
+                      </>
+                    ) : (
+                      format(dateRange.from, "dd MMM yyyy", { locale: ru })
+                    )
+                  ) : (
+                    "Выберите период"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={{ from: dateRange.from, to: dateRange.to }}
+                  onSelect={(range) => {
+                    if (range?.from && range?.to) {
+                      setDateRange({ from: range.from, to: range.to });
+                    }
+                  }}
+                  numberOfMonths={2}
+                  locale={ru}
+                />
+              </PopoverContent>
+            </Popover>
 
-          <TabsContent value={period} className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <StatsCard
-                title="Новые пользователи"
-                value={currentStats.newUsers.toString()}
-                icon={Users}
-                description={
-                  <div className="flex items-center gap-1">
-                    <TrendingUp className="h-3 w-3 text-success" />
-                    <span className="text-success">+{currentStats.growth}%</span>
-                  </div>
-                }
-              />
-              <StatsCard
-                title="Продажи"
-                value={currentStats.purchases.toString()}
-                icon={ShoppingCart}
-                description="Количество заказов"
-              />
-              <StatsCard
-                title="Выручка"
-                value={`₽${currentStats.revenue.toLocaleString()}`}
-                icon={DollarSign}
-                description={
-                  <div className="flex items-center gap-1">
-                    <Activity className="h-3 w-3" />
-                    <span>Средний чек: ₽{Math.round(currentStats.revenue / currentStats.purchases)}</span>
-                  </div>
-                }
-              />
-              <StatsCard
-                title="Пополнения"
-                value={currentStats.deposits.toString()}
-                icon={Wallet}
-                description={`На сумму ₽${currentStats.depositsAmount.toLocaleString()}`}
-              />
-            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Категория" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все категории</SelectItem>
+                {categories?.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
 
-            {/* Графики продаж и пользователей */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* График продаж */}
-              <Card className="overflow-hidden border-border/40 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="bg-gradient-to-br from-card to-muted/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-primary" />
-                        Динамика продаж
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">Продажи и выручка за период</p>
-                    </div>
-                    <Badge variant="default" className="bg-gradient-primary">
-                      +{currentStats.growth}%
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={salesData}>
-                      <defs>
-                        <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(250, 95%, 63%)" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(250, 95%, 63%)" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(280, 89%, 66%)" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(280, 89%, 66%)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip
-                        animationDuration={200}
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
-                      />
-                      <Legend />
-                      <Area
-                        type="monotone"
-                        dataKey="sales"
-                        stroke="hsl(250, 95%, 63%)"
-                        fillOpacity={1}
-                        fill="url(#colorSales)"
-                        name="Продажи"
-                        isAnimationActive={false}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="revenue"
-                        stroke="hsl(280, 89%, 66%)"
-                        fillOpacity={1}
-                        fill="url(#colorRevenue)"
-                        name="Выручка (₽)"
-                        isAnimationActive={false}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* График роста пользователей */}
-              <Card className="overflow-hidden border-border/40 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="bg-gradient-to-br from-card to-muted/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5 text-success" />
-                        Рост пользователей
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">Новые регистрации по месяцам</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={usersGrowthData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                      <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip
-                        animationDuration={200}
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
-                      />
-                      <Bar 
-                        dataKey="users" 
-                        fill="hsl(142, 76%, 36%)" 
-                        radius={[8, 8, 0, 0]} 
-                        name="Пользователи"
-                        isAnimationActive={false}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Распределение по категориям и методам оплаты */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* Продажи по категориям */}
-              <Card className="overflow-hidden border-border/40 shadow-lg">
-                <CardHeader className="bg-gradient-to-br from-card to-muted/20">
-                  <CardTitle>Популярные категории</CardTitle>
-                  <p className="text-sm text-muted-foreground">Распределение продаж по типам товаров</p>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={categoriesData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                        isAnimationActive={false}
-                      >
-                        {categoriesData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip animationDuration={200} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Методы оплаты */}
-              <Card className="overflow-hidden border-border/40 shadow-lg">
-                <CardHeader className="bg-gradient-to-br from-card to-muted/20">
-                  <CardTitle>Способы оплаты</CardTitle>
-                  <p className="text-sm text-muted-foreground">Популярность платежных систем</p>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={paymentMethodsData} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                      <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis dataKey="method" type="category" stroke="hsl(var(--muted-foreground))" width={100} />
-                      <Tooltip
-                        animationDuration={200}
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
-                      />
-                      <Bar 
-                        dataKey="amount" 
-                        fill="hsl(250, 95%, 63%)" 
-                        radius={[0, 8, 8, 0]} 
-                        name="Сумма (₽)"
-                        isAnimationActive={false}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Топ товаров */}
-            <Card className="overflow-hidden border-border/40 shadow-lg">
-              <CardHeader className="bg-gradient-to-br from-card to-muted/20">
-                <CardTitle className="flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5 text-primary" />
-                  Топ товаров
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">Самые продаваемые позиции за период</p>
+        {/* Summary Stats */}
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card className="border-border/40 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardDescription>Новые пользователи</CardDescription>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {topProducts.map((product, index) => (
-                    <div
-                      key={product.name}
-                      className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-muted/20 to-transparent border border-border/40 hover:border-primary/40 transition-all"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-muted-foreground">{product.category}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">{product.sales} продаж</p>
-                        <p className="text-sm text-muted-foreground">₽{product.revenue.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <CardContent>
+                <div className="text-3xl font-bold text-primary">{totals?.newUsers || 0}</div>
+                <p className="text-xs text-muted-foreground mt-1">За выбранный период</p>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+
+            <Card className="border-border/40 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardDescription>Продажи</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-primary">{totals?.purchases || 0}</div>
+                <p className="text-xs text-muted-foreground mt-1">Всего заказов</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/40 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardDescription>Выручка</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-success">₽{(totals?.revenue || 0).toFixed(0)}</div>
+                <p className="text-xs text-muted-foreground mt-1">Общая сумма</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/40 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardDescription>Пополнения</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-accent">₽{(totals?.depositsAmount || 0).toFixed(0)}</div>
+                <p className="text-xs text-muted-foreground mt-1">{totals?.deposits || 0} транзакций</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Charts */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="border-border/40 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Динамика продаж
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-[300px]" />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "0.5rem",
+                      }}
+                      animationDuration={200}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="purchases"
+                      stroke="hsl(250, 95%, 63%)"
+                      fill="hsl(250, 95%, 63%)"
+                      fillOpacity={0.2}
+                      name="Продажи"
+                      isAnimationActive={false}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/40 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-success" />
+                Выручка по дням
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-[300px]" />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "0.5rem",
+                      }}
+                      animationDuration={200}
+                    />
+                    <Bar dataKey="revenue" fill="hsl(142, 76%, 36%)" name="Выручка (₽)" isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Payment Systems Stats */}
+        <Card className="border-border/40 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-primary" />
+              Статистика платежных систем
+            </CardTitle>
+            <CardDescription>Данные с API платежных систем и локальной базы</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {paymentStatsLoading ? (
+              <Skeleton className="h-[300px]" />
+            ) : (
+              <div className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  {paymentStats?.paymentStats.map((stat) => (
+                    <Card key={stat.system} className="border-border/40">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">{stat.system}</CardTitle>
+                        <CardDescription>
+                          {stat.status === 'connected' && <span className="text-success">✓ Подключен</span>}
+                          {stat.status === 'disabled' && <span className="text-muted-foreground">○ Отключен</span>}
+                          {stat.status === 'error' && <span className="text-destructive">✗ Ошибка</span>}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {stat.enabled && stat.status === 'connected' && (
+                          <div className="text-sm space-y-1">
+                            {Array.isArray(stat.balance) ? (
+                              stat.balance.length > 0 ? (
+                                stat.balance.map((b: any, i: number) => (
+                                  <div key={i}>
+                                    {b.currency_code}: {b.available}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="text-muted-foreground">Нет данных</div>
+                              )
+                            ) : (
+                              <div>{stat.balance}</div>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Распределение по методам</h3>
+                    {pieData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            isAnimationActive={false}
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip animationDuration={200} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        Нет данных о платежах
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Детали по методам</h3>
+                    {Object.keys(paymentStats?.depositsByMethod || {}).length > 0 ? (
+                      <div className="space-y-3">
+                        {Object.entries(paymentStats?.depositsByMethod || {}).map(([method, data]) => (
+                          <Card key={method} className="p-4 border-border/40">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-medium">{method === 'unknown' ? 'Неизвестно' : method}</span>
+                              <span className="text-sm text-muted-foreground">{data.count} транзакций</span>
+                            </div>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Всего:</span>
+                                <span className="font-medium">₽{data.total.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Завершено:</span>
+                                <span className="text-success">{data.completed}</span>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-muted-foreground">
+                        Нет данных о платежах
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
