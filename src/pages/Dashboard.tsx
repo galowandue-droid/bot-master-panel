@@ -8,6 +8,9 @@ import { useStatistics } from "@/hooks/useStatistics";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { BroadcastDialog } from "@/components/broadcasts/BroadcastDialog";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import {
   LineChart,
   Line,
@@ -25,6 +28,46 @@ import { ru } from "date-fns/locale";
 export default function Dashboard() {
   const { statistics, totals, isLoading } = useStatistics(30);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleDownloadDB = async () => {
+    setDownloading(true);
+    try {
+      const tables = ['profiles', 'categories', 'positions', 'items', 'purchases', 'deposits', 'statistics'];
+      
+      for (const table of tables) {
+        const { data, error } = await supabase.functions.invoke('export-database', {
+          body: { table }
+        });
+
+        if (error) throw error;
+
+        const blob = new Blob([data], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${table}_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+
+      toast({
+        title: "Успешно",
+        description: "База данных экспортирована",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const chartData = statistics?.map((stat) => ({
     date: format(new Date(stat.date), "dd MMM", { locale: ru }),
@@ -46,9 +89,15 @@ export default function Dashboard() {
               Обзор статистики за последние 30 дней
             </p>
           </div>
-          <Button variant="outline" size="sm" className="border-primary/20 hover:bg-primary/10">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="border-primary/20 hover:bg-primary/10"
+            onClick={handleDownloadDB}
+            disabled={downloading}
+          >
             <Download className="mr-2 h-4 w-4" />
-            Скачать БД
+            {downloading ? "Загрузка..." : "Скачать БД"}
           </Button>
         </div>
       </header>
@@ -185,13 +234,16 @@ export default function Dashboard() {
 
         <RecentActivity />
 
-        <Card className="p-6">
+        <Card className="p-6 border-border/40 shadow-lg">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-foreground">Быстрые действия</h3>
             <p className="text-sm text-muted-foreground">Управление ботом</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <button className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left">
+            <button 
+              onClick={() => navigate('/catalog')}
+              className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left hover:shadow-md"
+            >
               <div className="rounded-lg bg-primary/10 p-3">
                 <Package className="h-6 w-6 text-primary" />
               </div>
@@ -202,7 +254,7 @@ export default function Dashboard() {
             </button>
             <button 
               onClick={() => setBroadcastOpen(true)}
-              className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left"
+              className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left hover:shadow-md"
             >
               <div className="rounded-lg bg-primary/10 p-3">
                 <Send className="h-6 w-6 text-primary" />
@@ -212,7 +264,10 @@ export default function Dashboard() {
                 <div className="text-sm text-muted-foreground">Отправить сообщение всем</div>
               </div>
             </button>
-            <button className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left">
+            <button 
+              onClick={() => navigate('/statistics')}
+              className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left hover:shadow-md"
+            >
               <div className="rounded-lg bg-primary/10 p-3">
                 <TrendingUp className="h-6 w-6 text-primary" />
               </div>
