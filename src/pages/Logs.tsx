@@ -9,10 +9,49 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { useState } from "react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export default function Logs() {
   const { logs, isLoading, refetch, clearLogs } = useLogs();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
+      const { data, error } = await supabase.functions.invoke('export-logs', {
+        method: 'POST',
+      });
+
+      if (error) throw error;
+
+      // Create blob and download
+      const blob = new Blob([data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `logs_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Логи экспортированы",
+        description: "Файл успешно загружен",
+      });
+    } catch (error: any) {
+      console.error('Error downloading logs:', error);
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -39,9 +78,15 @@ export default function Logs() {
               <RefreshCw className="h-4 w-4" />
               Обновить
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={handleDownload}
+              disabled={downloading}
+            >
               <Download className="h-4 w-4" />
-              Скачать
+              {downloading ? "Загрузка..." : "Скачать"}
             </Button>
             <Button
               variant="outline"

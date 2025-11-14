@@ -3,8 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Database as DatabaseIcon, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export default function Database() {
+  const [downloading, setDownloading] = useState(false);
+
   const tables = [
     { name: "profiles", records: 8945 },
     { name: "categories", records: 12 },
@@ -12,6 +17,42 @@ export default function Database() {
     { name: "items", records: 342 },
     { name: "purchases", records: 6334 },
   ];
+
+  const handleDownloadTable = async (tableName: string) => {
+    try {
+      setDownloading(true);
+      const { data, error } = await supabase.functions.invoke('export-database', {
+        body: { table: tableName },
+      });
+
+      if (error) throw error;
+
+      // Create blob and download
+      const blob = new Blob([data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${tableName}_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Таблица экспортирована",
+        description: `Таблица ${tableName} успешно загружена`,
+      });
+    } catch (error: any) {
+      console.error('Error downloading table:', error);
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const backups = [
     { name: "bot-backup-2024-01-15.db", date: "Сегодня в 00:00" },
@@ -97,10 +138,23 @@ export default function Database() {
             </div>
           </CardHeader>
           <CardContent>
-            <Button className="gap-2">
-              <Download className="h-4 w-4" />
-              Скачать БД (bot.db)
-            </Button>
+            <p className="text-sm text-muted-foreground mb-4">
+              Экспортировать таблицы базы данных в формате CSV
+            </p>
+            <div className="space-y-2">
+              {tables.map((table) => (
+                <Button 
+                  key={table.name}
+                  variant="outline"
+                  className="w-full gap-2 justify-start"
+                  onClick={() => handleDownloadTable(table.name)}
+                  disabled={downloading}
+                >
+                  <Download className="h-4 w-4" />
+                  {downloading ? "Загрузка..." : `Скачать ${table.name}`}
+                </Button>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
