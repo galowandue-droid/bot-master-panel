@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
 
 interface StatsCardProps {
   title: string;
@@ -8,7 +9,7 @@ interface StatsCardProps {
   change?: string;
   changeType?: "positive" | "negative" | "neutral";
   icon: LucideIcon;
-  description?: string;
+  description?: string | ReactNode;
 }
 
 export function StatsCard({
@@ -20,14 +21,17 @@ export function StatsCard({
   description,
 }: StatsCardProps) {
   return (
-    <Card className="p-6 transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between">
+    <Card className="p-6 transition-all hover:shadow-xl hover:-translate-y-1 duration-300 overflow-hidden border-border/40 shadow-md">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-primary opacity-5 rounded-full -mr-16 -mt-16" />
+      <div className="flex items-start justify-between relative">
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
           <div>
-            <p className="text-2xl font-bold text-foreground">{value}</p>
+            <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">{value}</p>
             {description && (
-              <p className="text-xs text-muted-foreground mt-1">{description}</p>
+              <div className="text-xs text-muted-foreground mt-1">
+                {typeof description === 'string' ? <p>{description}</p> : description}
+              </div>
             )}
           </div>
           {change && (
@@ -43,8 +47,8 @@ export function StatsCard({
             </p>
           )}
         </div>
-        <div className="rounded-lg bg-primary/10 p-3">
-          <Icon className="h-6 w-6 text-primary" />
+        <div className="rounded-xl bg-gradient-primary p-3 shadow-glow">
+          <Icon className="h-6 w-6 text-primary-foreground" />
         </div>
       </div>
     </Card>
