@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Users, ShoppingCart, TrendingUp, DollarSign, Package, Download, Send } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/StatsCard";
+import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { useStatistics } from "@/hooks/useStatistics";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
@@ -172,6 +173,8 @@ export default function Dashboard() {
             )}
           </Card>
         </div>
+
+        <RecentActivity />
 
         <Card className="p-6">
           <div className="mb-4">
