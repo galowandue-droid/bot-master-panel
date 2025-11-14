@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +6,6 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Users, ShoppingCart, DollarSign, Wallet, TrendingUp, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   AreaChart,
@@ -26,7 +24,7 @@ import {
 export default function Statistics() {
   const [period, setPeriod] = useState("month");
 
-  const stats = {
+  const stats = useMemo(() => ({
     day: {
       newUsers: 45,
       purchases: 23,
@@ -59,12 +57,11 @@ export default function Statistics() {
       depositsAmount: 1523400,
       growth: 156.2,
     },
-  };
+  }), []);
 
-  const currentStats = stats[period as keyof typeof stats];
+  const currentStats = useMemo(() => stats[period as keyof typeof stats], [period, stats]);
 
-  // Данные для графика продаж по дням
-  const salesData = [
+  const salesData = useMemo(() => [
     { date: "01", sales: 45, revenue: 6800 },
     { date: "05", sales: 52, revenue: 7900 },
     { date: "10", sales: 38, revenue: 5700 },
@@ -72,41 +69,38 @@ export default function Statistics() {
     { date: "20", sales: 63, revenue: 9500 },
     { date: "25", sales: 89, revenue: 13500 },
     { date: "30", sales: 95, revenue: 14300 },
-  ];
+  ], []);
 
-  // Данные для роста пользователей
-  const usersGrowthData = [
+  const usersGrowthData = useMemo(() => [
     { month: "Июл", users: 145 },
     { month: "Авг", users: 234 },
     { month: "Сен", users: 389 },
     { month: "Окт", users: 567 },
     { month: "Ноя", users: 892 },
     { month: "Дек", users: 1245 },
-  ];
+  ], []);
 
-  // Данные по категориям
-  const categoriesData = [
+  const categoriesData = useMemo(() => [
     { name: "Промокоды", value: 35, color: "hsl(250, 95%, 63%)" },
     { name: "Аккаунты", value: 28, color: "hsl(280, 89%, 66%)" },
     { name: "Подписки", value: 22, color: "hsl(142, 76%, 36%)" },
     { name: "Игры", value: 15, color: "hsl(38, 92%, 50%)" },
-  ];
+  ], []);
 
-  // Данные по способам оплаты
-  const paymentMethodsData = [
+  const paymentMethodsData = useMemo(() => [
     { method: "CryptoBot", amount: 45200 },
     { method: "ЮMoney", amount: 38100 },
     { method: "Telegram Stars", amount: 28900 },
     { method: "Карты", amount: 22800 },
-  ];
+  ], []);
 
-  const topProducts = [
+  const topProducts = useMemo(() => [
     { name: "Промокод Самокат", category: "Промокоды", sales: 145, revenue: 21750 },
     { name: "Spotify Premium", category: "Аккаунты", sales: 112, revenue: 16800 },
     { name: "Discord Nitro", category: "Подписки", sales: 98, revenue: 14700 },
     { name: "Netflix 4K", category: "Подписки", sales: 87, revenue: 13050 },
     { name: "Steam Wallet", category: "Игры", sales: 76, revenue: 11400 },
-  ];
+  ], []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -205,6 +199,7 @@ export default function Statistics() {
                       <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
                       <YAxis stroke="hsl(var(--muted-foreground))" />
                       <Tooltip
+                        animationDuration={200}
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
                           border: "1px solid hsl(var(--border))",
@@ -219,6 +214,7 @@ export default function Statistics() {
                         fillOpacity={1}
                         fill="url(#colorSales)"
                         name="Продажи"
+                        isAnimationActive={false}
                       />
                       <Area
                         type="monotone"
@@ -227,6 +223,7 @@ export default function Statistics() {
                         fillOpacity={1}
                         fill="url(#colorRevenue)"
                         name="Выручка (₽)"
+                        isAnimationActive={false}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -253,13 +250,20 @@ export default function Statistics() {
                       <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
                       <YAxis stroke="hsl(var(--muted-foreground))" />
                       <Tooltip
+                        animationDuration={200}
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
                           border: "1px solid hsl(var(--border))",
                           borderRadius: "8px",
                         }}
                       />
-                      <Bar dataKey="users" fill="hsl(142, 76%, 36%)" radius={[8, 8, 0, 0]} name="Пользователи" />
+                      <Bar 
+                        dataKey="users" 
+                        fill="hsl(142, 76%, 36%)" 
+                        radius={[8, 8, 0, 0]} 
+                        name="Пользователи"
+                        isAnimationActive={false}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -286,12 +290,13 @@ export default function Statistics() {
                         outerRadius={100}
                         fill="#8884d8"
                         dataKey="value"
+                        isAnimationActive={false}
                       >
                         {categoriesData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip animationDuration={200} />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -310,13 +315,20 @@ export default function Statistics() {
                       <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
                       <YAxis dataKey="method" type="category" stroke="hsl(var(--muted-foreground))" width={100} />
                       <Tooltip
+                        animationDuration={200}
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
                           border: "1px solid hsl(var(--border))",
                           borderRadius: "8px",
                         }}
                       />
-                      <Bar dataKey="amount" fill="hsl(250, 95%, 63%)" radius={[0, 8, 8, 0]} name="Сумма (₽)" />
+                      <Bar 
+                        dataKey="amount" 
+                        fill="hsl(250, 95%, 63%)" 
+                        radius={[0, 8, 8, 0]} 
+                        name="Сумма (₽)"
+                        isAnimationActive={false}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
