@@ -109,6 +109,41 @@ export type Database = {
           },
         ]
       }
+      deposits: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          payment_method: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           buyer_id: string | null
@@ -224,6 +259,7 @@ export type Database = {
           created_at: string | null
           first_name: string | null
           id: string
+          is_blocked: boolean | null
           telegram_id: number | null
           updated_at: string | null
           username: string | null
@@ -233,6 +269,7 @@ export type Database = {
           created_at?: string | null
           first_name?: string | null
           id: string
+          is_blocked?: boolean | null
           telegram_id?: number | null
           updated_at?: string | null
           username?: string | null
@@ -242,6 +279,7 @@ export type Database = {
           created_at?: string | null
           first_name?: string | null
           id?: string
+          is_blocked?: boolean | null
           telegram_id?: number | null
           updated_at?: string | null
           username?: string | null
