@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Database from "./pages/Database";
 import Logs from "./pages/Logs";
 import Roles from "./pages/Roles";
+import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/database" element={<Database />} />
             <Route path="/logs" element={<Logs />} />
             <Route path="/roles" element={<Roles />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

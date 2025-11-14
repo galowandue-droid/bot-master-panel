@@ -35,11 +35,26 @@ export function useAssignRole() {
 
   return useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: "admin" | "user" }) => {
+      // Get user info for logging
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username, first_name")
+        .eq("id", userId)
+        .single();
+
       const { error } = await supabase
         .from("user_roles")
         .insert({ user_id: userId, role });
 
       if (error) throw error;
+
+      // Log the role assignment
+      const username = profile?.username || profile?.first_name || "Unknown";
+      await supabase.from("logs").insert({
+        level: "info",
+        message: `Роль "${role}" назначена пользователю ${username}`,
+        metadata: { user_id: userId, role, action: "assign_role" },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-roles"] });
@@ -65,6 +80,13 @@ export function useRemoveRole() {
 
   return useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: "admin" | "user" }) => {
+      // Get user info for logging
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username, first_name")
+        .eq("id", userId)
+        .single();
+
       const { error } = await supabase
         .from("user_roles")
         .delete()
@@ -72,6 +94,14 @@ export function useRemoveRole() {
         .eq("role", role);
 
       if (error) throw error;
+
+      // Log the role removal
+      const username = profile?.username || profile?.first_name || "Unknown";
+      await supabase.from("logs").insert({
+        level: "info",
+        message: `Роль "${role}" удалена у пользователя ${username}`,
+        metadata: { user_id: userId, role, action: "remove_role" },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-roles"] });

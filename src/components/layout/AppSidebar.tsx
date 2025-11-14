@@ -16,6 +16,7 @@ import {
   FileText,
   LogOut,
   Shield,
+  User,
 } from "lucide-react";
 import {
   Sidebar,
@@ -130,7 +131,17 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-4 space-y-2">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          asChild
+        >
+          <NavLink to="/profile">
+            <User className="h-4 w-4" />
+            {open && <span>Мой профиль</span>}
+          </NavLink>
+        </Button>
         <Button
           variant="ghost"
           className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
