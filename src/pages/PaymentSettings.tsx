@@ -6,9 +6,11 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, Bitcoin, Wallet, Star, CreditCard, CheckCircle2, XCircle, Circle, AlertCircle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Bitcoin, Wallet, Star, CreditCard, CheckCircle2, XCircle, Circle, AlertCircle, Clock } from "lucide-react";
 import { validatePaymentToken } from "@/lib/payment-validation";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 
 interface PaymentSystem {
   id: string;
@@ -66,9 +68,11 @@ const paymentSystems: PaymentSystem[] = [
 
 export default function PaymentSettings() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [tokens, setTokens] = useState<Record<string, string>>({});
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
   const [testingSystem, setTestingSystem] = useState<string | null>(null);
+  const [lastTestTime, setLastTestTime] = useState<Record<string, Date>>({});
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["payment-settings"],
@@ -108,130 +112,198 @@ export default function PaymentSettings() {
     },
   });
 
-  const handleSaveToken = async (systemId: string) => {
-    const system = paymentSystems.find((s) => s.id === systemId);
-    if (!system) return;
+  const saveTokenMutation = useMutation({
+    mutationFn: async ({ systemId, token }: { systemId: string; token: string }) => {
+      const system = paymentSystems.find((s) => s.id === systemId);
+      if (!system) throw new Error("System not found");
 
-    const token = tokens[systemId];
-
-    try {
       validatePaymentToken(systemId, token);
-    } catch (error) {
+
+      const { error } = await supabase.from("bot_settings").upsert({
+        key: system.tokenKey,
+        value: token,
+      });
+
+      if (error) throw error;
+      return { system };
+    },
+    onSuccess: ({ system }) => {
+      queryClient.invalidateQueries({ queryKey: ["payment-settings"] });
+      toast({
+        title: "Успешно",
+        description: `Токен для ${system.name} сохранен. Теперь проверьте подключение.`,
+      });
+    },
+    onError: (error) => {
       toast({
         title: "Ошибка валидации",
         description: error instanceof Error ? error.message : "Неверный формат токена",
         variant: "destructive",
       });
-      return;
-    }
+    },
+  });
 
-    const { error } = await supabase.from("bot_settings").upsert({
-      key: system.tokenKey,
-      value: token,
-    });
-
-    if (error) {
+  const handleSaveToken = async (systemId: string) => {
+    const token = tokens[systemId];
+    if (!token) {
       toast({
         title: "Ошибка",
-        description: "Не удалось сохранить токен",
+        description: "Введите токен",
         variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Успешно",
-      description: `Токен для ${system.name} сохранен`,
-    });
+    await saveTokenMutation.mutateAsync({ systemId, token });
   };
 
-  const handleToggle = async (systemId: string, newValue: boolean) => {
-    const system = paymentSystems.find((s) => s.id === systemId);
-    if (!system) return;
+  const toggleMutation = useMutation({
+    mutationFn: async ({ systemId, newValue }: { systemId: string; newValue: boolean }) => {
+      const system = paymentSystems.find((s) => s.id === systemId);
+      if (!system) throw new Error("System not found");
 
-    const { error } = await supabase.from("bot_settings").upsert({
-      key: system.enabledKey,
-      value: newValue.toString(),
-    });
+      const { error } = await supabase.from("bot_settings").upsert({
+        key: system.enabledKey,
+        value: newValue.toString(),
+      });
 
-    if (error) {
+      if (error) throw error;
+      return { system, newValue };
+    },
+    onSuccess: ({ system, newValue }, { systemId }) => {
+      setEnabled({ ...enabled, [systemId]: newValue });
+      queryClient.invalidateQueries({ queryKey: ["payment-settings"] });
+      toast({
+        title: "Успешно",
+        description: `${system.name} ${newValue ? "включен" : "отключен"}`,
+      });
+    },
+    onError: () => {
       toast({
         title: "Ошибка",
         description: "Не удалось изменить статус",
         variant: "destructive",
       });
-      return;
-    }
+    },
+  });
 
-    setEnabled({ ...enabled, [systemId]: newValue });
-    toast({
-      title: "Успешно",
-      description: `${system.name} ${newValue ? "включен" : "отключен"}`,
-    });
+  const handleToggle = async (systemId: string, newValue: boolean) => {
+    await toggleMutation.mutateAsync({ systemId, newValue });
   };
+
+  const testMutation = useMutation({
+    mutationFn: async (systemId: string) => {
+      const { data, error } = await supabase.functions.invoke("test-payment-system", {
+        body: { system: systemId },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || "Не удалось подключиться к платежной системе");
+      }
+
+      return { systemId, data };
+    },
+    onSuccess: ({ systemId }) => {
+      setLastTestTime({ ...lastTestTime, [systemId]: new Date() });
+      queryClient.invalidateQueries({ queryKey: ["payment-stats"] });
+      toast({
+        title: "Подключено",
+        description: "Подключение к платежной системе работает",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка подключения",
+        description: error instanceof Error ? error.message : "Не удалось подключиться",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleTest = async (systemId: string) => {
     setTestingSystem(systemId);
-
-    const { data, error } = await supabase.functions.invoke("test-payment-system", {
-      body: { system: systemId },
-    });
-
-    setTestingSystem(null);
-
-    if (error || !data?.success) {
-      toast({
-        title: "Ошибка подключения",
-        description: data?.error || "Не удалось подключиться к платежной системе",
-        variant: "destructive",
-      });
-      return;
+    try {
+      await testMutation.mutateAsync(systemId);
+    } finally {
+      setTestingSystem(null);
     }
-
-    toast({
-      title: "Успешно",
-      description: "Подключение к платежной системе работает",
-    });
   };
 
-  const getStatusBadge = (systemId: string) => {
+  const getStatusInfo = (systemId: string) => {
     const systemStats = paymentStats?.paymentStats?.find(
       (stat: any) => stat.system.toLowerCase() === systemId
     );
+    const hasToken = tokens[systemId]?.length > 0;
+    const lastTest = lastTestTime[systemId];
+
+    if (!hasToken) {
+      return {
+        badge: (
+          <Badge variant="secondary" className="gap-1">
+            <Circle className="h-3 w-3 fill-muted-foreground text-muted-foreground" />
+            Не настроено
+          </Badge>
+        ),
+        canEnable: false,
+        message: null,
+      };
+    }
 
     if (!enabled[systemId]) {
-      return (
+      return {
+        badge: (
+          <Badge variant="secondary" className="gap-1">
+            <Circle className="h-3 w-3 fill-muted-foreground text-muted-foreground" />
+            Отключено
+          </Badge>
+        ),
+        canEnable: lastTest !== undefined,
+        message: lastTest ? null : "Проверьте подключение перед включением",
+      };
+    }
+
+    if (systemStats?.status === "error") {
+      return {
+        badge: (
+          <Badge variant="destructive" className="gap-1">
+            <XCircle className="h-3 w-3" />
+            Ошибка
+          </Badge>
+        ),
+        canEnable: true,
+        message: null,
+      };
+    }
+
+    if (lastTest) {
+      const timeStr = format(lastTest, "сегодня в HH:mm", { locale: ru });
+      return {
+        badge: (
+          <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600">
+            <CheckCircle2 className="h-3 w-3" />
+            Подключено
+          </Badge>
+        ),
+        canEnable: true,
+        message: (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+            <Clock className="h-3 w-3" />
+            <span>Последняя проверка: {timeStr}</span>
+          </div>
+        ),
+      };
+    }
+
+    return {
+      badge: (
         <Badge variant="secondary" className="gap-1">
-          <Circle className="h-3 w-3 fill-muted-foreground text-muted-foreground" />
-          Отключено
+          <Circle className="h-3 w-3 fill-primary text-primary" />
+          Не проверено
         </Badge>
-      );
-    }
-
-    if (!systemStats) {
-      return (
-        <Badge variant="secondary" className="gap-1">
-          <Circle className="h-3 w-3 fill-muted-foreground text-muted-foreground" />
-          Не настроено
-        </Badge>
-      );
-    }
-
-    if (systemStats.status === "error") {
-      return (
-        <Badge variant="destructive" className="gap-1">
-          <XCircle className="h-3 w-3" />
-          Ошибка
-        </Badge>
-      );
-    }
-
-    return (
-      <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600">
-        <CheckCircle2 className="h-3 w-3" />
-        Подключено
-      </Badge>
-    );
+      ),
+      canEnable: false,
+      message: "Проверьте подключение перед включением",
+    };
   };
 
   if (isLoading) {
@@ -254,12 +326,13 @@ export default function PaymentSettings() {
       <div className="grid gap-6">
         {paymentSystems.map((system) => {
           const Icon = system.icon;
+          const statusInfo = getStatusInfo(system.id);
           const isEnabled = enabled[system.id];
           const systemStats = paymentStats?.paymentStats?.find(
             (stat: any) => stat.system.toLowerCase() === system.id
           );
           const hasError = systemStats?.status === "error";
-          const isConnected = systemStats?.status === "connected";
+          const isConnected = lastTestTime[system.id] && isEnabled;
 
           return (
             <Card key={system.id} className="hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
@@ -282,7 +355,7 @@ export default function PaymentSettings() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <CardTitle>{system.name}</CardTitle>
-                        {getStatusBadge(system.id)}
+                        {statusInfo.badge}
                       </div>
                       <CardDescription className="mt-1">{system.description}</CardDescription>
                       {systemStats?.balance && (
@@ -290,6 +363,7 @@ export default function PaymentSettings() {
                           Баланс: {JSON.stringify(systemStats.balance)}
                         </p>
                       )}
+                      {statusInfo.message}
                       {hasError && systemStats?.error && (
                         <div className="flex items-start gap-2 mt-2 p-2 bg-destructive/10 rounded-md">
                           <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
@@ -301,6 +375,7 @@ export default function PaymentSettings() {
                   <Switch
                     checked={isEnabled}
                     onCheckedChange={(checked) => handleToggle(system.id, checked)}
+                    disabled={!statusInfo.canEnable}
                   />
                 </div>
               </CardHeader>
@@ -314,26 +389,35 @@ export default function PaymentSettings() {
                       onChange={(e) =>
                         setTokens({ ...tokens, [system.id]: e.target.value })
                       }
-                      disabled={!isEnabled}
                     />
                     <div className="flex gap-2">
                       <Button
                         onClick={() => handleSaveToken(system.id)}
-                        disabled={!isEnabled || !tokens[system.id]}
+                        disabled={!tokens[system.id] || saveTokenMutation.isPending}
                         className="flex-1"
                       >
-                        Сохранить
+                        {saveTokenMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Сохранение...
+                          </>
+                        ) : (
+                          "Сохранить"
+                        )}
                       </Button>
                       {system.testable && (
                         <Button
                           onClick={() => handleTest(system.id)}
-                          disabled={!isEnabled || testingSystem === system.id}
+                          disabled={!tokens[system.id] || testingSystem === system.id}
                           variant="outline"
                         >
                           {testingSystem === system.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              Проверка...
+                            </>
                           ) : (
-                            "Тест"
+                            "Проверить подключение"
                           )}
                         </Button>
                       )}
