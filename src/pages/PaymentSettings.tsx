@@ -97,6 +97,7 @@ export default function PaymentSettings() {
   const [balances, setBalances] = useState<Record<string, any>>({});
   const [statuses, setStatuses] = useState<Record<string, "connected" | "disconnected" | "checking">>({});
   const [lastChecks, setLastChecks] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
   
   // Message settings
   const [successMessage, setSuccessMessage] = useState("");
@@ -245,33 +246,122 @@ export default function PaymentSettings() {
 
   const handleCheckConnection = async (systemId: string) => {
     setStatuses(prev => ({ ...prev, [systemId]: "checking" }));
+    setIsSaving(true);
     
-    // Simulate API check - в реальности нужно вызвать payment-stats или проверку конкретного API
-    setTimeout(() => {
-      const isConnected = enabled[systemId] && tokens[systemId];
+    try {
+      const token = tokens[systemId];
+      if (!token) {
+        throw new Error("Токен не установлен");
+      }
+
+      // Check connection based on system type
+      let isConnected = false;
+      let balance: any = "—";
+
+      if (systemId === "cryptobot") {
+        // Call CryptoBot API to check connection
+        const response = await fetch(`https://pay.crypt.bot/api/getMe`, {
+          headers: {
+            "Crypto-Pay-API-Token": token,
+          },
+        });
+        const data = await response.json();
+        isConnected = data.ok;
+        
+        if (isConnected) {
+          // Get balance
+          const balanceResponse = await fetch(`https://pay.crypt.bot/api/getBalance`, {
+            headers: {
+              "Crypto-Pay-API-Token": token,
+            },
+          });
+          const balanceData = await balanceResponse.json();
+          if (balanceData.ok && balanceData.result?.length > 0) {
+            balance = balanceData.result.map((b: any) => `${b.available} ${b.currency_code}`).join(", ");
+          }
+        }
+      } else if (systemId === "telegram_stars") {
+        // For Telegram Stars, just verify token format
+        isConnected = token.length > 10;
+        balance = "Telegram Stars";
+      } else {
+        // For other systems, basic token check
+        isConnected = token.length > 0;
+      }
+      
       setStatuses(prev => ({ 
         ...prev, 
         [systemId]: isConnected ? "connected" : "disconnected" 
       }));
-      setLastChecks(prev => ({ 
-        ...prev, 
-        [systemId]: new Date().toLocaleString('ru-RU') 
+      setBalances(prev => ({
+        ...prev,
+        [systemId]: balance
+      }));
+      setLastChecks(prev => ({
+        ...prev,
+        [systemId]: new Date().toLocaleString('ru-RU')
       }));
       
       toast({
-        title: isConnected ? "Подключено" : "Не подключено",
-        description: isConnected ? "Соединение успешно" : "Проверьте токен",
+        title: isConnected ? "Подключение успешно" : "Ошибка подключения",
+        description: isConnected 
+          ? "Платежная система подключена и работает"
+          : "Проверьте токен и попробуйте снова",
         variant: isConnected ? "default" : "destructive",
       });
-    }, 1000);
+    } catch (error: any) {
+      setStatuses(prev => ({ ...prev, [systemId]: "disconnected" }));
+      toast({
+        title: "Ошибка подключения",
+        description: error.message || "Не удалось проверить подключение",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleRefreshBalance = async (systemId: string) => {
-    toast({
-      title: "Обновление баланса",
-      description: "Баланс обновляется...",
-    });
-    // В реальности нужно вызвать payment-stats API
+    setIsSaving(true);
+    try {
+      const token = tokens[systemId];
+      if (!token) {
+        throw new Error("Токен не установлен");
+      }
+
+      if (systemId === "cryptobot") {
+        const balanceResponse = await fetch(`https://pay.crypt.bot/api/getBalance`, {
+          headers: {
+            "Crypto-Pay-API-Token": token,
+          },
+        });
+        const balanceData = await balanceResponse.json();
+        if (balanceData.ok && balanceData.result?.length > 0) {
+          const balance = balanceData.result.map((b: any) => `${b.available} ${b.currency_code}`).join(", ");
+          setBalances(prev => ({
+            ...prev,
+            [systemId]: balance
+          }));
+          toast({
+            title: "Баланс обновлен",
+            description: `Баланс: ${balance}`,
+          });
+        }
+      } else {
+        toast({
+          title: "Обновление баланса",
+          description: "Функция доступна только для CryptoBot",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Ошибка обновления",
+        description: error.message || "Не удалось обновить баланс",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const MessagePreview = ({ message, status }: { message: string; status: 'success' | 'failed' | 'pending' }) => {
@@ -347,7 +437,7 @@ export default function PaymentSettings() {
                 onRefreshBalance={() => handleRefreshBalance(system.id)}
                 onTokenChange={(value) => setTokens((prev) => ({ ...prev, [system.id]: value }))}
                 onCommissionChange={(value) => setCommissions((prev) => ({ ...prev, [system.id]: value }))}
-                isSaving={saveSettings.isPending}
+                isSaving={saveSettings.isPending || isSaving}
               />
             ))}
           </div>
