@@ -1,6 +1,7 @@
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -8,6 +9,7 @@ import {
   CreditCard,
   Settings as SettingsIcon,
   ChevronRight,
+  ChevronDown,
   Wrench,
   Bot,
   BarChart3,
@@ -17,6 +19,8 @@ import {
   FileText,
   LogOut,
   User,
+  ShoppingBag,
+  FolderTree,
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,29 +35,223 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-const menuItems = [
-  { title: "Дашборд", url: "/", icon: LayoutDashboard },
-  { title: "Каталог", url: "/catalog", icon: Package },
-  { title: "Статистика", url: "/statistics", icon: BarChart3 },
-  { title: "Поиск", url: "/search", icon: Search },
-  { title: "Рассылка", url: "/mailing", icon: Send },
-  { title: "Пользователи", url: "/users", icon: Users },
-  { title: "Платежи", url: "/payments", icon: CreditCard },
-  { title: "Настройки платежей", url: "/payment-settings", icon: Wrench },
-  { title: "Настройки", url: "/settings", icon: SettingsIcon },
+interface MenuItem {
+  title: string;
+  url?: string;
+  icon: React.ElementType;
+  emoji?: string;
+  items?: { title: string; url: string; icon: React.ElementType }[];
+}
+
+const menuItems: MenuItem[] = [
+  { 
+    title: "Дашборд", 
+    url: "/", 
+    icon: LayoutDashboard,
+    emoji: "📊"
+  },
+  {
+    title: "Каталог",
+    icon: Package,
+    emoji: "📦",
+    items: [
+      { title: "Категории", url: "/catalog", icon: FolderTree },
+      { title: "Товары", url: "/catalog", icon: ShoppingBag },
+    ],
+  },
+  {
+    title: "Пользователи",
+    icon: Users,
+    emoji: "👥",
+    items: [
+      { title: "Список", url: "/users", icon: Users },
+      { title: "Роли", url: "/roles", icon: SettingsIcon },
+    ],
+  },
+  {
+    title: "Финансы",
+    icon: CreditCard,
+    emoji: "💰",
+    items: [
+      { title: "Платежи", url: "/payments", icon: CreditCard },
+      { title: "Настройки", url: "/payment-settings", icon: Wrench },
+    ],
+  },
+  {
+    title: "Маркетинг",
+    icon: Send,
+    emoji: "📢",
+    items: [
+      { title: "Рассылки", url: "/mailing", icon: Send },
+      { title: "Статистика", url: "/statistics", icon: BarChart3 },
+      { title: "Поиск", url: "/search", icon: Search },
+    ],
+  },
+  {
+    title: "Настройки",
+    icon: SettingsIcon,
+    emoji: "⚙️",
+    items: [
+      { title: "Общие", url: "/settings", icon: SettingsIcon },
+    ],
+  },
 ];
 
-const toolsItems = [
-  { title: "База данных", url: "/database", icon: Database },
-  { title: "Логи", url: "/logs", icon: FileText },
-];
+const toolsItems: MenuItem = {
+  title: "Инструменты",
+  icon: Database,
+  emoji: "🛠️",
+  items: [
+    { title: "База данных", url: "/database", icon: Database },
+    { title: "Логи", url: "/logs", icon: FileText },
+  ],
+};
 
 export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
   const { signOut } = useAuth();
+
+  // Load collapsed groups from localStorage
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+    const stored = localStorage.getItem("sidebar-collapsed-groups");
+    return stored ? JSON.parse(stored) : {};
+  });
+
+  // Save collapsed state to localStorage
+  useEffect(() => {
+    localStorage.setItem("sidebar-collapsed-groups", JSON.stringify(collapsedGroups));
+  }, [collapsedGroups]);
+
+  const toggleGroup = (title: string) => {
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
+
+  // Check if any child item is active
+  const isGroupActive = (items?: { url: string }[]) => {
+    if (!items) return false;
+    return items.some((item) => location.pathname === item.url);
+  };
+
+  // Auto-expand groups with active items
+  useEffect(() => {
+    const newCollapsed = { ...collapsedGroups };
+    let hasChanges = false;
+
+    [...menuItems, toolsItems].forEach((group) => {
+      if (group.items && isGroupActive(group.items)) {
+        if (newCollapsed[group.title] !== false) {
+          newCollapsed[group.title] = false;
+          hasChanges = true;
+        }
+      }
+    });
+
+    if (hasChanges) {
+      setCollapsedGroups(newCollapsed);
+    }
+  }, [location.pathname]);
+
+  const renderMenuItem = (item: MenuItem) => {
+    // Single item without children
+    if (item.url && !item.items) {
+      const isActive = location.pathname === item.url;
+      return (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton asChild>
+            <NavLink
+              to={item.url}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors",
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {open && (
+                <>
+                  {item.emoji && <span className="mr-1">{item.emoji}</span>}
+                  <span>{item.title}</span>
+                  {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
+                </>
+              )}
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      );
+    }
+
+    // Group with children
+    const isOpen = !collapsedGroups[item.title];
+    const hasActiveChild = isGroupActive(item.items);
+
+    return (
+      <Collapsible key={item.title} open={isOpen} onOpenChange={() => toggleGroup(item.title)}>
+        <SidebarMenuItem>
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors w-full",
+                hasActiveChild
+                  ? "bg-sidebar-accent/30 text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {open && (
+                <>
+                  {item.emoji && <span className="mr-1">{item.emoji}</span>}
+                  <span>{item.title}</span>
+                  {isOpen ? (
+                    <ChevronDown className="ml-auto h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="ml-auto h-4 w-4" />
+                  )}
+                </>
+              )}
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="ml-6 space-y-1 mt-1">
+            {item.items?.map((subItem) => {
+              const isActive = location.pathname === subItem.url;
+              return (
+                <NavLink
+                  key={subItem.title}
+                  to={subItem.url}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <subItem.icon className="h-4 w-4" />
+                  {open && (
+                    <>
+                      <span>{subItem.title}</span>
+                      {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
+                    </>
+                  )}
+                </NavLink>
+              );
+            })}
+          </CollapsibleContent>
+        </SidebarMenuItem>
+      </Collapsible>
+    );
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -75,58 +273,14 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Управление</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-                          isActive
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                        }`}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                        {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            <SidebarMenu>{menuItems.map(renderMenuItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Инструменты</SidebarGroupLabel>
+          <SidebarGroupLabel>{toolsItems.emoji} {toolsItems.title}</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {toolsItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-                          isActive
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                        }`}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                        {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            <SidebarMenu>{renderMenuItem(toolsItems)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
