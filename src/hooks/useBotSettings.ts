@@ -33,7 +33,10 @@ export const useBotSettings = () => {
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
       const { data, error } = await supabase
         .from("bot_settings")
-        .upsert({ key, value, updated_at: new Date().toISOString() })
+        .upsert(
+          { key, value, updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        )
         .select()
         .single();
 
