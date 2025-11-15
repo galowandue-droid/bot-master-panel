@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { Category } from "@/hooks/useCategories";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
 interface TreeNode extends Category {
   children: TreeNode[];
@@ -145,17 +147,7 @@ function TreeCategoryItem({
       {hasChildren && isExpanded && (
         <div>
           {node.children.map((child) => (
-            <TreeCategoryItemWrapper
-              key={child.id}
-              node={child}
-              isSelected={isSelected}
-              positionCount={positionCount}
-              onSelect={onSelect}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onAddChild={onAddChild}
-              canDrag={canDrag}
-            />
+            <TreeCategoryItemWrapper key={child.id} {...child} />
           ))}
         </div>
       )}
@@ -163,17 +155,8 @@ function TreeCategoryItem({
   );
 }
 
-// Wrapper component to handle selection for children
-interface TreeCategoryItemWrapperProps extends Omit<TreeCategoryItemProps, 'isSelected' | 'positionCount' | 'onSelect' | 'onEdit' | 'onDelete' | 'onAddChild'> {
-  isSelected: boolean;
-  positionCount: number;
-  onSelect: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onAddChild: () => void;
-}
-
-function TreeCategoryItemWrapper(props: TreeCategoryItemWrapperProps) {
+// Wrapper to handle props passing correctly
+function TreeCategoryItemWrapper(props: any) {
   return <TreeCategoryItem {...props} />;
 }
 
@@ -182,10 +165,11 @@ interface TreeCategoryViewProps {
   selectedCategoryId: string | null;
   positionCounts: Record<string, number>;
   onSelectCategory: (id: string) => void;
+  onAddChild: (parentId: string) => void;
   onEditCategory: (category: Category) => void;
   onDeleteCategory: (category: Category) => void;
-  onAddChildCategory: (parentId: string) => void;
-  editMode: boolean;
+  onUpdateCategory: (id: string, updates: { parent_id?: string | null; position?: number }) => void;
+  editMode?: boolean;
 }
 
 export function TreeCategoryView({
@@ -193,47 +177,78 @@ export function TreeCategoryView({
   selectedCategoryId,
   positionCounts,
   onSelectCategory,
+  onAddChild,
   onEditCategory,
   onDeleteCategory,
-  onAddChildCategory,
-  editMode,
+  onUpdateCategory,
+  editMode = false,
 }: TreeCategoryViewProps) {
-  // Build tree structure
-  const buildTree = (categories: Category[]): TreeNode[] => {
-    const categoryMap = new Map<string, TreeNode>();
-    const rootNodes: TreeNode[] = [];
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
-    // Create nodes
-    categories.forEach((category) => {
-      categoryMap.set(category.id, {
-        ...category,
-        children: [],
-        level: 0,
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+
+    const activeCategory = categories.find(c => c.id === active.id);
+    const overCategory = categories.find(c => c.id === over.id);
+    
+    if (!activeCategory || !overCategory) return;
+
+    // Update parent_id if dropped on a different category
+    if (activeCategory.parent_id !== overCategory.parent_id) {
+      onUpdateCategory(activeCategory.id, { 
+        parent_id: overCategory.parent_id,
+        position: overCategory.position 
       });
+    } else {
+      // Just reorder within the same parent
+      const siblings = categories.filter(c => c.parent_id === activeCategory.parent_id);
+      const oldIndex = siblings.findIndex(c => c.id === active.id);
+      const newIndex = siblings.findIndex(c => c.id === over.id);
+      
+      if (oldIndex !== newIndex) {
+        onUpdateCategory(activeCategory.id, { position: newIndex });
+      }
+    }
+  };
+
+  const buildTree = (items: Category[]): TreeNode[] => {
+    const itemMap = new Map<string, TreeNode>();
+    const rootItems: TreeNode[] = [];
+
+    items.forEach(item => {
+      itemMap.set(item.id, { ...item, children: [], level: 0 });
     });
 
-    // Build tree
-    categories.forEach((category) => {
-      const node = categoryMap.get(category.id);
-      if (!node) return;
-
-      if (category.parent_id) {
-        const parent = categoryMap.get(category.parent_id);
-        if (parent) {
-          node.level = parent.level + 1;
-          parent.children.push(node);
-        } else {
-          rootNodes.push(node);
-        }
+    items.forEach(item => {
+      const node = itemMap.get(item.id)!;
+      if (item.parent_id && itemMap.has(item.parent_id)) {
+        const parent = itemMap.get(item.parent_id)!;
+        node.level = parent.level + 1;
+        parent.children.push(node);
       } else {
-        rootNodes.push(node);
+        rootItems.push(node);
       }
     });
 
-    return rootNodes;
-  };
+    const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
+      return nodes
+        .sort((a, b) => (a.position || 0) - (b.position || 0))
+        .map(node => ({
+          ...node,
+          children: sortNodes(node.children)
+        }));
+    };
 
-  const treeData = buildTree(categories);
+    return sortNodes(rootItems);
+  };
 
   const renderTree = (nodes: TreeNode[]) => {
     return nodes.map((node) => (
@@ -245,21 +260,35 @@ export function TreeCategoryView({
         onSelect={() => onSelectCategory(node.id)}
         onEdit={() => onEditCategory(node)}
         onDelete={() => onDeleteCategory(node)}
-        onAddChild={() => onAddChildCategory(node.id)}
+        onAddChild={() => onAddChild(node.id)}
         canDrag={editMode}
       />
     ));
   };
 
+  const tree = buildTree(categories);
+
+  if (categories.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-32 text-muted-foreground">
+        Категории не найдены
+      </div>
+    );
+  }
+
+  const allIds = categories.map(c => c.id);
+
   return (
-    <div className="space-y-1">
-      {treeData.length > 0 ? (
-        renderTree(treeData)
-      ) : (
-        <div className="text-center text-sm text-muted-foreground py-8">
-          Категории не найдены
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext items={allIds} strategy={verticalListSortingStrategy}>
+        <div className="space-y-1">
+          {renderTree(tree)}
         </div>
-      )}
-    </div>
+      </SortableContext>
+    </DndContext>
   );
 }
