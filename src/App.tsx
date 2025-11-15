@@ -21,6 +21,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Referrals from "./pages/Referrals";
 import RequiredChannels from "./pages/RequiredChannels";
+import Roles from "./pages/Roles";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/mailing" element={<Mailing />} />
             <Route path="/required-channels" element={<RequiredChannels />} />
             <Route path="/users" element={<Users />} />
+            <Route path="/roles" element={<Roles />} />
             <Route path="/payments" element={<Payments />} />
             <Route path="/payment-settings" element={<PaymentSettings />} />
             <Route path="/referrals" element={<Referrals />} />
