@@ -19,6 +19,7 @@ import Logs from "./pages/Logs";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Referrals from "./pages/Referrals";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/users" element={<Users />} />
             <Route path="/payments" element={<Payments />} />
             <Route path="/payment-settings" element={<PaymentSettings />} />
+            <Route path="/referrals" element={<Referrals />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/database" element={<Database />} />
             <Route path="/logs" element={<Logs />} />
