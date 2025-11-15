@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,11 +24,11 @@ const Referrals = () => {
   });
 
   // Update local state when settings load
-  useState(() => {
+  useEffect(() => {
     if (settings) {
       setReferralSettings(prev => ({ ...prev, ...settings }));
     }
-  });
+  }, [settings]);
 
   const handleCopyLink = (userId: string) => {
     const link = `https://t.me/your_bot?start=ref_${userId}`;
