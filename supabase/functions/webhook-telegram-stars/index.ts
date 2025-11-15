@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createLogger, createErrorResponse } from "../_shared/edge-utils.ts";
+
+const logger = createLogger('webhook-telegram-stars');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,37 +21,27 @@ serve(async (req) => {
     );
 
     const payload = await req.json();
-    console.log('Telegram Stars webhook received:', payload);
-
-    // Telegram Stars работает через Telegram Bot API
-    // Обрабатываем successful_payment update
+    logger.info('Webhook received', { has_payment: !!payload.message?.successful_payment });
     
     if (payload.message?.successful_payment) {
       const payment = payload.message.successful_payment;
-      const userId = payment.invoice_payload; // We stored user_id in payload
-      const amount = payment.total_amount / 100; // Stars in kopecks
+      const userId = payment.invoice_payload;
+      const amount = payment.total_amount / 100;
 
       if (!userId) {
-        console.error('Missing user_id in payment payload');
+        logger.warn('Missing user_id');
         return new Response('Invalid payload', { status: 400 });
       }
 
-      // Create deposit record
-      const { error: depositError } = await supabaseClient
-        .from('deposits')
-        .insert({
-          user_id: userId,
-          amount: amount,
-          payment_method: 'telegram_stars',
-          status: 'completed',
-        });
+      logger.info('Processing', { user_id: userId, amount });
 
-      if (depositError) {
-        console.error('Error creating deposit:', depositError);
-        throw depositError;
-      }
+      await supabaseClient.from('deposits').insert({
+        user_id: userId,
+        amount,
+        payment_method: 'telegram_stars',
+        status: 'completed',
+      });
 
-      // Update user balance
       const { data: profile } = await supabaseClient
         .from('profiles')
         .select('balance, telegram_id')
@@ -57,37 +50,26 @@ serve(async (req) => {
 
       if (profile) {
         const newBalance = (profile.balance || 0) + amount;
-        await supabaseClient
-          .from('profiles')
-          .update({ balance: newBalance })
-          .eq('id', userId);
+        await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', userId);
+        logger.info('Balance updated', { user_id: userId, new_balance: newBalance });
 
-        console.log(`Balance updated for user ${userId}: +${amount}`);
-
-        // Send notification to user via edge function
         try {
           await supabaseClient.functions.invoke('send-notification', {
             body: {
               type: 'deposit',
               telegram_id: profile.telegram_id,
-              data: {
-                amount,
-                payment_method: 'telegram_stars'
-              }
+              data: { amount, payment_method: 'telegram_stars' }
             }
           });
         } catch (notifError) {
-          console.error('Failed to send notification:', notifError);
+          logger.error('Notification failed', { error: String(notifError) });
         }
       }
     }
 
     return new Response('OK', { status: 200 });
   } catch (error) {
-    console.error('Error in webhook-telegram-stars:', error);
-    return new Response(JSON.stringify({ error: String(error) }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    logger.error('Webhook failed', { error: String(error) });
+    return createErrorResponse(error as Error);
   }
 });

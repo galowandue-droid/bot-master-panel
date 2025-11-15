@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { retryWithBackoff, withTimeout, createLogger, createErrorResponse } from "../_shared/edge-utils.ts";
+
+const logger = createLogger('send-broadcast');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +16,6 @@ interface BroadcastButton {
   position: number;
 }
 
-// Format buttons for Telegram inline keyboard
 function formatButtonsForTelegram(buttons: BroadcastButton[]) {
   const rows = new Map<number, Array<{ text: string; url?: string }>>();
   
@@ -34,7 +36,6 @@ function formatButtonsForTelegram(buttons: BroadcastButton[]) {
   });
 }
 
-// Send message via Telegram Bot API
 async function sendTelegramMessage(
   chatId: number,
   message: string,
@@ -49,64 +50,49 @@ async function sendTelegramMessage(
   }
 
   const baseUrl = `https://api.telegram.org/bot${botToken}`;
-  
   const keyboard = buttons && buttons.length > 0 ? {
     inline_keyboard: formatButtonsForTelegram(buttons)
   } : undefined;
 
   let method = 'sendMessage';
-  let body: any = {
-    chat_id: chatId,
-    text: message,
-  };
+  let body: any = { chat_id: chatId, text: message };
 
   if (mediaUrl && mediaType) {
     const caption = mediaCaption || message;
-    
     switch (mediaType) {
       case 'photo':
         method = 'sendPhoto';
-        body = {
-          chat_id: chatId,
-          photo: mediaUrl,
-          caption: caption,
-        };
+        body = { chat_id: chatId, photo: mediaUrl, caption };
         break;
       case 'video':
         method = 'sendVideo';
-        body = {
-          chat_id: chatId,
-          video: mediaUrl,
-          caption: caption,
-        };
+        body = { chat_id: chatId, video: mediaUrl, caption };
         break;
       case 'document':
         method = 'sendDocument';
-        body = {
-          chat_id: chatId,
-          document: mediaUrl,
-          caption: caption,
-        };
+        body = { chat_id: chatId, document: mediaUrl, caption };
         break;
     }
   }
 
-  if (keyboard) {
-    body.reply_markup = keyboard;
-  }
+  if (keyboard) body.reply_markup = keyboard;
 
-  const response = await fetch(`${baseUrl}/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Telegram API error: ${error}`);
-  }
-
-  return await response.json();
+  return await retryWithBackoff(async () => {
+    return await withTimeout(
+      fetch(`${baseUrl}/${method}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Telegram API error: ${error}`);
+        }
+        return response.json();
+      }),
+      15000
+    );
+  }, { maxRetries: 2, initialDelay: 1000 });
 }
 
 serve(async (req) => {
@@ -121,130 +107,91 @@ serve(async (req) => {
     );
 
     const { broadcast_id } = await req.json();
-
     if (!broadcast_id) {
-      return new Response(
-        JSON.stringify({ error: 'broadcast_id is required' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      logger.error('Missing broadcast_id');
+      return new Response(JSON.stringify({ error: 'broadcast_id is required' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    // Get authenticated user
+    logger.info('Starting broadcast', { broadcast_id });
+
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
 
     if (authError || !user) {
+      logger.error('Unauthorized');
       throw new Error('Unauthorized');
     }
 
-    // Get broadcast details
     const { data: broadcast, error: broadcastError } = await supabaseClient
       .from('broadcasts')
       .select('*')
       .eq('id', broadcast_id)
       .single();
 
-    if (broadcastError) throw broadcastError;
+    if (broadcastError || !broadcast) {
+      logger.error('Broadcast not found', { broadcast_id });
+      throw new Error('Broadcast not found');
+    }
 
-    console.log('Processing broadcast:', broadcast.id);
-
-    // Get buttons for this broadcast
     const { data: buttons } = await supabaseClient
       .from('broadcast_buttons')
       .select('*')
-      .eq('broadcast_id', broadcast.id)
-      .order('row')
-      .order('position');
+      .eq('broadcast_id', broadcast_id)
+      .order('row', { ascending: true })
+      .order('position', { ascending: true });
 
-    // Update status to sending
+    let targetUsers;
+    if (broadcast.segment_id) {
+      const { data: segmentMembers } = await supabaseClient
+        .from('user_segment_members')
+        .select('user_id, profiles!inner(*)')
+        .eq('segment_id', broadcast.segment_id);
+      targetUsers = segmentMembers?.map(m => m.profiles) || [];
+    } else {
+      const { data: allUsers } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('is_blocked', false);
+      targetUsers = allUsers || [];
+    }
+
+    logger.info('Target users', { count: targetUsers.length });
+
     await supabaseClient
       .from('broadcasts')
       .update({ status: 'sending' })
-      .eq('id', broadcast.id);
-
-    // Get target users based on segment
-    let profilesQuery = supabaseClient
-      .from('profiles')
-      .select('telegram_id')
-      .not('telegram_id', 'is', null);
-
-    if (broadcast.segment_id) {
-      // Get users in this segment
-      const { data: segmentMembers } = await supabaseClient
-        .from('user_segment_members')
-        .select('user_id')
-        .eq('segment_id', broadcast.segment_id);
-
-      const userIds = segmentMembers?.map(m => m.user_id) || [];
-      
-      if (userIds.length === 0) {
-        console.log('No users in segment');
-        await supabaseClient
-          .from('broadcasts')
-          .update({
-            status: 'completed',
-            sent_count: 0,
-            failed_count: 0,
-            completed_at: new Date().toISOString(),
-          })
-          .eq('id', broadcast.id);
-
-        return new Response(
-          JSON.stringify({ 
-            success: true,
-            broadcast_id: broadcast.id,
-            sent_count: 0,
-            failed_count: 0,
-            message: 'No users in segment'
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      profilesQuery = profilesQuery.in('id', userIds);
-    }
-
-    const { data: profiles, error: profilesError } = await profilesQuery;
-
-    if (profilesError) throw profilesError;
+      .eq('id', broadcast_id);
 
     let sentCount = 0;
     let failedCount = 0;
 
-    console.log(`Sending broadcast to ${profiles?.length || 0} users`);
-    
-    // Send to each user
-    for (const profile of profiles || []) {
+    for (const user of targetUsers) {
+      if (!user.telegram_id) {
+        failedCount++;
+        continue;
+      }
+
       try {
         await sendTelegramMessage(
-          profile.telegram_id!,
+          user.telegram_id,
           broadcast.message,
           broadcast.media_url,
           broadcast.media_type,
           broadcast.media_caption,
-          buttons || []
+          buttons || undefined
         );
         sentCount++;
-        console.log(`Sent to user ${profile.telegram_id}`);
-      } catch (error: any) {
+        logger.info('Message sent', { user_id: user.id });
+      } catch (error) {
         failedCount++;
-        const errorMessage = error.message || String(error);
-        
-        // Check if it's a "chat not found" error
-        if (errorMessage.includes('chat not found')) {
-          console.warn(`User ${profile.telegram_id} has not started the bot or blocked it`);
-        } else {
-          console.error(`Failed to send to user ${profile.telegram_id}:`, error);
-        }
+        logger.error('Send failed', { user_id: user.id, error: String(error) });
       }
     }
 
-    // Update broadcast status
-    const { error: updateError } = await supabaseClient
+    await supabaseClient
       .from('broadcasts')
       .update({
         status: 'completed',
@@ -252,29 +199,16 @@ serve(async (req) => {
         failed_count: failedCount,
         completed_at: new Date().toISOString(),
       })
-      .eq('id', broadcast.id);
+      .eq('id', broadcast_id);
 
-    if (updateError) throw updateError;
+    logger.info('Broadcast completed', { broadcast_id, sentCount, failedCount });
 
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        broadcast_id: broadcast.id,
-        sent_count: sentCount,
-        failed_count: failedCount,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ success: true, sent: sentCount, failed: failedCount }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
-    console.error('Error sending broadcast:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+  } catch (error) {
+    logger.error('Broadcast failed', { error: String(error) });
+    return createErrorResponse(error as Error);
   }
 });

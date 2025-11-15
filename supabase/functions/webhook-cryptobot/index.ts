@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createLogger, createErrorResponse } from "../_shared/edge-utils.ts";
+
+const logger = createLogger('webhook-cryptobot');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,19 +12,11 @@ const corsHeaders = {
 async function verifySignature(body: string, signature: string, token: string): Promise<boolean> {
   const encoder = new TextEncoder();
   const keyData = encoder.encode(token);
-  const key = await crypto.subtle.importKey(
-    'raw',
-    keyData,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  
+  const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const dataBuffer = encoder.encode(body);
   const signatureBuffer = await crypto.subtle.sign('HMAC', key, dataBuffer);
   const hashArray = Array.from(new Uint8Array(signatureBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  
   return hashHex === signature;
 }
 
@@ -36,7 +31,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get CryptoBot token from settings
     const { data: settings } = await supabaseClient
       .from('bot_settings')
       .select('value')
@@ -44,7 +38,7 @@ serve(async (req) => {
       .single();
 
     if (!settings?.value) {
-      console.error('CryptoBot token not found in settings');
+      logger.error('Token not configured');
       return new Response('Token not configured', { status: 500 });
     }
 
@@ -52,93 +46,62 @@ serve(async (req) => {
     const body = await req.text();
     const signature = req.headers.get('crypto-pay-api-signature');
 
-    // Verify webhook signature
     if (!signature || !(await verifySignature(body, signature, token))) {
-      console.error('Invalid webhook signature');
+      logger.error('Invalid signature');
       return new Response('Invalid signature', { status: 403 });
     }
 
     const payload = JSON.parse(body);
-    console.log('CryptoBot webhook received:', payload);
+    logger.info('Webhook received', { update_type: payload.update_type });
 
-    // Handle different update types
     if (payload.update_type === 'invoice_paid') {
       const invoice = payload.payload;
-      const userId = invoice.payload; // We stored user_id in payload
+      const userId = invoice.payload;
       const amount = parseFloat(invoice.amount);
 
-      // Create deposit record
-      const { error: depositError } = await supabaseClient
-        .from('deposits')
-        .insert({
-          user_id: userId,
-          amount: amount,
-          payment_method: 'cryptobot',
-          status: 'completed',
-        });
+      logger.info('Processing payment', { user_id: userId, amount });
 
-      if (depositError) {
-        console.error('Error creating deposit:', depositError);
-        throw depositError;
-      }
+      await supabaseClient.from('deposits').insert({
+        user_id: userId,
+        amount,
+        payment_method: 'cryptobot',
+        status: 'completed',
+      });
 
-      // Update user balance
-      const { error: balanceError } = await supabaseClient.rpc(
-        'increment_balance',
-        { user_id: userId, amount: amount }
-      );
-
-      if (balanceError) {
-        // If function doesn't exist, update directly
-        const { data: profile } = await supabaseClient
-          .from('profiles')
-          .select('balance')
-          .eq('id', userId)
-          .single();
-
-        if (profile) {
-          const newBalance = (profile.balance || 0) + amount;
-          await supabaseClient
-            .from('profiles')
-            .update({ balance: newBalance })
-            .eq('id', userId);
-        }
-      }
-
-      console.log(`Balance updated for user ${userId}: +${amount}`);
-
-      // Get user's telegram_id for notification
-      const { data: userProfile } = await supabaseClient
+      const { data: profile } = await supabaseClient
         .from('profiles')
-        .select('telegram_id')
+        .select('balance, telegram_id')
         .eq('id', userId)
         .single();
 
-      // Send notification to user via edge function
-      if (userProfile?.telegram_id) {
-        try {
-          await supabaseClient.functions.invoke('send-notification', {
-            body: {
-              type: 'deposit',
-              telegram_id: userProfile.telegram_id,
-              data: {
-                amount,
-                payment_method: 'cryptobot'
+      if (profile) {
+        const newBalance = (profile.balance || 0) + amount;
+        await supabaseClient
+          .from('profiles')
+          .update({ balance: newBalance })
+          .eq('id', userId);
+
+        logger.info('Balance updated', { user_id: userId, new_balance: newBalance });
+
+        if (profile.telegram_id) {
+          try {
+            await supabaseClient.functions.invoke('send-notification', {
+              body: {
+                type: 'deposit',
+                telegram_id: profile.telegram_id,
+                data: { amount, payment_method: 'cryptobot' }
               }
-            }
-          });
-        } catch (notifError) {
-          console.error('Failed to send notification:', notifError);
+            });
+          } catch (notifError) {
+            logger.error('Notification failed', { error: String(notifError) });
+          }
         }
       }
     }
 
     return new Response('OK', { status: 200 });
   } catch (error) {
-    console.error('Error in webhook-cryptobot:', error);
-    return new Response(JSON.stringify({ error: String(error) }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    logger.error('Webhook failed', { error: String(error) });
+    return createErrorResponse(error as Error);
   }
 });
