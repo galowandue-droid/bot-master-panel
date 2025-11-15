@@ -26,13 +26,17 @@ serve(async (req) => {
     if (error) throw error;
 
     if (!logs || logs.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'No logs found' }),
-        { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      // Return empty CSV instead of 404
+      const headers = ['created_at', 'level', 'message', 'metadata'];
+      const csvContent = headers.join(',');
+      
+      return new Response(csvContent, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="logs_${new Date().toISOString().split('T')[0]}.csv"`,
+        },
+      });
     }
 
     // Convert to CSV
