@@ -6,11 +6,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Send } from "lucide-react";
-import { z } from "zod";
-
-const broadcastSchema = z.object({
-  message: z.string().trim().min(1, "Message cannot be empty").max(4096, "Message must be less than 4096 characters"),
-});
 
 interface BroadcastDialogProps {
   open: boolean;
@@ -24,11 +19,10 @@ export function BroadcastDialog({ open, onOpenChange }: BroadcastDialogProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validation = broadcastSchema.safeParse({ message });
-    if (!validation.success) {
+    if (!message.trim() || message.length > 4096) {
       toast({ 
-        title: "Ошибка валидации", 
-        description: validation.error.issues[0]?.message,
+        title: "Ошибка", 
+        description: "Введите корректное сообщение (не более 4096 символов)",
         variant: "destructive" 
       });
       return;
@@ -40,7 +34,7 @@ export function BroadcastDialog({ open, onOpenChange }: BroadcastDialogProps) {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase.from("broadcasts").insert({
-        message: validation.data.message,
+        message: message.trim(),
         created_by: user?.id,
         status: "pending",
       });
