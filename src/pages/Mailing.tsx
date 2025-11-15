@@ -136,12 +136,12 @@ const Mailing = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Тип медиа</Label>
-                    <Select value={mediaType || ""} onValueChange={(v) => setMediaType(v as any || undefined)}>
+                    <Select value={mediaType || "none"} onValueChange={(v) => setMediaType(v === "none" ? undefined : v as any)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Без медиа" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Без медиа</SelectItem>
+                        <SelectItem value="none">Без медиа</SelectItem>
                         <SelectItem value="photo">Фото</SelectItem>
                         <SelectItem value="video">Видео</SelectItem>
                         <SelectItem value="document">Документ</SelectItem>
