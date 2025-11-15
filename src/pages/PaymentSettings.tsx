@@ -11,6 +11,7 @@ import { Loader2, Bitcoin, Wallet, Star, CreditCard, CheckCircle2, XCircle, Circ
 import { validatePaymentToken } from "@/lib/payment-validation";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface PaymentSystem {
   id: string;

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function Payments() {
   const { data: paymentStats, isLoading: isLoadingStats, refetch: refetchStats } = usePaymentStats();
@@ -78,28 +79,33 @@ export default function Payments() {
   const hasData = paymentStats?.dailyStats && paymentStats.dailyStats.length > 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Платежи</h1>
-          <p className="text-muted-foreground">
-            Статистика и аналитика платежей
-          </p>
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 items-center gap-4 px-6">
+          <SidebarTrigger />
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-foreground">Платежи</h1>
+            <p className="text-sm text-muted-foreground">
+              Статистика и аналитика платежей
+            </p>
+          </div>
+          <Button
+            onClick={handleRefresh}
+            disabled={isLoadingStats || isRefreshing}
+            variant="outline"
+            size="sm"
+          >
+            {isLoadingStats || isRefreshing ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            <span className="ml-2">Обновить</span>
+          </Button>
         </div>
-        <Button
-          onClick={handleRefresh}
-          disabled={isLoadingStats || isRefreshing}
-          variant="outline"
-          size="sm"
-        >
-          {isLoadingStats || isRefreshing ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          <span className="ml-2">Обновить</span>
-        </Button>
-      </div>
+      </header>
+
+      <div className="p-6 space-y-6">
 
       {/* Графики аналитики */}
       {isLoadingStats ? (
@@ -156,6 +162,7 @@ export default function Payments() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }
