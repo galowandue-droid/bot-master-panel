@@ -11,7 +11,6 @@ interface MenuItem {
   title: string;
   url?: string;
   icon: React.ElementType;
-  emoji?: string;
   items?: {
     title: string;
     url: string;
@@ -21,12 +20,10 @@ interface MenuItem {
 const menuItems: MenuItem[] = [{
   title: "Дашборд",
   url: "/",
-  icon: LayoutDashboard,
-  emoji: "📊"
+  icon: LayoutDashboard
 }, {
   title: "Каталог",
   icon: Package,
-  emoji: "📦",
   items: [{
     title: "Категории",
     url: "/catalog",
@@ -39,7 +36,6 @@ const menuItems: MenuItem[] = [{
 }, {
   title: "Пользователи",
   icon: Users,
-  emoji: "👥",
   items: [{
     title: "Список",
     url: "/users",
@@ -52,7 +48,6 @@ const menuItems: MenuItem[] = [{
 }, {
   title: "Финансы",
   icon: CreditCard,
-  emoji: "💰",
   items: [{
     title: "Платежи",
     url: "/payments",
@@ -65,7 +60,6 @@ const menuItems: MenuItem[] = [{
 }, {
   title: "Маркетинг",
   icon: Send,
-  emoji: "📢",
   items: [{
     title: "Рассылки",
     url: "/mailing",
@@ -86,7 +80,6 @@ const menuItems: MenuItem[] = [{
 }, {
   title: "Настройки",
   icon: SettingsIcon,
-  emoji: "⚙️",
   items: [{
     title: "Общие",
     url: "/settings",
@@ -96,7 +89,6 @@ const menuItems: MenuItem[] = [{
 const toolsItems: MenuItem = {
   title: "Инструменты",
   icon: Database,
-  emoji: "🛠️",
   items: [{
     title: "База данных",
     url: "/database",
@@ -168,7 +160,6 @@ export function AppSidebar() {
             <NavLink to={item.url} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 transition-colors", isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground hover:bg-sidebar-accent/50")}>
               <item.icon className="h-4 w-4" />
               {open && <>
-                  {item.emoji}
                   <span>{item.title}</span>
                   {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
                 </>}
@@ -186,7 +177,6 @@ export function AppSidebar() {
             <SidebarMenuButton className={cn("flex items-center gap-3 rounded-lg px-3 py-2 transition-colors w-full", hasActiveChild ? "bg-sidebar-accent/30 text-sidebar-accent-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent/50")}>
               <item.icon className="h-4 w-4" />
               {open && <>
-                  {item.emoji}
                   <span>{item.title}</span>
                   {isOpen ? <ChevronDown className="ml-auto h-4 w-4" /> : <ChevronRight className="ml-auto h-4 w-4" />}
                 </>}
