@@ -119,6 +119,10 @@ const Mailing = () => {
       <BroadcastDialog 
         open={broadcastDialogOpen} 
         onOpenChange={setBroadcastDialogOpen}
+        onCreateSegment={() => {
+          setBroadcastDialogOpen(false);
+          setSegmentDialogOpen(true);
+        }}
       />
       
       <SegmentDialog
