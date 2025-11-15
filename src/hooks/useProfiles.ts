@@ -26,9 +26,10 @@ export function useProfiles(searchQuery?: string) {
         .order("created_at", { ascending: false });
 
       if (searchQuery) {
-        const isNumeric = /^\d+$/.test(searchQuery);
-        if (isNumeric) {
-          query = query.eq('telegram_id', parseInt(searchQuery));
+        const digitsOnly = searchQuery.replace(/\D/g, "");
+        // If the query contains digits (even inside brackets), search by telegram_id too
+        if (digitsOnly.length > 0) {
+          query = query.or(`telegram_id.eq.${digitsOnly},username.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%`);
         } else {
           query = query.or(`username.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%`);
         }
