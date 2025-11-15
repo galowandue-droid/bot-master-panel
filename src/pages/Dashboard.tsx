@@ -1,39 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, ShoppingCart, TrendingUp, DollarSign, Package, Download, Send, Activity, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Download, Activity } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { MetricCard } from "@/components/dashboard/MetricCard";
+import { ConversionMetrics } from "@/components/dashboard/ConversionMetrics";
+import { TopProducts } from "@/components/dashboard/TopProducts";
+import { HourlyActivity } from "@/components/dashboard/HourlyActivity";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
-import { useStatistics } from "@/hooks/useStatistics";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
-import { BroadcastDialog } from "@/components/broadcasts/BroadcastDialog";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import {
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 
 export default function Dashboard() {
-  const { statistics, totals, isLoading } = useStatistics(30);
-  const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const navigate = useNavigate();
 
   const handleDownloadDB = async () => {
     setDownloading(true);
@@ -73,18 +52,11 @@ export default function Dashboard() {
     }
   };
 
-  const chartData = statistics?.map((stat) => ({
-    date: format(new Date(stat.date), "dd MMM", { locale: ru }),
-    users: stat.new_users,
-    purchases: stat.purchases_count,
-    revenue: Number(stat.purchases_amount),
-  }));
-
   return (
     <>
       <PageHeader
         title="Панель управления"
-        description="Обзор статистики за последние 30 дней"
+        description="Аналитика и статистика проекта"
         gradient
         actions={
           <Button 
@@ -95,195 +67,34 @@ export default function Dashboard() {
             disabled={downloading}
           >
             <Download className="mr-2 h-4 w-4" />
-            {downloading ? "Загрузка..." : "Скачать БД"}
+            {downloading ? "Загрузка..." : "Экспорт БД"}
           </Button>
         }
       />
 
       <PageContainer gradient>
-        {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-32 w-full" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <MetricCard
-              title="Всего пользователей"
-              value={totals?.users || 0}
-              change={`+${totals?.newUsers || 0} новых`}
-              changeType="positive"
-              icon={Users}
-            />
-            <MetricCard
-              title="Продажи"
-              value={totals?.purchases || 0}
-              change={`₽${(totals?.revenue || 0).toFixed(0)} выручка`}
-              changeType="neutral"
-              icon={ShoppingCart}
-            />
-            <MetricCard
-              title="Выручка"
-              value={`₽${(totals?.revenue || 0).toFixed(0)}`}
-              change={`${totals?.purchases || 0} заказов`}
-              changeType="positive"
-              icon={DollarSign}
-              iconColor="text-green-600"
-            />
-            <MetricCard
-              title="Пополнения"
-              value={totals?.deposits || 0}
-              change={`₽${(totals?.depositsAmount || 0).toFixed(0)} сумма`}
-              changeType="positive"
-              icon={TrendingUp}
-              iconColor="text-blue-600"
-            />
-          </div>
-        )}
+        {/* Conversion Metrics */}
+        <ConversionMetrics />
 
+        {/* Charts Row */}
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="p-6 border-border/40 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Новые пользователи
-              </h3>
-              <p className="text-sm text-muted-foreground">Регистрации по дням</p>
-            </div>
-            {isLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(250, 95%, 63%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(250, 95%, 63%)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                  />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="users"
-                    stroke="hsl(250, 95%, 63%)"
-                    fillOpacity={1}
-                    fill="url(#colorUsers)"
-                    name="Пользователи"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </Card>
-
-          <Card className="p-6 border-border/40 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-success" />
-                Продажи и выручка
-              </h3>
-              <p className="text-sm text-muted-foreground">Динамика по дням</p>
-            </div>
-            {isLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                  />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="purchases"
-                    stroke="hsl(142, 76%, 36%)"
-                    strokeWidth={2}
-                    name="Продажи"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="hsl(280, 89%, 66%)"
-                    strokeWidth={2}
-                    name="Выручка (₽)"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </Card>
+          <HourlyActivity />
+          <TopProducts />
         </div>
 
-        <RecentActivity />
-
-        <Card className="p-6 border-border/40 shadow-lg">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-foreground">Быстрые действия</h3>
-            <p className="text-sm text-muted-foreground">Управление ботом</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <button 
-              onClick={() => navigate('/catalog')}
-              className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left hover:shadow-md"
-            >
-              <div className="rounded-lg bg-primary/10 p-3">
-                <Package className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <div className="font-medium text-foreground">Добавить товары</div>
-                <div className="text-sm text-muted-foreground">Пополнить каталог</div>
-              </div>
-            </button>
-            <button 
-              onClick={() => setBroadcastOpen(true)}
-              className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left hover:shadow-md"
-            >
-              <div className="rounded-lg bg-primary/10 p-3">
-                <Send className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <div className="font-medium text-foreground">Рассылка</div>
-                <div className="text-sm text-muted-foreground">Отправить сообщение всем</div>
-              </div>
-            </button>
-            <button 
-              onClick={() => navigate('/statistics')}
-              className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left hover:shadow-md"
-            >
-              <div className="rounded-lg bg-primary/10 p-3">
-                <TrendingUp className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <div className="font-medium text-foreground">Отчеты</div>
-                <div className="text-sm text-muted-foreground">Скачать статистику</div>
-              </div>
-            </button>
-          </div>
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Последняя активность
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RecentActivity />
+          </CardContent>
         </Card>
       </PageContainer>
-      <BroadcastDialog open={broadcastOpen} onOpenChange={setBroadcastOpen} />
     </>
   );
 }
