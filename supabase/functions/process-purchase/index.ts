@@ -254,6 +254,16 @@ serve(async (req) => {
     // Get purchased items content
     const purchasedItemsContent = availableItems.map(item => item.content);
 
+    // Deliver items to user via Telegram in background
+    try {
+      await supabaseClient.functions.invoke('deliver-items', {
+        body: { purchase_id: purchase.id }
+      });
+    } catch (deliveryError) {
+      console.error('Error delivering items:', deliveryError);
+      // Don't fail the purchase if delivery fails - it can be retried
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true,
