@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Package, FolderOpen, Pencil, Trash2, Search, Copy, GripVertical } from "lucide-react";
+import { Plus, Package, FolderOpen, Pencil, Trash2, Search, Copy, GripVertical, List, GitBranch } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCategories } from "@/hooks/useCategories";
 import { usePositions } from "@/hooks/usePositions";
 import { useItems } from "@/hooks/useItems";
 import { CategoryDialog } from "@/components/catalog/CategoryDialog";
+import { TreeCategoryView } from "@/components/catalog/TreeCategoryView";
 import { PositionDialog } from "@/components/catalog/PositionDialog";
 import { ItemDialog } from "@/components/catalog/ItemDialog";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
@@ -210,6 +212,8 @@ export default function Catalog() {
   const [selectedPositionForItems, setSelectedPositionForItems] = useState<string | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<{ type: "category" | "position" | "item"; id: string } | null>(null);
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "tree">("list");
+  const [parentIdForNewCategory, setParentIdForNewCategory] = useState<string | null>(null);
 
   const { categories, isLoading: categoriesLoading, deleteCategory, updateCategory, createCategory } = useCategories();
   const { positions, isLoading: positionsLoading, deletePosition, updatePosition, createPosition } = usePositions();
@@ -325,35 +329,102 @@ export default function Catalog() {
 
         <div className="flex h-[calc(100vh-4rem)]">
           <div className="w-64 border-r bg-muted/10">
-            <div className="p-4 border-b">
-              <Button onClick={() => { setSelectedCategory(undefined); setCategoryDialogOpen(true); }} size="sm" className="w-full gap-2">
+            <div className="p-4 border-b space-y-2">
+              <Button 
+                onClick={() => { 
+                  setSelectedCategory(undefined); 
+                  setParentIdForNewCategory(null);
+                  setCategoryDialogOpen(true); 
+                }} 
+                size="sm" 
+                className="w-full gap-2"
+              >
                 <Plus className="h-4 w-4" />Новая категория
               </Button>
+              
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "list" | "tree")} className="w-full">
+                <TabsList className="w-full grid grid-cols-2">
+                  <TabsTrigger value="list" className="gap-1">
+                    <List className="h-3 w-3" />
+                    Список
+                  </TabsTrigger>
+                  <TabsTrigger value="tree" className="gap-1">
+                    <GitBranch className="h-3 w-3" />
+                    Дерево
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-            <ScrollArea className="h-[calc(100vh-9rem)]">
+            
+            <ScrollArea className="h-[calc(100vh-11rem)]">
               <div className="p-2 space-y-1">
-                <Button variant={!selectedCategoryId ? "default" : "ghost"} className="w-full justify-start gap-2" onClick={() => setSelectedCategoryId(null)}>
-                  <Package className="h-4 w-4" />Все товары<Badge variant="secondary" className="ml-auto">{positions?.length || 0}</Badge>
+                <Button 
+                  variant={!selectedCategoryId ? "default" : "ghost"} 
+                  className="w-full justify-start gap-2" 
+                  onClick={() => setSelectedCategoryId(null)}
+                >
+                  <Package className="h-4 w-4" />
+                  Все товары
+                  <Badge variant="secondary" className="ml-auto">{positions?.length || 0}</Badge>
                 </Button>
+                
                 {categoriesLoading ? (
-                  <div className="space-y-2 p-2">{[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
+                  <div className="space-y-2 p-2">
+                    {[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+                  </div>
                 ) : categories && categories.length > 0 ? (
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
-                    <SortableContext items={categories.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                      {categories.map(cat => (
-                        <SortableCategoryItem
-                          key={cat.id}
-                          category={cat}
-                          positionCount={positions?.filter(p => p.category_id === cat.id).length || 0}
-                          isSelected={selectedCategoryId === cat.id}
-                          onSelect={() => setSelectedCategoryId(cat.id)}
-                          onEdit={() => { setSelectedCategory(cat); setCategoryDialogOpen(true); }}
-                          onDelete={() => { setDeleteTarget({ type: "category", id: cat.id }); setDeleteDialogOpen(true); }}
-                          onDuplicate={() => handleDuplicateCategory(cat)}
-                        />
-                      ))}
-                    </SortableContext>
-                  </DndContext>
+                  viewMode === "tree" ? (
+                    <TreeCategoryView
+                      categories={categories}
+                      selectedCategoryId={selectedCategoryId}
+                      positionCounts={
+                        categories.reduce((acc, cat) => {
+                          acc[cat.id] = positions?.filter(p => p.category_id === cat.id).length || 0;
+                          return acc;
+                        }, {} as Record<string, number>)
+                      }
+                      onSelectCategory={setSelectedCategoryId}
+                      onEditCategory={(cat) => { 
+                        setSelectedCategory(cat); 
+                        setParentIdForNewCategory(null);
+                        setCategoryDialogOpen(true); 
+                      }}
+                      onDeleteCategory={(cat) => { 
+                        setDeleteTarget({ type: "category", id: cat.id }); 
+                        setDeleteDialogOpen(true); 
+                      }}
+                      onAddChildCategory={(parentId) => {
+                        setSelectedCategory(undefined);
+                        setParentIdForNewCategory(parentId);
+                        setCategoryDialogOpen(true);
+                      }}
+                      editMode={true}
+                    />
+                  ) : (
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+                      <SortableContext items={categories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                        {categories.map(cat => (
+                          <SortableCategoryItem
+                            key={cat.id}
+                            category={cat}
+                            positionCount={positions?.filter(p => p.category_id === cat.id).length || 0}
+                            isSelected={selectedCategoryId === cat.id}
+                            onSelect={() => setSelectedCategoryId(cat.id)}
+                            onEdit={() => { 
+                              setSelectedCategory(cat); 
+                              setParentIdForNewCategory(null);
+                              setCategoryDialogOpen(true); 
+                            }}
+                            onDelete={() => { 
+                              setDeleteTarget({ type: "category", id: cat.id }); 
+                              setDeleteDialogOpen(true); 
+                            }}
+                            onDuplicate={() => handleDuplicateCategory(cat)}
+                          />
+                        ))}
+                      </SortableContext>
+                    </DndContext>
+                  )
                 ) : null}
               </div>
             </ScrollArea>
@@ -399,7 +470,18 @@ export default function Catalog() {
           </div>
         </div>
 
-        <CategoryDialog category={selectedCategory} open={categoryDialogOpen} onOpenChange={(open) => { setCategoryDialogOpen(open); if (!open) setSelectedCategory(undefined); }} />
+        <CategoryDialog 
+          category={selectedCategory} 
+          parentId={parentIdForNewCategory}
+          open={categoryDialogOpen} 
+          onOpenChange={(open) => { 
+            setCategoryDialogOpen(open); 
+            if (!open) {
+              setSelectedCategory(undefined);
+              setParentIdForNewCategory(null);
+            }
+          }} 
+        />
         <PositionDialog position={selectedPosition} open={positionDialogOpen} onOpenChange={(open) => { setPositionDialogOpen(open); if (!open) setSelectedPosition(undefined); }} />
         <ItemDialog positionId={selectedPositionForItems} open={itemDialogOpen} onOpenChange={(open) => { setItemDialogOpen(open); if (!open) setSelectedPositionForItems(undefined); }} />
         <DeleteConfirmDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={handleConfirmDelete} title={`Удалить ${deleteTarget?.type === "category" ? "категорию" : deleteTarget?.type === "position" ? "позицию" : "товар"}?`} description="Это действие нельзя отменить." />
