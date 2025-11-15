@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createLogger, createErrorResponse } from "../_shared/edge-utils.ts";
+
+const logger = createLogger('webhook-wata');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,36 +21,26 @@ serve(async (req) => {
     );
 
     const payload = await req.json();
-    console.log('Wata webhook received:', payload);
-
-    // Wata webhook format (customize based on actual API documentation)
-    // Example: { status: 'success', order_id: '...', user_id: '...', amount: 100 }
+    logger.info('Webhook received', { status: payload.status });
     
     if (payload.status === 'success' || payload.status === 'paid') {
       const userId = payload.user_id || payload.merchant_data?.user_id;
       const amount = parseFloat(payload.amount);
 
       if (!userId || !amount) {
-        console.error('Missing user_id or amount in webhook');
+        logger.warn('Missing data');
         return new Response('Invalid payload', { status: 400 });
       }
 
-      // Create deposit record
-      const { error: depositError } = await supabaseClient
-        .from('deposits')
-        .insert({
-          user_id: userId,
-          amount: amount,
-          payment_method: 'wata',
-          status: 'completed',
-        });
+      logger.info('Processing', { user_id: userId, amount });
 
-      if (depositError) {
-        console.error('Error creating deposit:', depositError);
-        throw depositError;
-      }
+      await supabaseClient.from('deposits').insert({
+        user_id: userId,
+        amount,
+        payment_method: 'wata',
+        status: 'completed',
+      });
 
-      // Update user balance
       const { data: profile } = await supabaseClient
         .from('profiles')
         .select('balance, telegram_id')
@@ -56,37 +49,26 @@ serve(async (req) => {
 
       if (profile) {
         const newBalance = (profile.balance || 0) + amount;
-        await supabaseClient
-          .from('profiles')
-          .update({ balance: newBalance })
-          .eq('id', userId);
+        await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', userId);
+        logger.info('Balance updated', { user_id: userId, new_balance: newBalance });
 
-        console.log(`Balance updated for user ${userId}: +${amount}`);
-
-        // Send notification to user via edge function
         try {
           await supabaseClient.functions.invoke('send-notification', {
             body: {
               type: 'deposit',
               telegram_id: profile.telegram_id,
-              data: {
-                amount,
-                payment_method: 'wata'
-              }
+              data: { amount, payment_method: 'wata' }
             }
           });
         } catch (notifError) {
-          console.error('Failed to send notification:', notifError);
+          logger.error('Notification failed', { error: String(notifError) });
         }
       }
     }
 
     return new Response('OK', { status: 200 });
   } catch (error) {
-    console.error('Error in webhook-wata:', error);
-    return new Response(JSON.stringify({ error: String(error) }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    logger.error('Webhook failed', { error: String(error) });
+    return createErrorResponse(error as Error);
   }
 });

@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import Referrals from "./pages/Referrals";
 import RequiredChannels from "./pages/RequiredChannels";
 import Roles from "./pages/Roles";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/statistics" element={<Statistics />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/search" element={<Search />} />
             <Route path="/mailing" element={<Mailing />} />
             <Route path="/required-channels" element={<RequiredChannels />} />

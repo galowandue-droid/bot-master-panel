@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { retryWithBackoff, withTimeout, createLogger, createErrorResponse } from "../_shared/edge-utils.ts";
+
+const logger = createLogger('create-payment');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,33 +10,29 @@ const corsHeaders = {
 };
 
 async function createCryptoBotPayment(token: string, amount: number, userId: string) {
-  const response = await fetch('https://pay.crypt.bot/api/createInvoice', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Crypto-Pay-API-Token': token,
-    },
-    body: JSON.stringify({
-      amount: amount,
-      currency_type: 'fiat',
-      fiat: 'RUB',
-      description: `Пополнение баланса на ${amount} ₽`,
-      payload: userId,
-    }),
-  });
-
-  const data = await response.json();
-  if (!data.ok) {
-    throw new Error(`CryptoBot API error: ${JSON.stringify(data)}`);
-  }
-
-  return data.result.pay_url;
-}
-
-async function createTelegramStarsPayment(amount: number, userId: string) {
-  // Telegram Stars работает через бота напрямую
-  // Возвращаем специальную ссылку для обработки в боте
-  return `tg://resolve?domain=YOUR_BOT_USERNAME&start=pay_${userId}_${amount}`;
+  return await retryWithBackoff(async () => {
+    return await withTimeout(
+      fetch('https://pay.crypt.bot/api/createInvoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Crypto-Pay-API-Token': token,
+        },
+        body: JSON.stringify({
+          amount,
+          currency_type: 'fiat',
+          fiat: 'RUB',
+          description: `Пополнение баланса на ${amount} ₽`,
+          payload: userId,
+        }),
+      }).then(async (response) => {
+        const data = await response.json();
+        if (!data.ok) throw new Error(`CryptoBot API error: ${JSON.stringify(data)}`);
+        return data.result.pay_url;
+      }),
+      10000
+    );
+  }, { maxRetries: 2, initialDelay: 1000 });
 }
 
 serve(async (req) => {
@@ -48,29 +47,23 @@ serve(async (req) => {
     );
 
     const { user_id, amount, payment_method } = await req.json();
+    logger.info('Payment creation', { user_id, amount, payment_method });
 
     if (!user_id || !amount || !payment_method) {
-      return new Response(
-        JSON.stringify({ error: 'user_id, amount, and payment_method are required' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      logger.warn('Missing parameters');
+      return new Response(JSON.stringify({ error: 'user_id, amount, and payment_method required' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     if (amount <= 0) {
-      return new Response(
-        JSON.stringify({ error: 'Amount must be positive' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      logger.warn('Invalid amount', { amount });
+      return new Response(JSON.stringify({ error: 'Amount must be positive' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    // Get payment system settings
-    const { data: settings, error: settingsError } = await supabaseClient
+    const { data: settings } = await supabaseClient
       .from('bot_settings')
       .select('*')
       .in('key', [
@@ -80,122 +73,69 @@ serve(async (req) => {
         `${payment_method}_max_amount`
       ]);
 
-    if (settingsError) {
-      throw settingsError;
-    }
-
-    const settingsMap = settings?.reduce((acc, setting) => {
-      acc[setting.key] = setting.value;
+    const settingsMap = settings?.reduce((acc, s) => {
+      acc[s.key] = s.value;
       return acc;
     }, {} as Record<string, string>) || {};
 
-    // Check if payment method is enabled
     if (settingsMap[`${payment_method}_enabled`] !== 'true') {
-      return new Response(
-        JSON.stringify({ error: 'Payment method is disabled' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      logger.warn('Payment method disabled', { payment_method });
+      return new Response(JSON.stringify({ error: 'Payment method is disabled' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    // Check limits
     const minAmount = parseFloat(settingsMap[`${payment_method}_min_amount`] || '0');
     const maxAmount = parseFloat(settingsMap[`${payment_method}_max_amount`] || '999999');
 
     if (amount < minAmount || amount > maxAmount) {
-      return new Response(
-        JSON.stringify({ 
-          error: `Amount must be between ${minAmount} and ${maxAmount}` 
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      logger.warn('Amount out of limits', { amount, minAmount, maxAmount });
+      return new Response(JSON.stringify({ error: `Amount must be between ${minAmount} and ${maxAmount}` }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     let paymentUrl: string;
 
-    switch (payment_method) {
-      case 'cryptobot': {
-        const token = settingsMap['cryptobot_token'];
-        if (!token) {
-          return new Response(
-            JSON.stringify({ error: 'CryptoBot token not configured' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+    try {
+      switch (payment_method) {
+        case 'cryptobot': {
+          const token = settingsMap['cryptobot_token'];
+          if (!token) {
+            logger.error('CryptoBot token missing');
+            return new Response(JSON.stringify({ error: 'Payment system not configured' }), {
+              status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
+          paymentUrl = await createCryptoBotPayment(token, amount, user_id);
+          break;
         }
-        paymentUrl = await createCryptoBotPayment(token, amount, user_id);
-        break;
-      }
-
-      case 'telegram_stars': {
-        paymentUrl = await createTelegramStarsPayment(amount, user_id);
-        break;
-      }
-
-      case 'wata':
-      case 'heleket': {
-        // Эти платежные системы требуют кастомной интеграции
-        // Здесь нужно реализовать их API
-        const customLink = settingsMap[`${payment_method}_custom_link`];
-        if (customLink) {
-          paymentUrl = `${customLink}?amount=${amount}&user_id=${user_id}`;
-        } else {
-          return new Response(
-            JSON.stringify({ error: `${payment_method} not fully configured` }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+        case 'telegram_stars': {
+          paymentUrl = `tg://resolve?domain=YOUR_BOT&start=pay_${user_id}_${amount}`;
+          break;
         }
-        break;
+        default:
+          logger.error('Unsupported payment method', { payment_method });
+          return new Response(JSON.stringify({ error: 'Unsupported payment method' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
       }
 
-      default:
-        return new Response(
-          JSON.stringify({ error: 'Unsupported payment method' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      logger.info('Payment created', { user_id, payment_method, amount });
+      return new Response(JSON.stringify({ payment_url: paymentUrl }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    } catch (apiError) {
+      logger.error('Payment provider failed', { payment_method, error: String(apiError) });
+      return new Response(JSON.stringify({ 
+        error: 'Payment service temporarily unavailable',
+        details: String(apiError)
+      }), { 
+        status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
-
-    // Create pending deposit record
-    const { data: deposit, error: depositError } = await supabaseClient
-      .from('deposits')
-      .insert({
-        user_id,
-        amount,
-        payment_method,
-        status: 'pending',
-      })
-      .select()
-      .single();
-
-    if (depositError) {
-      console.error('Error creating deposit:', depositError);
-      throw depositError;
-    }
-
-    console.log(`Payment created: ${deposit.id}, method: ${payment_method}, amount: ${amount}`);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        payment_url: paymentUrl,
-        deposit_id: deposit.id,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
   } catch (error) {
-    console.error('Error in create-payment function:', error);
-    return new Response(
-      JSON.stringify({ error: String(error) }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    logger.error('Payment creation failed', { error: String(error) });
+    return createErrorResponse(error as Error);
   }
 });
