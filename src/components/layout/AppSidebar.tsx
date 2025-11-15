@@ -7,6 +7,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 interface MenuItem {
   title: string;
   url?: string;
@@ -195,14 +196,17 @@ export function AppSidebar() {
   };
   return <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
-            <Bot className="h-5 w-5 text-sidebar-primary-foreground" />
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
+              <Bot className="h-5 w-5 text-sidebar-primary-foreground" />
+            </div>
+            {open && <div>
+                <p className="text-sm font-semibold text-sidebar-foreground">Admin Panel</p>
+                <p className="text-xs text-sidebar-foreground/60">Telegram Bot</p>
+              </div>}
           </div>
-          {open && <div>
-              <p className="text-sm font-semibold text-sidebar-foreground">Admin Panel</p>
-              <p className="text-xs text-sidebar-foreground/60">Telegram Bot</p>
-            </div>}
+          {open && <NotificationCenter />}
         </div>
       </SidebarHeader>
 
