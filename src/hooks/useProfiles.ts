@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getUserFriendlyError } from "@/lib/errorMapper";
 
 export interface UserProfile {
   id: string;
@@ -107,7 +106,7 @@ export function useUpdateBalance() {
     onError: (error: any) => {
       toast({
         title: "Ошибка",
-        description: getUserFriendlyError(error),
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -137,7 +136,7 @@ export function useToggleBlockUser() {
     onError: (error: any) => {
       toast({
         title: "Ошибка",
-        description: getUserFriendlyError(error),
+        description: error.message,
         variant: "destructive",
       });
     },
