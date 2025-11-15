@@ -317,13 +317,6 @@ export type Database = {
             referencedRelation: "purchases"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "purchase_items_purchase_id_fkey"
-            columns: ["purchase_id"]
-            isOneToOne: false
-            referencedRelation: "recent_activity"
-            referencedColumns: ["id"]
-          },
         ]
       }
       purchases: {
