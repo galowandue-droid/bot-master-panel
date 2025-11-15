@@ -24,6 +24,9 @@ export const useRecentActivity = (limit: number = 5) => {
       if (error) throw error;
       return data as Activity[];
     },
+    staleTime: 30000, // Data is fresh for 30 seconds
+    refetchInterval: 60000, // Auto-refetch every minute
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 
   return {

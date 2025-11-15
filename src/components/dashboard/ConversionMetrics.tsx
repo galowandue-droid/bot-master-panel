@@ -40,6 +40,9 @@ export function ConversionMetrics() {
         totalRevenue: Math.round(totalRevenue),
       };
     },
+    staleTime: 60000, // Cache for 1 minute
+    refetchInterval: 120000, // Refetch every 2 minutes
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {
