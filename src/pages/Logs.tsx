@@ -101,11 +101,11 @@ export default function Logs() {
         </div>
       </header>
 
-      <div className="p-6 space-y-6">
+      <div className="p-6">
         {/* Logs */}
-        <Card>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[600px]">
+        <Card className="h-[calc(100vh-12rem)]">
+          <CardContent className="p-0 h-full">
+            <ScrollArea className="h-full">
               {isLoading ? (
                 <div className="p-4 space-y-2">
                   {[1, 2, 3, 4, 5].map((i) => (

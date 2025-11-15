@@ -34,7 +34,6 @@ export default function Database() {
         throw new Error('Нет данных для экспорта');
       }
 
-      // Create blob and download
       const blob = new Blob([data], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -79,125 +78,104 @@ export default function Database() {
         </div>
       </header>
 
-      <div className="p-6 space-y-6">
-        {/* DB Info */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <DatabaseIcon className="h-5 w-5 text-primary" />
-              </div>
-              <CardTitle>Информация о БД</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Размер БД</p>
-                <p className="text-2xl font-bold text-foreground">24.3 МБ</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Всего записей</p>
-                <p className="text-2xl font-bold text-foreground">15,678</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Последнее обновление</p>
-                <p className="text-2xl font-bold text-foreground">Сейчас</p>
-              </div>
-            </div>
-
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-medium text-foreground">Таблица</th>
-                    <th className="text-right p-3 text-sm font-medium text-foreground">Записей</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {tables.map((table) => (
-                    <tr key={table.name} className="hover:bg-muted/50">
-                      <td className="p-3 text-sm text-foreground font-mono">{table.name}</td>
-                      <td className="p-3 text-sm text-muted-foreground text-right">
-                        {table.records.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Download DB */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Download className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Скачать базу данных</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Экспорт всех данных в формате SQL
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Экспортировать таблицы базы данных в формате CSV
-            </p>
-            <div className="space-y-2">
-              {tables.map((table) => (
-                <Button 
-                  key={table.name}
-                  variant="outline"
-                  className="w-full gap-2 justify-start"
-                  onClick={() => handleDownloadTable(table.name)}
-                  disabled={downloading}
-                >
-                  <Download className="h-4 w-4" />
-                  {downloading ? "Загрузка..." : `Скачать ${table.name}`}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Backups */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Calendar className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Автоматические резервные копии</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Бэкапы создаются ежедневно в 00:00
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {backups.map((backup) => (
-              <div
-                key={backup.name}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-              >
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground font-mono">{backup.name}</p>
-                  <p className="text-xs text-muted-foreground">{backup.date}</p>
+      <div className="p-6 h-[calc(100vh-4rem)] overflow-auto">
+        <div className="space-y-6 max-w-7xl mx-auto">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <DatabaseIcon className="h-5 w-5 text-primary" />
                 </div>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Скачать
-                </Button>
+                <CardTitle>Информация о БД</CardTitle>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Размер БД</p>
+                  <p className="text-2xl font-bold text-foreground">24.3 МБ</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Всего записей</p>
+                  <p className="text-2xl font-bold text-foreground">15,678</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Последнее обновление</p>
+                  <p className="text-2xl font-bold text-foreground">Сегодня</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Таблицы</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {tables.map((table) => (
+                  <div
+                    key={table.name}
+                    className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-primary/10 p-2">
+                        <DatabaseIcon className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{table.name}</p>
+                        <p className="text-sm text-muted-foreground">{table.records} записей</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadTable(table.name)}
+                      disabled={downloading}
+                      className="gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Экспорт
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Резервные копии</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {backups.map((backup) => (
+                  <div
+                    key={backup.name}
+                    className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-secondary/50 p-2">
+                        <Calendar className="h-4 w-4 text-secondary-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{backup.name}</p>
+                        <p className="text-sm text-muted-foreground">{backup.date}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge variant="secondary">Авто</Badge>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Download className="h-4 w-4" />
+                        Скачать
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

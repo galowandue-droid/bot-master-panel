@@ -62,10 +62,10 @@ export default function Mailing() {
         </div>
       </header>
 
-      <div className="p-6">
-        <div className="grid gap-6 md:grid-cols-3">
+      <div className="p-6 h-[calc(100vh-4rem)] overflow-auto">
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Left: Create Broadcast */}
-          <Card className="md:col-span-2">
+          <Card>
             <CardHeader>
               <CardTitle>Создать рассылку</CardTitle>
             </CardHeader>
