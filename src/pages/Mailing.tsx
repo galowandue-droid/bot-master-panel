@@ -3,11 +3,11 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Send, Users, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Send, Users, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default function Mailing() {
   const [message, setMessage] = useState("");
@@ -55,9 +55,9 @@ export default function Mailing() {
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center gap-4 px-6">
           <SidebarTrigger />
-          <div className="flex-1">
+          <div className="flex-1 space-y-1">
             <h1 className="text-2xl font-bold text-foreground">Рассылка</h1>
-            <p className="text-sm text-muted-foreground">Массовая отправка сообщений пользователям</p>
+            <Breadcrumbs items={[{ label: "Рассылка" }]} />
           </div>
         </div>
       </header>
