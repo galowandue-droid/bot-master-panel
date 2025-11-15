@@ -99,7 +99,7 @@ serve(async (req) => {
     // Get local database statistics for deposits
     const { data: deposits, error: depositsError } = await supabaseClient
       .from('deposits')
-      .select('payment_method, amount, status');
+      .select('payment_method, amount, status, created_at');
 
     if (depositsError) {
       console.error('Error fetching deposits:', depositsError);
@@ -122,10 +122,43 @@ serve(async (req) => {
       return acc;
     }, {} as Record<string, { count: number; total: number; completed: number }>) || {};
 
+    // Aggregate deposits by day for last 7 days
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      return date.toISOString().split('T')[0];
+    });
+
+    const depositsByDay = deposits?.reduce((acc, deposit) => {
+      const date = new Date(deposit.created_at).toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = {
+          count: 0,
+          total: 0
+        };
+      }
+      acc[date].count++;
+      acc[date].total += Number(deposit.amount);
+      return acc;
+    }, {} as Record<string, { count: number; total: number }>) || {};
+
+    const dailyStats = last7Days.map(date => ({
+      date,
+      count: depositsByDay[date]?.count || 0,
+      total: depositsByDay[date]?.total || 0
+    }));
+
+    // Calculate average check
+    const totalDeposits = deposits?.filter(d => d.status === 'completed').length || 0;
+    const totalAmount = deposits?.filter(d => d.status === 'completed').reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+    const averageCheck = totalDeposits > 0 ? totalAmount / totalDeposits : 0;
+
     return new Response(
       JSON.stringify({
         paymentStats,
         depositsByMethod,
+        dailyStats,
+        averageCheck,
         success: true
       }),
       {

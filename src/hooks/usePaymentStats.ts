@@ -9,6 +9,12 @@ export interface PaymentSystemStats {
   error?: string;
 }
 
+export interface DailyStats {
+  date: string;
+  count: number;
+  total: number;
+}
+
 export interface PaymentStats {
   paymentStats: PaymentSystemStats[];
   depositsByMethod: Record<string, {
@@ -16,6 +22,8 @@ export interface PaymentStats {
     total: number;
     completed: number;
   }>;
+  dailyStats: DailyStats[];
+  averageCheck: number;
   success: boolean;
 }
 
