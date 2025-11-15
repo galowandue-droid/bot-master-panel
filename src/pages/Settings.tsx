@@ -4,11 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, MessageCircle, HeadphonesIcon, Webhook, Eye, Power, Settings2, Bell, Wallet, ShoppingCart } from "lucide-react";
 import { useBotSettings } from "@/hooks/useBotSettings";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 export default function Settings() {
   const { getSetting, updateSetting } = useBotSettings();
@@ -31,18 +32,14 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="flex h-16 items-center gap-4 px-6">
-          <SidebarTrigger />
-          <div className="flex-1 space-y-1">
-            <h1 className="text-2xl font-bold">Настройки</h1>
-            <Breadcrumbs items={[{ label: "Настройки" }]} />
-          </div>
-        </div>
-      </header>
+    <>
+      <PageHeader
+        title="Настройки"
+        icon={<Settings2 className="h-5 w-5 text-primary" />}
+        breadcrumbs={[{ label: "Настройки" }]}
+      />
 
-      <div className="p-6 h-[calc(100vh-4rem)] overflow-auto">
+      <PageContainer className="h-[calc(100vh-4rem)] overflow-auto">
         <div className="max-w-4xl mx-auto">
           <Tabs defaultValue="general" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
@@ -236,7 +233,7 @@ export default function Settings() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
-    </div>
+      </PageContainer>
+    </>
   );
 }

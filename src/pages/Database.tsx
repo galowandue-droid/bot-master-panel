@@ -1,7 +1,8 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Database as DatabaseIcon, FileArchive } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -50,18 +51,14 @@ export default function Database() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center gap-4 px-6">
-          <SidebarTrigger />
-          <div className="flex-1 space-y-1">
-            <h1 className="text-2xl font-bold text-foreground">База данных</h1>
-            <Breadcrumbs items={[{ label: "База данных" }]} />
-          </div>
-        </div>
-      </header>
+    <>
+      <PageHeader
+        title="База данных"
+        icon={<DatabaseIcon className="h-5 w-5 text-primary" />}
+        breadcrumbs={[{ label: "База данных" }]}
+      />
 
-      <div className="p-6 h-[calc(100vh-4rem)] overflow-auto">
+      <PageContainer className="h-[calc(100vh-4rem)] overflow-auto">
         <div className="space-y-6 max-w-7xl mx-auto">
           <Card>
             <CardHeader>
@@ -128,7 +125,7 @@ export default function Database() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+      </PageContainer>
+    </>
   );
 }

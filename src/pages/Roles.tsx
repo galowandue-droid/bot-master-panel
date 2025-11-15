@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useProfiles } from "@/hooks/useProfiles";
 import { useUserRoles, useAssignRole, useRemoveRole } from "@/hooks/useUserRoles";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Shield, ShieldOff, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 export default function Roles() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,15 +42,14 @@ export default function Roles() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Управление ролями</h1>
-          <p className="text-muted-foreground mt-1">
-            Назначайте и удаляйте роли администраторов
-          </p>
-        </div>
-      </div>
+    <>
+      <PageHeader
+        title="Управление ролями"
+        description="Назначайте и удаляйте роли администраторов"
+        icon={<Shield className="h-5 w-5 text-primary" />}
+      />
+
+      <PageContainer>
 
       <Alert>
         <Shield className="h-4 w-4" />
@@ -131,6 +131,7 @@ export default function Roles() {
           </Table>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
+    </>
   );
 }

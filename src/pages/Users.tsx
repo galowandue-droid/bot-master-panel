@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Search, UserCircle, Wallet, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Search, UserCircle, Wallet, ChevronLeft, ChevronRight, Eye, Users as UsersIcon } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { UserDetailsDialog } from "@/components/users/UserDetailsDialog";
 import { useProfiles } from "@/hooks/useProfiles";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,20 +43,14 @@ export default function Users() {
   const selectedUser = profiles?.find((p) => p.id === selectedUserId) || null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center gap-4 px-6">
-          <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Пользователи</h1>
-            <p className="text-sm text-muted-foreground">
-              Поиск и управление пользователями
-            </p>
-          </div>
-        </div>
-      </header>
+    <>
+      <PageHeader
+        title="Пользователи"
+        description="Поиск и управление пользователями"
+        icon={<UsersIcon className="h-5 w-5 text-primary" />}
+      />
 
-      <div className="p-6 space-y-6">
+      <PageContainer>
         {/* Search and Filters */}
         <Card className="p-4">
           <div className="flex gap-4">
@@ -208,13 +203,13 @@ export default function Users() {
             </div>
           </div>
         )}
-      </div>
+      </PageContainer>
 
       <UserDetailsDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         user={selectedUser}
       />
-    </div>
+    </>
   );
 }

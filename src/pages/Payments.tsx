@@ -1,14 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, TrendingUp, DollarSign } from "lucide-react";
+import { RefreshCw, TrendingUp, DollarSign, Wallet } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { usePaymentStats } from "@/hooks/usePaymentStats";
 import { PaymentCharts } from "@/components/payments/PaymentCharts";
 import { EmptyState } from "@/components/EmptyState";
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function Payments() {
   const { data: paymentStats, isLoading: isLoadingStats, refetch: refetchStats } = usePaymentStats();
@@ -79,16 +80,12 @@ export default function Payments() {
   const hasData = paymentStats?.dailyStats && paymentStats.dailyStats.length > 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center gap-4 px-6">
-          <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Платежи</h1>
-            <p className="text-sm text-muted-foreground">
-              Статистика и аналитика платежей
-            </p>
-          </div>
+    <>
+      <PageHeader
+        title="Платежи"
+        description="Статистика и аналитика платежей"
+        icon={<Wallet className="h-5 w-5 text-primary" />}
+        actions={
           <Button
             onClick={handleRefresh}
             disabled={isLoadingStats || isRefreshing}
@@ -102,10 +99,10 @@ export default function Payments() {
             )}
             <span className="ml-2">Обновить</span>
           </Button>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="p-6 space-y-6">
+      <PageContainer>
 
       {/* Графики аналитики */}
       {isLoadingStats ? (
@@ -160,9 +157,9 @@ export default function Payments() {
               ))}
             </div>
           </CardContent>
-        </Card>
-      )}
-      </div>
-    </div>
+          </Card>
+        )}
+      </PageContainer>
+    </>
   );
 }
