@@ -6,8 +6,9 @@ import {
   Package,
   Users,
   CreditCard,
-  Settings,
+  Settings as SettingsIcon,
   ChevronRight,
+  Wrench,
   Bot,
   BarChart3,
   Search,
@@ -40,7 +41,8 @@ const menuItems = [
   { title: "Рассылка", url: "/mailing", icon: Send },
   { title: "Пользователи", url: "/users", icon: Users },
   { title: "Платежи", url: "/payments", icon: CreditCard },
-  { title: "Настройки", url: "/settings", icon: Settings },
+  { title: "Настройки платежей", url: "/payment-settings", icon: Wrench },
+  { title: "Настройки", url: "/settings", icon: SettingsIcon },
 ];
 
 const toolsItems = [

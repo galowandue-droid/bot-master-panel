@@ -12,6 +12,7 @@ import Search from "./pages/Search";
 import Mailing from "./pages/Mailing";
 import Users from "./pages/UsersTable";
 import Payments from "./pages/Payments";
+import PaymentSettings from "./pages/PaymentSettings";
 import Settings from "./pages/Settings";
 import Database from "./pages/Database";
 import Logs from "./pages/Logs";
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/mailing" element={<Mailing />} />
             <Route path="/users" element={<Users />} />
             <Route path="/payments" element={<Payments />} />
+            <Route path="/payment-settings" element={<PaymentSettings />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/database" element={<Database />} />
             <Route path="/logs" element={<Logs />} />
