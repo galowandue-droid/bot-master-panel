@@ -11,3 +11,30 @@ verify_jwt = true
 
 [functions.payment-stats]
 verify_jwt = true
+
+[functions.process-purchase]
+verify_jwt = true
+
+[functions.check-channel-subscription]
+verify_jwt = true
+
+[functions.process-scheduled-broadcasts]
+verify_jwt = false
+
+[functions.deliver-items]
+verify_jwt = true
+
+[functions.create-payment]
+verify_jwt = true
+
+[functions.webhook-cryptobot]
+verify_jwt = false
+
+[functions.webhook-wata]
+verify_jwt = false
+
+[functions.webhook-heleket]
+verify_jwt = false
+
+[functions.webhook-telegram-stars]
+verify_jwt = false
