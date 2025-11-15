@@ -6,6 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Category, useCategories } from "@/hooks/useCategories";
+import { toast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const categorySchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
+  description: z.string().max(500, "Description must be less than 500 characters").optional(),
+  is_visible: z.boolean(),
+});
 
 interface CategoryDialogProps {
   open: boolean;
@@ -22,21 +30,37 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = categorySchema.safeParse({ 
+      name, 
+      description: description || undefined, 
+      is_visible: isVisible 
+    });
+    
+    if (!validation.success) {
+      toast({ 
+        title: "Ошибка валидации", 
+        description: validation.error.issues[0]?.message,
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (category) {
         await updateCategory.mutateAsync({
           id: category.id,
-          name,
-          description,
-          is_visible: isVisible,
+          name: validation.data.name,
+          description: validation.data.description,
+          is_visible: validation.data.is_visible,
         });
       } else {
         await createCategory.mutateAsync({
-          name,
-          description,
-          is_visible: isVisible,
+          name: validation.data.name,
+          description: validation.data.description,
+          is_visible: validation.data.is_visible,
           position: 0,
         });
       }
