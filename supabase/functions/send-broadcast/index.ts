@@ -230,9 +230,16 @@ serve(async (req) => {
         );
         sentCount++;
         console.log(`Sent to user ${profile.telegram_id}`);
-      } catch (error) {
+      } catch (error: any) {
         failedCount++;
-        console.error(`Failed to send to user ${profile.telegram_id}:`, error);
+        const errorMessage = error.message || String(error);
+        
+        // Check if it's a "chat not found" error
+        if (errorMessage.includes('chat not found')) {
+          console.warn(`User ${profile.telegram_id} has not started the bot or blocked it`);
+        } else {
+          console.error(`Failed to send to user ${profile.telegram_id}:`, error);
+        }
       }
     }
 
