@@ -235,3 +235,144 @@ export function useToggleBlockUser() {
     },
   });
 }
+
+export function useDeleteProfiles() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userIds: string[]) => {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .in("id", userIds);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, userIds) => {
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      toast({
+        title: "Пользователи удалены",
+        description: `Удалено пользователей: ${userIds.length}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Ошибка удаления",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useBulkToggleBlockUser() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userIds, isBlocked }: { userIds: string[]; isBlocked: boolean }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_blocked: isBlocked })
+        .in("id", userIds);
+      
+      if (error) throw error;
+    },
+    onMutate: async ({ userIds, isBlocked }) => {
+      await queryClient.cancelQueries({ queryKey: ["profiles"] });
+      const previousData = queryClient.getQueriesData({ queryKey: ["profiles"] });
+      
+      queryClient.setQueriesData({ queryKey: ["profiles"] }, (old: any) => {
+        if (!old) return old;
+        return old.map((profile: UserProfile) =>
+          userIds.includes(profile.id) ? { ...profile, is_blocked: isBlocked } : profile
+        );
+      });
+      
+      return { previousData };
+    },
+    onError: (error: any, _, context) => {
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    onSuccess: (_, { userIds, isBlocked }) => {
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      toast({
+        title: isBlocked ? "Пользователи заблокированы" : "Пользователи разблокированы",
+        description: `Обновлено пользователей: ${userIds.length}`,
+      });
+    },
+  });
+}
+
+export function useBulkUpdateBalance() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userIds, amount }: { userIds: string[]; amount: number }) => {
+      // Update each user's balance
+      for (const userId of userIds) {
+        const { data: profile, error: fetchError } = await supabase
+          .from("profiles")
+          .select("balance")
+          .eq("id", userId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const newBalance = Number(profile.balance || 0) + amount;
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ balance: newBalance })
+          .eq("id", userId);
+
+        if (updateError) throw updateError;
+      }
+    },
+    onMutate: async ({ userIds, amount }) => {
+      await queryClient.cancelQueries({ queryKey: ["profiles"] });
+      const previousData = queryClient.getQueriesData({ queryKey: ["profiles"] });
+      
+      queryClient.setQueriesData({ queryKey: ["profiles"] }, (old: any) => {
+        if (!old) return old;
+        return old.map((profile: UserProfile) =>
+          userIds.includes(profile.id) 
+            ? { ...profile, balance: Number(profile.balance || 0) + amount }
+            : profile
+        );
+      });
+      
+      return { previousData };
+    },
+    onError: (error: any, _, context) => {
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    onSuccess: (_, { userIds }) => {
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      toast({
+        title: "Баланс обновлен",
+        description: `Обновлено пользователей: ${userIds.length}`,
+      });
+    },
+  });
+}
+
