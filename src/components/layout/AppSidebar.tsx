@@ -23,16 +23,8 @@ const menuItems: MenuItem[] = [{
   icon: LayoutDashboard
 }, {
   title: "Каталог",
-  icon: Package,
-  items: [{
-    title: "Категории",
-    url: "/catalog",
-    icon: FolderTree
-  }, {
-    title: "Товары",
-    url: "/catalog",
-    icon: ShoppingBag
-  }]
+  url: "/catalog",
+  icon: Package
 }, {
   title: "Пользователи",
   icon: Users,
