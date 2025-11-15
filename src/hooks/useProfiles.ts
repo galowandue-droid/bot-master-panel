@@ -27,7 +27,7 @@ export function useProfiles(searchQuery?: string) {
 
       if (searchQuery) {
         const digitsOnly = searchQuery.replace(/\D/g, "");
-        // If the query contains digits (even inside brackets), search by telegram_id too
+        // If the query contains digits (even inside brackets), search by telegram_id only
         if (digitsOnly.length > 0) {
           query = query.or(`telegram_id.eq.${digitsOnly},username.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%`);
         } else {
