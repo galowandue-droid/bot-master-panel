@@ -26,6 +26,8 @@ interface PaymentSystem {
   placeholder: string;
   tokenLabel: string;
   customLinkKey: string;
+  commissionKey: string;
+  defaultCommission: string;
 }
 
 const paymentSystems: PaymentSystem[] = [
@@ -39,6 +41,8 @@ const paymentSystems: PaymentSystem[] = [
     placeholder: "Введите токен CryptoBot...",
     tokenLabel: "API токен",
     customLinkKey: "cryptobot_custom_link",
+    commissionKey: "cryptobot_commission",
+    defaultCommission: "0",
   },
   {
     id: "wata",
@@ -50,6 +54,8 @@ const paymentSystems: PaymentSystem[] = [
     placeholder: "Введите токен Wata...",
     tokenLabel: "API токен",
     customLinkKey: "wata_custom_link",
+    commissionKey: "wata_commission",
+    defaultCommission: "2",
   },
   {
     id: "heleket",
@@ -61,6 +67,8 @@ const paymentSystems: PaymentSystem[] = [
     placeholder: "Введите токен Heleket...",
     tokenLabel: "API токен",
     customLinkKey: "heleket_custom_link",
+    commissionKey: "heleket_commission",
+    defaultCommission: "1",
   },
   {
     id: "telegram_stars",
@@ -72,6 +80,8 @@ const paymentSystems: PaymentSystem[] = [
     placeholder: "Не требует токена",
     tokenLabel: "Токен",
     customLinkKey: "telegram_stars_custom_link",
+    commissionKey: "telegram_stars_commission",
+    defaultCommission: "0",
   },
 ];
 
@@ -81,17 +91,17 @@ export default function PaymentSettings() {
   const [tokens, setTokens] = useState<Record<string, string>>({});
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
   const [customLinks, setCustomLinks] = useState<Record<string, string>>({});
+  const [commissions, setCommissions] = useState<Record<string, string>>({});
+  const [lastCheck, setLastCheck] = useState<Record<string, string>>({});
   
   // Message settings
   const [successMessage, setSuccessMessage] = useState("");
   const [failedMessage, setFailedMessage] = useState("");
   const [pendingMessage, setPendingMessage] = useState("");
   
-  // Commission and limits
+  // Global limits
   const [minAmount, setMinAmount] = useState("100");
   const [maxAmount, setMaxAmount] = useState("100000");
-  const [commissionPercent, setCommissionPercent] = useState("0");
-  const [commissionFixed, setCommissionFixed] = useState("0");
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["payment-settings"],
@@ -121,16 +131,21 @@ export default function PaymentSettings() {
       setEnabled(newEnabled);
       setCustomLinks(newCustomLinks);
       
+      // Set individual commissions
+      const newCommissions: Record<string, string> = {};
+      paymentSystems.forEach((system) => {
+        newCommissions[system.id] = settingsMap[system.commissionKey] || system.defaultCommission;
+      });
+      setCommissions(newCommissions);
+      
       // Set messages
       setSuccessMessage(settingsMap.payment_success_message || "Оплата успешно завершена! ✅");
       setFailedMessage(settingsMap.payment_failed_message || "Ошибка оплаты. Попробуйте снова. ❌");
       setPendingMessage(settingsMap.payment_pending_message || "Ожидание оплаты... ⏳");
       
-      // Set limits and commissions
+      // Set limits
       setMinAmount(settingsMap.payment_min_amount || "100");
       setMaxAmount(settingsMap.payment_max_amount || "100000");
-      setCommissionPercent(settingsMap.payment_commission_percent || "0");
-      setCommissionFixed(settingsMap.payment_commission_fixed || "0");
 
       return settingsMap;
     },
@@ -208,12 +223,19 @@ export default function PaymentSettings() {
     });
   };
 
-  const handleSaveLimitsAndCommissions = () => {
+  const handleSaveLimits = () => {
     saveSettings.mutate({
       payment_min_amount: minAmount,
       payment_max_amount: maxAmount,
-      payment_commission_percent: commissionPercent,
-      payment_commission_fixed: commissionFixed,
+    });
+  };
+
+  const handleSaveCommission = (systemId: string) => {
+    const system = paymentSystems.find((s) => s.id === systemId);
+    if (!system) return;
+
+    saveSettings.mutate({
+      [system.commissionKey]: commissions[systemId] || system.defaultCommission,
     });
   };
 
@@ -446,56 +468,62 @@ export default function PaymentSettings() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Комиссии</CardTitle>
+              <CardTitle>Комиссии по платежным системам</CardTitle>
               <CardDescription>
-                Настройте комиссию за проведение платежей
+                Настройте комиссию для каждой платежной системы индивидуально (в процентах)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Процент комиссии (%)</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    placeholder="0"
-                    value={commissionPercent}
-                    onChange={(e) => setCommissionPercent(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Процент от суммы платежа
-                  </p>
+              {paymentSystems.map((system) => (
+                <div key={system.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <system.icon className="h-5 w-5" />
+                    <div>
+                      <p className="font-medium">{system.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Текущая комиссия: {commissions[system.id] || system.defaultCommission}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder={system.defaultCommission}
+                      value={commissions[system.id] || system.defaultCommission}
+                      onChange={(e) =>
+                        setCommissions((prev) => ({
+                          ...prev,
+                          [system.id]: e.target.value,
+                        }))
+                      }
+                      className="w-20"
+                    />
+                    <span className="text-sm">%</span>
+                    <Button
+                      size="sm"
+                      onClick={() => handleSaveCommission(system.id)}
+                      disabled={saveSettings.isPending}
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Фиксированная комиссия (₽)</Label>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    value={commissionFixed}
-                    onChange={(e) => setCommissionFixed(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Добавляется к проценту
-                  </p>
-                </div>
-              </div>
+              ))}
 
-              {(parseFloat(commissionPercent) > 0 || parseFloat(commissionFixed) > 0) && (
-                <Alert>
-                  <AlertDescription>
-                    Пример: платеж 1000₽ = {1000 * (1 + parseFloat(commissionPercent) / 100) + parseFloat(commissionFixed)}₽ 
-                    (комиссия {1000 * parseFloat(commissionPercent) / 100 + parseFloat(commissionFixed)}₽)
-                  </AlertDescription>
-                </Alert>
-              )}
+              <Alert>
+                <AlertDescription>
+                  Пример: платеж 1000₽ с комиссией 2% = 1020₽ (комиссия 20₽)
+                </AlertDescription>
+              </Alert>
 
-              <Button onClick={handleSaveLimitsAndCommissions} disabled={saveSettings.isPending}>
+              <Button onClick={handleSaveLimits} disabled={saveSettings.isPending} className="w-full">
                 {saveSettings.isPending ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <Save className="h-4 w-4 mr-2" />
                 )}
-                Сохранить настройки
+                Сохранить лимиты
               </Button>
             </CardContent>
           </Card>

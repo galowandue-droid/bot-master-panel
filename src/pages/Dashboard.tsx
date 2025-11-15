@@ -1,9 +1,9 @@
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, ShoppingCart, TrendingUp, DollarSign, Package, Download, Send } from "lucide-react";
+import { Users, ShoppingCart, TrendingUp, DollarSign, Package, Download, Send, Activity, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { StatsCard } from "@/components/dashboard/StatsCard";
+import { MetricCard } from "@/components/dashboard/MetricCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { useStatistics } from "@/hooks/useStatistics";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,11 +17,14 @@ import {
   Line,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -106,29 +109,35 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatsCard
+            <MetricCard
               title="Всего пользователей"
               value={totals?.users || 0}
+              change={`+${totals?.newUsers || 0} новых`}
+              changeType="positive"
               icon={Users}
-              description={`+${totals?.newUsers || 0} новых`}
             />
-            <StatsCard
+            <MetricCard
               title="Продажи"
               value={totals?.purchases || 0}
+              change={`₽${(totals?.revenue || 0).toFixed(0)} выручка`}
+              changeType="neutral"
               icon={ShoppingCart}
-              description={`₽${(totals?.revenue || 0).toFixed(0)} выручка`}
             />
-            <StatsCard
+            <MetricCard
               title="Выручка"
               value={`₽${(totals?.revenue || 0).toFixed(0)}`}
+              change={`${totals?.purchases || 0} заказов`}
+              changeType="positive"
               icon={DollarSign}
-              description={`${totals?.purchases || 0} заказов`}
+              iconColor="text-green-600"
             />
-            <StatsCard
+            <MetricCard
               title="Пополнения"
               value={totals?.deposits || 0}
+              change={`₽${(totals?.depositsAmount || 0).toFixed(0)} сумма`}
+              changeType="positive"
               icon={TrendingUp}
-              description={`₽${(totals?.depositsAmount || 0).toFixed(0)} сумма`}
+              iconColor="text-blue-600"
             />
           </div>
         )}
