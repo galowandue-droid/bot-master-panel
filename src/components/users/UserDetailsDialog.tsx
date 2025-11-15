@@ -23,9 +23,13 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
 
   if (!user) return null;
 
-  const handleBalanceChange = () => {
+  const handleBalanceChange = async () => {
     const amount = parseFloat(balanceAmount);
-    if (isNaN(amount) || amount === 0) return;
+    
+    // Comprehensive validation to prevent Infinity, NaN, and out-of-bounds values
+    if (isNaN(amount) || !isFinite(amount) || amount === 0 || Math.abs(amount) > 1000000) {
+      return;
+    }
 
     updateBalance.mutate(
       { userId: user.id, amount },
