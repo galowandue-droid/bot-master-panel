@@ -100,53 +100,53 @@ export default function Users() {
             <p className="text-muted-foreground">Пользователи не найдены</p>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
             {paginatedUsers.map((user) => (
               <Card
                 key={user.id}
-                className="p-4 hover:shadow-lg transition-shadow"
+                className="p-3 sm:p-4 hover:shadow-lg transition-shadow"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="rounded-full bg-primary/10 p-2 shrink-0">
-                      <UserCircle className="h-5 w-5 text-primary" />
+                <div className="flex items-start justify-between gap-3 sm:gap-4">
+                  <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                    <div className="rounded-full bg-primary/10 p-1.5 sm:p-2 shrink-0">
+                      <UserCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold truncate">
+                    <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-sm sm:text-base truncate">
                           {user.first_name || user.username || `User ${user.telegram_id}`}
                         </h3>
                         {user.is_blocked && (
-                          <span className="px-2 py-0.5 text-xs rounded-full bg-destructive/10 text-destructive">
+                          <span className="px-1.5 sm:px-2 py-0.5 text-xs rounded-full bg-destructive/10 text-destructive whitespace-nowrap">
                             Заблокирован
                           </span>
                         )}
                       </div>
                       {user.username && (
-                        <p className="text-sm text-muted-foreground">@{user.username}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">@{user.username}</p>
                       )}
                       <p className="text-xs text-muted-foreground">ID: {user.telegram_id}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-2 sm:gap-3">
                     <div className="text-right shrink-0">
-                      <div className="flex items-center gap-1.5 text-success mb-2">
-                        <Wallet className="h-4 w-4" />
-                        <span className="font-semibold">₽{user.balance.toFixed(0)}</span>
+                      <div className="flex items-center gap-1 sm:gap-1.5 text-success mb-1 sm:mb-2">
+                        <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="font-semibold text-sm sm:text-base">₽{user.balance.toFixed(0)}</span>
                       </div>
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p>Покупок: {user.purchases_count}</p>
-                        <p>Потрачено: ₽{user.total_spent.toFixed(0)}</p>
+                      <div className="space-y-0.5 sm:space-y-1 text-xs text-muted-foreground">
+                        <p className="whitespace-nowrap">Покупок: {user.purchases_count}</p>
+                        <p className="whitespace-nowrap">Потрачено: ₽{user.total_spent.toFixed(0)}</p>
                       </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleUserClick(user.id)}
-                      className="shrink-0"
+                      className="shrink-0 h-8 w-8 sm:h-9 sm:w-9"
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
@@ -157,8 +157,8 @@ export default function Users() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Показано {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} из {filteredUsers.length}
             </p>
             <div className="flex gap-2">
@@ -167,6 +167,7 @@ export default function Users() {
                 size="sm"
                 onClick={() => setCurrentPage(currentPage - 1)}
                 disabled={currentPage === 1}
+                className="h-8"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -181,12 +182,13 @@ export default function Users() {
                   .map((page, idx, arr) => (
                     <div key={page} className="flex items-center">
                       {idx > 0 && arr[idx - 1] !== page - 1 && (
-                        <span className="px-2 text-muted-foreground">...</span>
+                        <span className="px-1 sm:px-2 text-muted-foreground text-sm">...</span>
                       )}
                       <Button
                         variant={currentPage === page ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(page)}
+                        className="h-8 min-w-8 px-2"
                       >
                         {page}
                       </Button>
@@ -198,6 +200,7 @@ export default function Users() {
                 size="sm"
                 onClick={() => setCurrentPage(currentPage + 1)}
                 disabled={currentPage === totalPages}
+                className="h-8"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
