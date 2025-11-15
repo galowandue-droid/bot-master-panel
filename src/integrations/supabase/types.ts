@@ -702,6 +702,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_template_usage: {
+        Args: { template_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
