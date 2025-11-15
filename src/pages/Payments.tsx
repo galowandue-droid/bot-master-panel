@@ -6,18 +6,20 @@ import { Label } from "@/components/ui/label";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Bitcoin, Wallet, Star, CreditCard, Check, X, Loader2, TrendingUp, DollarSign } from "lucide-react";
+import { Bitcoin, Wallet, Star, CreditCard, Check, X, Loader2, TrendingUp, DollarSign, RefreshCw, AlertCircle } from "lucide-react";
 import { useBotSettings } from "@/hooks/useBotSettings";
 import { usePaymentStats } from "@/hooks/usePaymentStats";
 import { toast } from "@/hooks/use-toast";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { validatePaymentToken } from "@/lib/payment-validation";
 
 export default function Payments() {
   const { getSetting, updateSetting } = useBotSettings();
-  const { data: paymentStats } = usePaymentStats();
+  const { data: paymentStats, refetch: refetchStats, isLoading: isLoadingStats, isFetching } = usePaymentStats();
   const [testingStatus, setTestingStatus] = useState<Record<string, boolean>>({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const paymentSystems = [
     {
@@ -67,7 +69,37 @@ export default function Payments() {
       return;
     }
 
+    // Validate token format
+    const validation = validatePaymentToken(system.id, value);
+    if (!validation.success) {
+      toast({
+        title: "Ошибка валидации",
+        description: validation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
     await updateSetting.mutateAsync({ key: system.tokenKey, value });
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchStats();
+      toast({
+        title: "Обновлено",
+        description: "Статистика успешно обновлена",
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить статистику",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleToggle = async (system: { id: string; enabledKey: string }) => {
@@ -110,17 +142,42 @@ export default function Payments() {
     }
   };
 
-  const getStatusBadge = (system: { enabledKey: string; tokenKey: string }) => {
+  const getStatusBadge = (system: { enabledKey: string; tokenKey: string; id: string }) => {
     const isEnabled = getSetting(system.enabledKey) === "true";
     const hasToken = !!getSetting(system.tokenKey);
+    const systemStats = paymentStats?.paymentStats?.find(s => s.system === system.id);
+    const hasError = systemStats?.error;
 
     if (!hasToken) {
-      return <Badge variant="outline" className="gap-1"><X className="h-3 w-3" />Не настроен</Badge>;
+      return (
+        <Badge variant="outline" className="gap-1 text-muted-foreground border-muted-foreground/50">
+          <div className="h-2 w-2 rounded-full bg-muted-foreground/50" />
+          Не настроен
+        </Badge>
+      );
     }
     if (!isEnabled) {
-      return <Badge variant="secondary" className="gap-1">Отключен</Badge>;
+      return (
+        <Badge variant="secondary" className="gap-1">
+          <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+          Отключен
+        </Badge>
+      );
     }
-    return <Badge variant="default" className="gap-1 bg-success text-success-foreground"><Check className="h-3 w-3" />Подключен</Badge>;
+    if (hasError) {
+      return (
+        <Badge variant="destructive" className="gap-1">
+          <AlertCircle className="h-3 w-3" />
+          Ошибка
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="gap-1 bg-success text-success-foreground hover:bg-success/90">
+        <div className="h-2 w-2 rounded-full bg-success-foreground animate-pulse" />
+        Подключен
+      </Badge>
+    );
   };
 
   const depositStats = useMemo(() => {
@@ -150,36 +207,73 @@ export default function Payments() {
       <div className="p-6 space-y-6">
         <Card className="border-border/40 shadow-lg">
           <CardHeader>
-            <CardTitle>Статистика платежей</CardTitle>
-            <CardDescription>Информация о подключенных системах</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Статистика платежей</CardTitle>
+                <CardDescription>Информация о подключенных системах</CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefresh}
+                disabled={isRefreshing || isFetching}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing || isFetching ? 'animate-spin' : ''}`} />
+                Обновить
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40">
-                <div className="text-sm text-muted-foreground">Активных систем</div>
-                <div className="text-2xl font-bold text-foreground">
-                  {paymentSystems.filter(s => getSetting(s.enabledKey) === "true").length}
+            {isLoadingStats ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Check className="h-4 w-4 text-success" />
+                    Активных систем
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {paymentSystems.filter(s => getSetting(s.enabledKey) === "true").length}
+                  </div>
+                </div>
+                <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    Настроенных
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {paymentSystems.filter(s => !!getSetting(s.tokenKey)).length}
+                  </div>
+                </div>
+                <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Wallet className="h-4 w-4" />
+                    Всего систем
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {paymentSystems.length}
+                  </div>
+                </div>
+                <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-success" />
+                    Готово к работе
+                  </div>
+                  <div className="text-2xl font-bold text-success">
+                    {paymentSystems.filter(s => getSetting(s.enabledKey) === "true" && !!getSetting(s.tokenKey)).length}
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40">
-                <div className="text-sm text-muted-foreground">Настроенных</div>
-                <div className="text-2xl font-bold text-foreground">
-                  {paymentSystems.filter(s => !!getSetting(s.tokenKey)).length}
-                </div>
-              </div>
-              <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40">
-                <div className="text-sm text-muted-foreground">Всего систем</div>
-                <div className="text-2xl font-bold text-foreground">
-                  {paymentSystems.length}
-                </div>
-              </div>
-              <div className="space-y-2 p-4 rounded-lg bg-muted/30 border border-border/40">
-                <div className="text-sm text-muted-foreground">Готово к работе</div>
-                <div className="text-2xl font-bold text-success">
-                  {paymentSystems.filter(s => getSetting(s.enabledKey) === "true" && !!getSetting(s.tokenKey)).length}
-                </div>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -284,21 +378,36 @@ export default function Payments() {
           const isEnabled = getSetting(system.enabledKey) === "true";
           const currentToken = getSetting(system.tokenKey) || "";
           const isTesting = testingStatus[system.id];
+          const systemStats = paymentStats?.paymentStats?.find(s => s.system === system.id);
 
           return (
-            <Card key={system.id} className="border-border/40 shadow-lg hover:shadow-xl transition-shadow">
+            <Card key={system.id} className="border-border/40 shadow-card hover:shadow-lg transition-all hover:scale-[1.01]">
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="rounded-lg bg-gradient-primary p-3 shadow-glow">
-                      <Icon className="h-6 w-6 text-primary-foreground" />
+                  <div className="flex items-center gap-3">
+                    <div className={`p-3 rounded-xl transition-colors ${
+                      isEnabled && !systemStats?.error 
+                        ? 'bg-success/10 border border-success/20' 
+                        : systemStats?.error
+                        ? 'bg-destructive/10 border border-destructive/20'
+                        : 'bg-muted border border-border'
+                    }`}>
+                      <Icon className={`h-6 w-6 ${
+                        isEnabled && !systemStats?.error
+                          ? 'text-success'
+                          : systemStats?.error
+                          ? 'text-destructive'
+                          : 'text-muted-foreground'
+                      }`} />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{system.name}</CardTitle>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        {system.name}
+                      </CardTitle>
                       <CardDescription>{system.description}</CardDescription>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {getStatusBadge(system)}
                     <Switch
                       checked={isEnabled}
