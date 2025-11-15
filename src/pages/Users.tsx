@@ -38,6 +38,7 @@ export default function Users() {
     setDialogOpen(true);
   };
 
+  // Get fresh user data from profiles
   const selectedUser = profiles?.find((p) => p.id === selectedUserId) || null;
 
   return (

@@ -26,6 +26,7 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
   const toggleBlock = useToggleBlockUser();
   const { data: purchaseHistory, isLoading: purchasesLoading } = usePurchaseHistory(user?.id || null);
 
+  // Use user directly from props - it's already synced via optimistic updates
   if (!user) return null;
 
   const handleBalanceChange = () => {
@@ -129,65 +130,61 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                   ))
                 ) : !purchaseHistory || purchaseHistory.length === 0 ? (
                   <div className="space-y-3">
-                    <div className="p-4 rounded-lg border border-border bg-card">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-                            ✅ Покупка #1 (демо)
-                          </Badge>
-                        </div>
+                    <div className="p-3 sm:p-4 rounded-lg border border-border bg-card">
+                      <div className="flex items-start justify-between mb-2 gap-2">
+                        <Badge variant="outline" className="bg-success/10 text-success border-success/20 shrink-0 text-xs">
+                          ✅ Покупка #1 (демо)
+                        </Badge>
                         <div className="text-right">
-                          <div className="font-semibold text-lg">139₽</div>
+                          <div className="font-semibold text-base sm:text-lg">139₽</div>
                           <div className="text-xs text-muted-foreground">1 шт.</div>
                         </div>
                       </div>
                       <div className="border-t border-dashed border-border my-2"></div>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">Самокат (Скидка 50%)</span>
+                          <ShoppingBag className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium text-sm sm:text-base">Самокат (Скидка 50%)</span>
                         </div>
                         <div className="ml-6 space-y-1">
                           <p className="text-xs text-muted-foreground font-medium">ℹ️ Ваш товар:</p>
-                          <div className="text-sm font-mono bg-muted/50 px-2 py-1 rounded">
+                          <div className="text-xs sm:text-sm font-mono bg-muted/50 px-2 py-1 rounded break-all">
                             • SAMOKAT-TEST-003
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground ml-6">
-                          <Clock className="h-3 w-3" />
+                          <Clock className="h-3 w-3 shrink-0" />
                           <span>14.11.2025 21:03</span>
                         </div>
                       </div>
                     </div>
-                    <div className="p-4 rounded-lg border border-border bg-card">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-                            ✅ Покупка #2 (демо)
-                          </Badge>
-                        </div>
+                    <div className="p-3 sm:p-4 rounded-lg border border-border bg-card">
+                      <div className="flex items-start justify-between mb-2 gap-2">
+                        <Badge variant="outline" className="bg-success/10 text-success border-success/20 shrink-0 text-xs">
+                          ✅ Покупка #2 (демо)
+                        </Badge>
                         <div className="text-right">
-                          <div className="font-semibold text-lg">290₽</div>
+                          <div className="font-semibold text-base sm:text-lg">290₽</div>
                           <div className="text-xs text-muted-foreground">2 шт.</div>
                         </div>
                       </div>
                       <div className="border-t border-dashed border-border my-2"></div>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">Яндекс Плюс</span>
+                          <ShoppingBag className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium text-sm sm:text-base">Яндекс Плюс</span>
                         </div>
                         <div className="ml-6 space-y-1">
                           <p className="text-xs text-muted-foreground font-medium">ℹ️ Ваш товар:</p>
-                          <div className="text-sm font-mono bg-muted/50 px-2 py-1 rounded">
+                          <div className="text-xs sm:text-sm font-mono bg-muted/50 px-2 py-1 rounded break-all">
                             • YANDEX-PLUS-001
                           </div>
-                          <div className="text-sm font-mono bg-muted/50 px-2 py-1 rounded">
+                          <div className="text-xs sm:text-sm font-mono bg-muted/50 px-2 py-1 rounded break-all">
                             • YANDEX-PLUS-002
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground ml-6">
-                          <Clock className="h-3 w-3" />
+                          <Clock className="h-3 w-3 shrink-0" />
                           <span>13.11.2025 18:45</span>
                         </div>
                       </div>
@@ -197,16 +194,14 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                   purchaseHistory.map((purchase, index) => (
                     <div
                       key={purchase.id}
-                      className="p-4 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors"
+                      className="p-3 sm:p-4 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors"
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-                            ✅ Покупка #{purchaseHistory.length - index}
-                          </Badge>
-                        </div>
+                      <div className="flex items-start justify-between mb-2 gap-2">
+                        <Badge variant="outline" className="bg-success/10 text-success border-success/20 shrink-0 text-xs">
+                          ✅ Покупка #{purchaseHistory.length - index}
+                        </Badge>
                         <div className="text-right">
-                          <div className="font-semibold text-lg">
+                          <div className="font-semibold text-base sm:text-lg">
                             {purchase.total_price}₽
                           </div>
                           <div className="text-xs text-muted-foreground">
@@ -219,15 +214,15 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
 
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{purchase.position.name}</span>
+                          <ShoppingBag className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium text-sm sm:text-base">{purchase.position.name}</span>
                         </div>
 
                         {purchase.items && purchase.items.length > 0 && (
                           <div className="ml-6 space-y-1">
                             <p className="text-xs text-muted-foreground font-medium">ℹ️ Ваш товар:</p>
                             {purchase.items.map((item, idx) => (
-                              <div key={idx} className="text-sm font-mono bg-muted/50 px-2 py-1 rounded">
+                              <div key={idx} className="text-xs sm:text-sm font-mono bg-muted/50 px-2 py-1 rounded break-all">
                                 • {item.content}
                               </div>
                             ))}
@@ -235,7 +230,7 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                         )}
 
                         <div className="flex items-center gap-2 text-xs text-muted-foreground ml-6">
-                          <Clock className="h-3 w-3" />
+                          <Clock className="h-3 w-3 shrink-0" />
                           <span>
                             {new Date(purchase.created_at).toLocaleString('ru-RU', {
                               day: '2-digit',
@@ -291,8 +286,8 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
           <TabsContent value="actions" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Управление балансом</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-sm sm:text-base">Управление балансом</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   Введите положительное число для пополнения или отрицательное для списания
                 </CardDescription>
               </CardHeader>
@@ -308,7 +303,7 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                   <Button
                     onClick={handleBalanceChange}
                     disabled={updateBalance.isPending || !balanceAmount}
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto shrink-0"
                   >
                     {updateBalance.isPending ? "Изменение..." : "Изменить"}
                   </Button>
@@ -321,8 +316,8 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Управление доступом</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-sm sm:text-base">Управление доступом</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   Блокировка пользователя запретит ему использовать бота
                 </CardDescription>
               </CardHeader>
@@ -337,12 +332,12 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                     "Обновление..."
                   ) : user.is_blocked ? (
                     <>
-                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      <ShieldCheck className="mr-2 h-4 w-4 shrink-0" />
                       Разблокировать
                     </>
                   ) : (
                     <>
-                      <Ban className="mr-2 h-4 w-4" />
+                      <Ban className="mr-2 h-4 w-4 shrink-0" />
                       Заблокировать
                     </>
                   )}
