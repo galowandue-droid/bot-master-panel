@@ -4,14 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Bitcoin, Wallet, Star, CreditCard, CheckCircle2, XCircle, Circle, AlertCircle, Clock } from "lucide-react";
+import { Loader2, Bitcoin, Wallet, Star, CreditCard, Save, MessageSquare, DollarSign, Link as LinkIcon } from "lucide-react";
 import { validatePaymentToken } from "@/lib/payment-validation";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 
 interface PaymentSystem {
   id: string;
@@ -21,9 +24,8 @@ interface PaymentSystem {
   tokenKey: string;
   enabledKey: string;
   placeholder: string;
-  testable: boolean;
-  balanceLabel: string;
   tokenLabel: string;
+  customLinkKey: string;
 }
 
 const paymentSystems: PaymentSystem[] = [
@@ -35,21 +37,19 @@ const paymentSystems: PaymentSystem[] = [
     tokenKey: "cryptobot_token",
     enabledKey: "cryptobot_enabled",
     placeholder: "Введите токен CryptoBot...",
-    testable: true,
-    balanceLabel: "Баланс",
     tokenLabel: "API токен",
+    customLinkKey: "cryptobot_custom_link",
   },
   {
     id: "wata",
     name: "Wata",
-    description: "Прием платежей через Wata (карты, СБП, международные)",
+    description: "Прием платежей через Wata (карты, СБП)",
     icon: CreditCard,
     tokenKey: "wata_token",
     enabledKey: "wata_enabled",
     placeholder: "Введите токен Wata...",
-    testable: true,
-    balanceLabel: "Баланс",
     tokenLabel: "API токен",
+    customLinkKey: "wata_custom_link",
   },
   {
     id: "heleket",
@@ -59,9 +59,8 @@ const paymentSystems: PaymentSystem[] = [
     tokenKey: "heleket_token",
     enabledKey: "heleket_enabled",
     placeholder: "Введите токен Heleket...",
-    testable: true,
-    balanceLabel: "Баланс",
     tokenLabel: "API токен",
+    customLinkKey: "heleket_custom_link",
   },
   {
     id: "telegram_stars",
@@ -71,9 +70,8 @@ const paymentSystems: PaymentSystem[] = [
     tokenKey: "telegram_stars_token",
     enabledKey: "telegram_stars_enabled",
     placeholder: "Не требует токена",
-    testable: false,
-    balanceLabel: "Баланс",
     tokenLabel: "Токен",
+    customLinkKey: "telegram_stars_custom_link",
   },
 ];
 
@@ -82,10 +80,20 @@ export default function PaymentSettings() {
   const queryClient = useQueryClient();
   const [tokens, setTokens] = useState<Record<string, string>>({});
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
-  const [testingSystem, setTestingSystem] = useState<string | null>(null);
-  const [lastTestTime, setLastTestTime] = useState<Record<string, Date>>({});
+  const [customLinks, setCustomLinks] = useState<Record<string, string>>({});
+  
+  // Message settings
+  const [successMessage, setSuccessMessage] = useState("");
+  const [failedMessage, setFailedMessage] = useState("");
+  const [pendingMessage, setPendingMessage] = useState("");
+  
+  // Commission and limits
+  const [minAmount, setMinAmount] = useState("100");
+  const [maxAmount, setMaxAmount] = useState("100000");
+  const [commissionPercent, setCommissionPercent] = useState("0");
+  const [commissionFixed, setCommissionFixed] = useState("0");
 
-  const { data: settings, isLoading, refetch: refetchSettings } = useQuery({
+  const { data: settings, isLoading } = useQuery({
     queryKey: ["payment-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -101,408 +109,446 @@ export default function PaymentSettings() {
 
       const newTokens: Record<string, string> = {};
       const newEnabled: Record<string, boolean> = {};
+      const newCustomLinks: Record<string, string> = {};
 
       paymentSystems.forEach((system) => {
         newTokens[system.id] = settingsMap[system.tokenKey] || "";
         newEnabled[system.id] = settingsMap[system.enabledKey] === "true";
+        newCustomLinks[system.id] = settingsMap[system.customLinkKey] || "";
       });
 
       setTokens(newTokens);
       setEnabled(newEnabled);
+      setCustomLinks(newCustomLinks);
+      
+      // Set messages
+      setSuccessMessage(settingsMap.payment_success_message || "Оплата успешно завершена! ✅");
+      setFailedMessage(settingsMap.payment_failed_message || "Ошибка оплаты. Попробуйте снова. ❌");
+      setPendingMessage(settingsMap.payment_pending_message || "Ожидание оплаты... ⏳");
+      
+      // Set limits and commissions
+      setMinAmount(settingsMap.payment_min_amount || "100");
+      setMaxAmount(settingsMap.payment_max_amount || "100000");
+      setCommissionPercent(settingsMap.payment_commission_percent || "0");
+      setCommissionFixed(settingsMap.payment_commission_fixed || "0");
 
       return settingsMap;
     },
   });
 
-  const { data: paymentStats, refetch: refetchStats } = useQuery({
-    queryKey: ["payment-stats"],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('payment-stats');
+  const saveSettings = useMutation({
+    mutationFn: async (updates: Record<string, string>) => {
+      const promises = Object.entries(updates).map(([key, value]) =>
+        supabase.from("bot_settings").upsert({ key, value }, { onConflict: "key" })
+      );
+
+      const results = await Promise.all(promises);
+      const error = results.find((r) => r.error)?.error;
       if (error) throw error;
-      return data;
     },
-  });
-
-  const saveTokenMutation = useMutation({
-    mutationFn: async ({ systemId, token }: { systemId: string; token: string }) => {
-      const system = paymentSystems.find((s) => s.id === systemId);
-      if (!system) throw new Error("System not found");
-
-      validatePaymentToken(systemId, token);
-
-      const { error } = await supabase.from("bot_settings").upsert({
-        key: system.tokenKey,
-        value: token,
-      });
-
-      if (error) throw error;
-      return { system };
-    },
-    onSuccess: ({ system }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-settings"] });
-      toast({
-        title: "Успешно",
-        description: `Токен для ${system.name} сохранен. Теперь проверьте подключение.`,
-      });
+      toast({ title: "Настройки сохранены" });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
-        title: "Ошибка валидации",
-        description: error instanceof Error ? error.message : "Неверный формат токена",
+        title: "Ошибка при сохранении",
         variant: "destructive",
       });
     },
   });
 
-  const handleSaveToken = async (systemId: string) => {
+  const handleToggleSystem = (systemId: string) => {
+    const system = paymentSystems.find((s) => s.id === systemId);
+    if (!system) return;
+
+    const newEnabled = !enabled[systemId];
+    setEnabled((prev) => ({ ...prev, [systemId]: newEnabled }));
+
+    saveSettings.mutate({
+      [system.enabledKey]: newEnabled.toString(),
+    });
+  };
+
+  const handleSaveToken = (systemId: string) => {
+    const system = paymentSystems.find((s) => s.id === systemId);
+    if (!system) return;
+
     const token = tokens[systemId];
-    if (!token) {
+    const validation = validatePaymentToken(systemId, token);
+
+    if (!validation.success) {
       toast({
-        title: "Ошибка",
-        description: "Введите токен",
+        title: "Ошибка валидации",
+        description: validation.error,
         variant: "destructive",
       });
       return;
     }
 
-    await saveTokenMutation.mutateAsync({ systemId, token });
+    saveSettings.mutate({
+      [system.tokenKey]: token,
+    });
   };
 
-  const toggleMutation = useMutation({
-    mutationFn: async ({ systemId, newValue }: { systemId: string; newValue: boolean }) => {
-      const system = paymentSystems.find((s) => s.id === systemId);
-      if (!system) throw new Error("System not found");
+  const handleSaveCustomLink = (systemId: string) => {
+    const system = paymentSystems.find((s) => s.id === systemId);
+    if (!system) return;
 
-      const { error } = await supabase.from("bot_settings").upsert({
-        key: system.enabledKey,
-        value: newValue.toString(),
-      });
-
-      if (error) throw error;
-      return { system, newValue };
-    },
-    onSuccess: ({ system, newValue }, { systemId }) => {
-      setEnabled({ ...enabled, [systemId]: newValue });
-      queryClient.invalidateQueries({ queryKey: ["payment-settings"] });
-      toast({
-        title: "Успешно",
-        description: `${system.name} ${newValue ? "включен" : "отключен"}`,
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось изменить статус",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleToggle = async (systemId: string, newValue: boolean) => {
-    await toggleMutation.mutateAsync({ systemId, newValue });
+    saveSettings.mutate({
+      [system.customLinkKey]: customLinks[systemId] || "",
+    });
   };
 
-  const testMutation = useMutation({
-    mutationFn: async (systemId: string) => {
-      const { data, error } = await supabase.functions.invoke("test-payment-system", {
-        body: { system: systemId },
-      });
-
-      if (error || !data?.success) {
-        throw new Error(data?.error || "Не удалось подключиться к платежной системе");
-      }
-
-      return { systemId, data };
-    },
-    onSuccess: ({ systemId }) => {
-      setLastTestTime({ ...lastTestTime, [systemId]: new Date() });
-      queryClient.invalidateQueries({ queryKey: ["payment-stats"] });
-      toast({
-        title: "Подключено",
-        description: "Подключение к платежной системе работает",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Ошибка подключения",
-        description: error instanceof Error ? error.message : "Не удалось подключиться",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleTest = async (systemId: string) => {
-    setTestingSystem(systemId);
-    try {
-      await testMutation.mutateAsync(systemId);
-    } finally {
-      setTestingSystem(null);
-    }
+  const handleSaveMessages = () => {
+    saveSettings.mutate({
+      payment_success_message: successMessage,
+      payment_failed_message: failedMessage,
+      payment_pending_message: pendingMessage,
+    });
   };
 
-  const getStatusInfo = (systemId: string) => {
-    const systemStats = paymentStats?.paymentStats?.find(
-      (stat: any) => stat.system.toLowerCase() === systemId
-    );
-    const hasToken = tokens[systemId]?.length > 0;
-    const lastTest = lastTestTime[systemId];
+  const handleSaveLimitsAndCommissions = () => {
+    saveSettings.mutate({
+      payment_min_amount: minAmount,
+      payment_max_amount: maxAmount,
+      payment_commission_percent: commissionPercent,
+      payment_commission_fixed: commissionFixed,
+    });
+  };
 
-    if (!hasToken) {
-      return {
-        badge: (
-          <Badge variant="secondary" className="gap-1">
-            <Circle className="h-3 w-3 fill-muted-foreground text-muted-foreground" />
-            Не настроено
-          </Badge>
-        ),
-        canEnable: false,
-        message: null,
-      };
-    }
-
-    if (!enabled[systemId]) {
-      return {
-        badge: (
-          <Badge variant="secondary" className="gap-1">
-            <Circle className="h-3 w-3 fill-muted-foreground text-muted-foreground" />
-            Отключено
-          </Badge>
-        ),
-        canEnable: lastTest !== undefined,
-        message: lastTest ? null : "Проверьте подключение перед включением",
-      };
-    }
-
-    if (systemStats?.status === "error") {
-      return {
-        badge: (
-          <Badge variant="destructive" className="gap-1">
-            <XCircle className="h-3 w-3" />
-            Ошибка
-          </Badge>
-        ),
-        canEnable: true,
-        message: null,
-      };
-    }
-
-    if (lastTest) {
-      const timeStr = format(lastTest, "сегодня в HH:mm", { locale: ru });
-      return {
-        badge: (
-          <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600">
-            <CheckCircle2 className="h-3 w-3" />
-            Подключено
-          </Badge>
-        ),
-        canEnable: true,
-        message: (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-            <Clock className="h-3 w-3" />
-            <span>Последняя проверка: {timeStr}</span>
-          </div>
-        ),
-      };
-    }
-
-    return {
-      badge: (
-        <Badge variant="secondary" className="gap-1">
-          <Circle className="h-3 w-3 fill-primary text-primary" />
-          Не проверено
-        </Badge>
-      ),
-      canEnable: false,
-      message: "Проверьте подключение перед включением",
+  const MessagePreview = ({ message, status }: { message: string; status: 'success' | 'failed' | 'pending' }) => {
+    const statusColors = {
+      success: 'bg-green-50 border-green-200',
+      failed: 'bg-red-50 border-red-200',
+      pending: 'bg-yellow-50 border-yellow-200',
     };
+
+    return (
+      <div className={`p-4 rounded-lg border-2 ${statusColors[status]} max-w-sm`}>
+        <div className="text-sm whitespace-pre-wrap">{message}</div>
+      </div>
+    );
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Платежные системы</h1>
-        <p className="text-muted-foreground">
-          Управление способами оплаты
-        </p>
+    <div className="flex-1 space-y-6 p-6">
+      <div className="flex items-center gap-4">
+        <SidebarTrigger />
+        <div>
+          <h1 className="text-3xl font-bold">💳 Настройки платежей</h1>
+          <p className="text-muted-foreground mt-2">
+            Управление платежными системами и параметрами оплаты
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-6">
-        {paymentSystems.map((system) => {
-          const Icon = system.icon;
-          const statusInfo = getStatusInfo(system.id);
-          const isEnabled = enabled[system.id];
-          const systemStats = paymentStats?.paymentStats?.find(
-            (stat: any) => stat.system.toLowerCase() === system.id
-          );
-          const hasError = systemStats?.status === "error";
-          const isConnected = lastTestTime[system.id] && isEnabled;
+      <Tabs defaultValue="systems" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="systems">Платежные системы</TabsTrigger>
+          <TabsTrigger value="messages">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Сообщения
+          </TabsTrigger>
+          <TabsTrigger value="limits">
+            <DollarSign className="h-4 w-4 mr-2" />
+            Лимиты и комиссии
+          </TabsTrigger>
+          <TabsTrigger value="links">
+            <LinkIcon className="h-4 w-4 mr-2" />
+            Кастомные ссылки
+          </TabsTrigger>
+        </TabsList>
 
-          return (
-            <Card key={system.id} className="border-border">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-card">
-                      <Icon className="h-5 w-5 text-foreground" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base font-semibold">{system.name}</CardTitle>
-                      <CardDescription className="text-sm mt-0.5">
-                        {system.description}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={isEnabled}
-                    onCheckedChange={(checked) => handleToggle(system.id, checked)}
-                    disabled={!statusInfo.canEnable}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
-              </CardHeader>
+        <TabsContent value="systems" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {paymentSystems.map((system) => {
+              const Icon = system.icon;
+              const isEnabled = enabled[system.id];
 
-              <CardContent className="space-y-4">
-                {system.id !== "telegram_stars" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">
-                        {system.tokenLabel}
-                      </label>
-                      <Input
-                        type="password"
-                        placeholder={system.placeholder}
-                        value={tokens[system.id] || ""}
-                        onChange={(e) =>
-                          setTokens({ ...tokens, [system.id]: e.target.value })
-                        }
-                        className="bg-background"
+              return (
+                <Card key={system.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-6 w-6" />
+                        <div>
+                          <CardTitle className="text-lg">{system.name}</CardTitle>
+                          <CardDescription className="text-sm">
+                            {system.description}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={isEnabled}
+                        onCheckedChange={() => handleToggleSystem(system.id)}
                       />
                     </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {isEnabled && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>{system.tokenLabel}</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              type="password"
+                              placeholder={system.placeholder}
+                              value={tokens[system.id] || ""}
+                              onChange={(e) =>
+                                setTokens((prev) => ({
+                                  ...prev,
+                                  [system.id]: e.target.value,
+                                }))
+                              }
+                            />
+                            <Button
+                              onClick={() => handleSaveToken(system.id)}
+                              disabled={saveSettings.isPending}
+                            >
+                              <Save className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <Badge variant={isEnabled ? "default" : "secondary"}>
+                          {isEnabled ? "Активна" : "Неактивна"}
+                        </Badge>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TabsContent>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">
-                        {system.balanceLabel}
-                      </label>
-                      <div className="relative">
-                        <Input
-                          type="text"
-                          value={
-                            systemStats?.balance
-                              ? typeof systemStats.balance === "object"
-                                ? JSON.stringify(systemStats.balance)
-                                : systemStats.balance
-                              : "₽0.00"
-                          }
-                          disabled
-                          className="bg-background pr-20"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            refetchStats();
-                            toast({ title: "Обновлено", description: "Баланс обновлен" });
-                          }}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 h-7"
-                        >
-                          Обновить
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {system.id === "telegram_stars" && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">
-                      {system.balanceLabel}
-                    </label>
-                    <Input
-                      type="text"
-                      value="Не требует настройки"
-                      disabled
-                      className="bg-background"
-                    />
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  {system.id !== "telegram_stars" && (
-                    <Button
-                      onClick={() => handleSaveToken(system.id)}
-                      disabled={!tokens[system.id] || saveTokenMutation.isPending}
-                      className="flex-1"
-                    >
-                      {saveTokenMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Сохранение...
-                        </>
-                      ) : (
-                        "Сохранить"
-                      )}
-                    </Button>
-                  )}
-                  {system.testable && (
-                    <Button
-                      onClick={() => handleTest(system.id)}
-                      disabled={!tokens[system.id] || testingSystem === system.id}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      {testingSystem === system.id ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Проверка...
-                        </>
-                      ) : (
-                        "Проверить подключение"
-                      )}
-                    </Button>
-                  )}
+        <TabsContent value="messages" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Кастомные сообщения</CardTitle>
+              <CardDescription>
+                Настройте текст сообщений для разных статусов оплаты
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Успешная оплата</Label>
+                <Textarea
+                  placeholder="Введите сообщение об успешной оплате..."
+                  value={successMessage}
+                  onChange={(e) => setSuccessMessage(e.target.value)}
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Доступные переменные: {"{amount}"}, {"{username}"}, {"{order_id}"}
+                </p>
+                <div className="pt-2">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Превью:</Label>
+                  <MessagePreview message={successMessage} status="success" />
                 </div>
+              </div>
 
-                {/* Status messages */}
-                {isConnected && lastTestTime[system.id] && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
-                        Подключено
-                      </Badge>
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>Ошибка оплаты</Label>
+                <Textarea
+                  placeholder="Введите сообщение об ошибке оплаты..."
+                  value={failedMessage}
+                  onChange={(e) => setFailedMessage(e.target.value)}
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Доступные переменные: {"{amount}"}, {"{username}"}, {"{error}"}
+                </p>
+                <div className="pt-2">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Превью:</Label>
+                  <MessagePreview message={failedMessage} status="failed" />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>Ожидание оплаты</Label>
+                <Textarea
+                  placeholder="Введите сообщение об ожидании оплаты..."
+                  value={pendingMessage}
+                  onChange={(e) => setPendingMessage(e.target.value)}
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Доступные переменные: {"{amount}"}, {"{username}"}, {"{time}"}
+                </p>
+                <div className="pt-2">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Превью:</Label>
+                  <MessagePreview message={pendingMessage} status="pending" />
+                </div>
+              </div>
+
+              <Button onClick={handleSaveMessages} disabled={saveSettings.isPending}>
+                {saveSettings.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Сохранить сообщения
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="limits" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Лимиты платежей</CardTitle>
+              <CardDescription>
+                Установите минимальную и максимальную сумму платежа
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Минимальная сумма (₽)</Label>
+                  <Input
+                    type="number"
+                    placeholder="100"
+                    value={minAmount}
+                    onChange={(e) => setMinAmount(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Максимальная сумма (₽)</Label>
+                  <Input
+                    type="number"
+                    placeholder="100000"
+                    value={maxAmount}
+                    onChange={(e) => setMaxAmount(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <Alert>
+                <AlertDescription>
+                  Платежи вне этого диапазона будут автоматически отклонены
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Комиссии</CardTitle>
+              <CardDescription>
+                Настройте комиссию за проведение платежей
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Процент комиссии (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    placeholder="0"
+                    value={commissionPercent}
+                    onChange={(e) => setCommissionPercent(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Процент от суммы платежа
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Фиксированная комиссия (₽)</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={commissionFixed}
+                    onChange={(e) => setCommissionFixed(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Добавляется к проценту
+                  </p>
+                </div>
+              </div>
+
+              {(parseFloat(commissionPercent) > 0 || parseFloat(commissionFixed) > 0) && (
+                <Alert>
+                  <AlertDescription>
+                    Пример: платеж 1000₽ = {1000 * (1 + parseFloat(commissionPercent) / 100) + parseFloat(commissionFixed)}₽ 
+                    (комиссия {1000 * parseFloat(commissionPercent) / 100 + parseFloat(commissionFixed)}₽)
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <Button onClick={handleSaveLimitsAndCommissions} disabled={saveSettings.isPending}>
+                {saveSettings.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Сохранить настройки
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="links" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Кастомные ссылки</CardTitle>
+              <CardDescription>
+                Добавьте кастомные ссылки для платежных систем
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {paymentSystems.map((system) => {
+                const Icon = system.icon;
+                return (
+                  <div key={system.id} className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" />
+                      {system.name}
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="url"
+                        placeholder="https://..."
+                        value={customLinks[system.id] || ""}
+                        onChange={(e) =>
+                          setCustomLinks((prev) => ({
+                            ...prev,
+                            [system.id]: e.target.value,
+                          }))
+                        }
+                      />
+                      <Button
+                        onClick={() => handleSaveCustomLink(system.id)}
+                        disabled={saveSettings.isPending}
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <span className="text-sm text-muted-foreground ml-auto">
-                      Последняя проверка: {format(lastTestTime[system.id], "сегодня в HH:mm", { locale: ru })}
-                    </span>
                   </div>
-                )}
-
-                {!isEnabled && statusInfo.message && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{statusInfo.message}</span>
-                  </div>
-                )}
-
-                {hasError && systemStats?.error && (
-                  <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                    <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-destructive">{systemStats.error}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                );
+              })}
+              <Alert>
+                <AlertDescription>
+                  Если указана кастомная ссылка, она будет использоваться вместо стандартной
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
