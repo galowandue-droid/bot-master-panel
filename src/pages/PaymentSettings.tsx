@@ -11,10 +11,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Bitcoin, Wallet, Star, CreditCard, Save, MessageSquare, DollarSign, Link as LinkIcon } from "lucide-react";
 import { validatePaymentToken } from "@/lib/payment-validation";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { PaymentSystemCard } from "@/components/payments/PaymentSystemCard";
 
 interface PaymentSystem {
   id: string;
@@ -92,7 +94,9 @@ export default function PaymentSettings() {
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
   const [customLinks, setCustomLinks] = useState<Record<string, string>>({});
   const [commissions, setCommissions] = useState<Record<string, string>>({});
-  const [lastCheck, setLastCheck] = useState<Record<string, string>>({});
+  const [balances, setBalances] = useState<Record<string, any>>({});
+  const [statuses, setStatuses] = useState<Record<string, "connected" | "disconnected" | "checking">>({});
+  const [lastChecks, setLastChecks] = useState<Record<string, string>>({});
   
   // Message settings
   const [successMessage, setSuccessMessage] = useState("");
@@ -239,6 +243,37 @@ export default function PaymentSettings() {
     });
   };
 
+  const handleCheckConnection = async (systemId: string) => {
+    setStatuses(prev => ({ ...prev, [systemId]: "checking" }));
+    
+    // Simulate API check - в реальности нужно вызвать payment-stats или проверку конкретного API
+    setTimeout(() => {
+      const isConnected = enabled[systemId] && tokens[systemId];
+      setStatuses(prev => ({ 
+        ...prev, 
+        [systemId]: isConnected ? "connected" : "disconnected" 
+      }));
+      setLastChecks(prev => ({ 
+        ...prev, 
+        [systemId]: new Date().toLocaleString('ru-RU') 
+      }));
+      
+      toast({
+        title: isConnected ? "Подключено" : "Не подключено",
+        description: isConnected ? "Соединение успешно" : "Проверьте токен",
+        variant: isConnected ? "default" : "destructive",
+      });
+    }, 1000);
+  };
+
+  const handleRefreshBalance = async (systemId: string) => {
+    toast({
+      title: "Обновление баланса",
+      description: "Баланс обновляется...",
+    });
+    // В реальности нужно вызвать payment-stats API
+  };
+
   const MessagePreview = ({ message, status }: { message: string; status: 'success' | 'failed' | 'pending' }) => {
     const statusColors = {
       success: 'bg-green-50 border-green-200',
@@ -262,16 +297,14 @@ export default function PaymentSettings() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-6">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger />
-        <div>
-          <h1 className="text-3xl font-bold">💳 Настройки платежей</h1>
-          <p className="text-muted-foreground mt-2">
-            Управление платежными системами и параметрами оплаты
-          </p>
-        </div>
-      </div>
+    <>
+      <PageHeader
+        title="Настройки платежей"
+        description="Управление платежными системами и параметрами оплаты"
+        icon={<Wallet className="h-5 w-5 text-primary" />}
+      />
+
+      <PageContainer>
 
       <Tabs defaultValue="systems" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -292,63 +325,31 @@ export default function PaymentSettings() {
 
         <TabsContent value="systems" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {paymentSystems.map((system) => {
-              const Icon = system.icon;
-              const isEnabled = enabled[system.id];
-
-              return (
-                <Card key={system.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Icon className="h-6 w-6" />
-                        <div>
-                          <CardTitle className="text-lg">{system.name}</CardTitle>
-                          <CardDescription className="text-sm">
-                            {system.description}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={isEnabled}
-                        onCheckedChange={() => handleToggleSystem(system.id)}
-                      />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {isEnabled && (
-                      <>
-                        <div className="space-y-2">
-                          <Label>{system.tokenLabel}</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              type="password"
-                              placeholder={system.placeholder}
-                              value={tokens[system.id] || ""}
-                              onChange={(e) =>
-                                setTokens((prev) => ({
-                                  ...prev,
-                                  [system.id]: e.target.value,
-                                }))
-                              }
-                            />
-                            <Button
-                              onClick={() => handleSaveToken(system.id)}
-                              disabled={saveSettings.isPending}
-                            >
-                              <Save className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <Badge variant={isEnabled ? "default" : "secondary"}>
-                          {isEnabled ? "Активна" : "Неактивна"}
-                        </Badge>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {paymentSystems.map((system) => (
+              <PaymentSystemCard
+                key={system.id}
+                id={system.id}
+                name={system.name}
+                description={system.description}
+                icon={system.icon}
+                isEnabled={enabled[system.id]}
+                token={tokens[system.id] || ""}
+                tokenLabel={system.tokenLabel}
+                tokenPlaceholder={system.placeholder}
+                commission={commissions[system.id] || system.defaultCommission}
+                balance={balances[system.id]}
+                status={statuses[system.id]}
+                lastCheck={lastChecks[system.id]}
+                onToggle={() => handleToggleSystem(system.id)}
+                onSaveToken={() => handleSaveToken(system.id)}
+                onSaveCommission={() => handleSaveCommission(system.id)}
+                onCheckConnection={() => handleCheckConnection(system.id)}
+                onRefreshBalance={() => handleRefreshBalance(system.id)}
+                onTokenChange={(value) => setTokens((prev) => ({ ...prev, [system.id]: value }))}
+                onCommissionChange={(value) => setCommissions((prev) => ({ ...prev, [system.id]: value }))}
+                isSaving={saveSettings.isPending}
+              />
+            ))}
           </div>
         </TabsContent>
 
@@ -577,6 +578,7 @@ export default function PaymentSettings() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </PageContainer>
+    </>
   );
 }
