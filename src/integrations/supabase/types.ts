@@ -35,6 +35,44 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_buttons: {
+        Row: {
+          broadcast_id: string
+          created_at: string
+          id: string
+          position: number
+          row: number
+          text: string
+          url: string | null
+        }
+        Insert: {
+          broadcast_id: string
+          created_at?: string
+          id?: string
+          position?: number
+          row?: number
+          text: string
+          url?: string | null
+        }
+        Update: {
+          broadcast_id?: string
+          created_at?: string
+          id?: string
+          position?: number
+          row?: number
+          text?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_buttons_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       broadcasts: {
         Row: {
           completed_at: string | null
@@ -42,8 +80,12 @@ export type Database = {
           created_by: string | null
           failed_count: number | null
           id: string
+          media_caption: string | null
+          media_type: string | null
           media_url: string | null
           message: string
+          schedule_at: string | null
+          segment_id: string | null
           sent_count: number | null
           status: string | null
         }
@@ -53,8 +95,12 @@ export type Database = {
           created_by?: string | null
           failed_count?: number | null
           id?: string
+          media_caption?: string | null
+          media_type?: string | null
           media_url?: string | null
           message: string
+          schedule_at?: string | null
+          segment_id?: string | null
           sent_count?: number | null
           status?: string | null
         }
@@ -64,12 +110,24 @@ export type Database = {
           created_by?: string | null
           failed_count?: number | null
           id?: string
+          media_caption?: string | null
+          media_type?: string | null
           media_url?: string | null
           message?: string
+          schedule_at?: string | null
+          segment_id?: string | null
           sent_count?: number | null
           status?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "broadcasts_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "user_segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categories: {
         Row: {
@@ -453,6 +511,69 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_segment_members: {
+        Row: {
+          added_at: string
+          id: string
+          segment_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          segment_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          segment_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_segment_members_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "user_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_segment_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_segments: {
+        Row: {
+          conditions: Json
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
