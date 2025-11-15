@@ -26,7 +26,12 @@ export function useProfiles(searchQuery?: string) {
         .order("created_at", { ascending: false });
 
       if (searchQuery) {
-        query = query.or(`username.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,telegram_id.eq.${searchQuery}`);
+        const isNumeric = /^\d+$/.test(searchQuery);
+        if (isNumeric) {
+          query = query.eq('telegram_id', parseInt(searchQuery));
+        } else {
+          query = query.or(`username.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%`);
+        }
       }
 
       const { data: profiles, error } = await query;

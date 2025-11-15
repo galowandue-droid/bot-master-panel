@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { UserCircle, Wallet, ShoppingBag, CreditCard, Ban, ShieldCheck } from "lucide-react";
+import { UserCircle, Wallet, ShoppingBag, CreditCard, Ban, ShieldCheck, Package, Clock } from "lucide-react";
 import { useState } from "react";
 import { useUpdateBalance, useToggleBlockUser } from "@/hooks/useProfiles";
 import type { UserProfile } from "@/hooks/useProfiles";
+import { usePurchaseHistory } from "@/hooks/usePurchaseHistory";
+import { formatDistanceToNow } from "date-fns";
+import { ru } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserDetailsDialogProps {
   open: boolean;
@@ -20,6 +24,7 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
   const [balanceAmount, setBalanceAmount] = useState("");
   const updateBalance = useUpdateBalance();
   const toggleBlock = useToggleBlockUser();
+  const { data: purchaseHistory, isLoading: purchasesLoading } = usePurchaseHistory(user?.id || null);
 
   if (!user) return null;
 
@@ -69,8 +74,9 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Профиль</TabsTrigger>
+            <TabsTrigger value="purchases">Покупки</TabsTrigger>
             <TabsTrigger value="stats">Статистика</TabsTrigger>
             <TabsTrigger value="actions">Действия</TabsTrigger>
           </TabsList>
@@ -103,6 +109,86 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                     </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="purchases" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  История покупок
+                </CardTitle>
+                <CardDescription>Все покупки пользователя</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {purchasesLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full" />
+                  ))
+                ) : !purchaseHistory || purchaseHistory.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShoppingBag className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground">Нет покупок</p>
+                  </div>
+                ) : (
+                  purchaseHistory.map((purchase, index) => (
+                    <div
+                      key={purchase.id}
+                      className="p-4 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                            ✅ Покупка #{purchaseHistory.length - index}
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-lg">
+                            {purchase.total_price}₽
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {purchase.quantity} шт.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-dashed border-border my-2"></div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{purchase.position.name}</span>
+                        </div>
+
+                        {purchase.items && purchase.items.length > 0 && (
+                          <div className="ml-6 space-y-1">
+                            <p className="text-xs text-muted-foreground font-medium">ℹ️ Ваш товар:</p>
+                            {purchase.items.map((item, idx) => (
+                              <div key={idx} className="text-sm font-mono bg-muted/50 px-2 py-1 rounded">
+                                • {item.content}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground pt-2">
+                          <Clock className="h-3 w-3" />
+                          <span>
+                            {new Date(purchase.created_at).toLocaleString('ru-RU', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -184,15 +270,17 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                   disabled={toggleBlock.isPending}
                   className="w-full"
                 >
-                  {user.is_blocked ? (
+                  {toggleBlock.isPending ? (
+                    "Обновление..."
+                  ) : user.is_blocked ? (
                     <>
                       <ShieldCheck className="mr-2 h-4 w-4" />
-                      Разблокировать пользователя
+                      Разблокировать
                     </>
                   ) : (
                     <>
                       <Ban className="mr-2 h-4 w-4" />
-                      Заблокировать пользователя
+                      Заблокировать
                     </>
                   )}
                 </Button>
