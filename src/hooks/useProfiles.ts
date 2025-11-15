@@ -139,18 +139,43 @@ export function useUpdateBalance() {
       if (error) throw error;
       return newBalance;
     },
+    onMutate: async ({ userId, amount }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["profiles"] });
+      
+      // Snapshot all profile caches
+      const previousData = queryClient.getQueriesData({ queryKey: ["profiles"] });
+      
+      // Optimistically update ALL profile caches
+      queryClient.setQueriesData({ queryKey: ["profiles"] }, (old: any) => {
+        if (!old) return old;
+        return old.map((profile: UserProfile) =>
+          profile.id === userId 
+            ? { ...profile, balance: Number(profile.balance || 0) + amount }
+            : profile
+        );
+      });
+      
+      return { previousData };
+    },
+    onError: (error: any, _, context) => {
+      // Rollback all caches on error
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       toast({
         title: "Баланс обновлен",
         description: "Баланс пользователя успешно изменен",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
       });
     },
   });
@@ -173,23 +198,25 @@ export function useToggleBlockUser() {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["profiles"] });
       
-      // Snapshot previous value
-      const previousProfiles = queryClient.getQueryData(["profiles"]);
+      // Snapshot all profile caches
+      const previousData = queryClient.getQueriesData({ queryKey: ["profiles"] });
       
-      // Optimistically update
-      queryClient.setQueryData(["profiles"], (old: any) => {
+      // Optimistically update ALL profile caches
+      queryClient.setQueriesData({ queryKey: ["profiles"] }, (old: any) => {
         if (!old) return old;
         return old.map((profile: UserProfile) =>
           profile.id === userId ? { ...profile, is_blocked: isBlocked } : profile
         );
       });
       
-      return { previousProfiles };
+      return { previousData };
     },
     onError: (error: any, _, context) => {
-      // Rollback on error
-      if (context?.previousProfiles) {
-        queryClient.setQueryData(["profiles"], context.previousProfiles);
+      // Rollback all caches on error
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
       toast({
         title: "Ошибка",

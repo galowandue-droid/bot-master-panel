@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,9 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
               </Badge>
             )}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Детальная информация о пользователе
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="mt-4">
