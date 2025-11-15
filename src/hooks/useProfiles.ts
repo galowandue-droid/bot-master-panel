@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export interface UserProfile {
   id: string;
@@ -16,6 +17,42 @@ export interface UserProfile {
 
 export function useProfiles(searchQuery?: string) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Subscribe to realtime changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          // Invalidate and refetch profiles when any change occurs
+          queryClient.invalidateQueries({ queryKey: ["profiles"] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'deposits'
+        },
+        () => {
+          // Invalidate profiles when a deposit is added (balance might change)
+          queryClient.invalidateQueries({ queryKey: ["profiles"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   return useQuery({
     queryKey: ["profiles", searchQuery],
