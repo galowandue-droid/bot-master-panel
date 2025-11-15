@@ -14,17 +14,20 @@ interface PaymentChartsProps {
 export function PaymentCharts({ dailyStats, depositsByMethod, averageCheck }: PaymentChartsProps) {
   const methodNames: Record<string, string> = {
     cryptobot: "CryptoBot",
-    yoomoney: "ЮMoney",
-    cards: "Банковские карты",
     telegram_stars: "Telegram Stars",
     wata: "Wata",
     heleket: "Heleket",
   };
 
-  const pieData = Object.entries(depositsByMethod).map(([method, stats]) => ({
-    name: methodNames[method] || method,
-    value: stats.total,
-  }));
+  // Filter only active payment methods
+  const activeMethodsOnly = Object.keys(methodNames);
+
+  const pieData = Object.entries(depositsByMethod)
+    .filter(([method]) => activeMethodsOnly.includes(method))
+    .map(([method, stats]) => ({
+      name: methodNames[method] || method,
+      value: stats.total,
+    }));
 
   const formattedDailyStats = dailyStats.map(stat => ({
     date: new Date(stat.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
@@ -151,7 +154,9 @@ export function PaymentCharts({ dailyStats, depositsByMethod, averageCheck }: Pa
             </ResponsiveContainer>
 
             <div className="flex flex-col justify-center space-y-4">
-              {Object.entries(depositsByMethod).map(([method, stats], index) => (
+              {Object.entries(depositsByMethod)
+                .filter(([method]) => activeMethodsOnly.includes(method))
+                .map(([method, stats], index) => (
                 <div 
                   key={method}
                   className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"

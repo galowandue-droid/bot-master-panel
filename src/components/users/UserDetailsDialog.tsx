@@ -128,9 +128,70 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                     <Skeleton key={i} className="h-24 w-full" />
                   ))
                 ) : !purchaseHistory || purchaseHistory.length === 0 ? (
-                  <div className="text-center py-8">
-                    <ShoppingBag className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                    <p className="text-sm text-muted-foreground">Нет покупок</p>
+                  <div className="space-y-3">
+                    <div className="p-4 rounded-lg border border-border bg-card">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                            ✅ Покупка #1 (демо)
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-lg">139₽</div>
+                          <div className="text-xs text-muted-foreground">1 шт.</div>
+                        </div>
+                      </div>
+                      <div className="border-t border-dashed border-border my-2"></div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">Самокат (Скидка 50%)</span>
+                        </div>
+                        <div className="ml-6 space-y-1">
+                          <p className="text-xs text-muted-foreground font-medium">ℹ️ Ваш товар:</p>
+                          <div className="text-sm font-mono bg-muted/50 px-2 py-1 rounded">
+                            • SAMOKAT-TEST-003
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground ml-6">
+                          <Clock className="h-3 w-3" />
+                          <span>14.11.2025 21:03</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-lg border border-border bg-card">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                            ✅ Покупка #2 (демо)
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-lg">290₽</div>
+                          <div className="text-xs text-muted-foreground">2 шт.</div>
+                        </div>
+                      </div>
+                      <div className="border-t border-dashed border-border my-2"></div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">Яндекс Плюс</span>
+                        </div>
+                        <div className="ml-6 space-y-1">
+                          <p className="text-xs text-muted-foreground font-medium">ℹ️ Ваш товар:</p>
+                          <div className="text-sm font-mono bg-muted/50 px-2 py-1 rounded">
+                            • YANDEX-PLUS-001
+                          </div>
+                          <div className="text-sm font-mono bg-muted/50 px-2 py-1 rounded">
+                            • YANDEX-PLUS-002
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground ml-6">
+                          <Clock className="h-3 w-3" />
+                          <span>13.11.2025 18:45</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   purchaseHistory.map((purchase, index) => (
@@ -173,7 +234,7 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                           </div>
                         )}
 
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground pt-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground ml-6">
                           <Clock className="h-3 w-3" />
                           <span>
                             {new Date(purchase.created_at).toLocaleString('ru-RU', {
