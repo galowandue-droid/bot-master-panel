@@ -36,6 +36,23 @@ export default function UsersTable() {
   const totalPages = Math.ceil((filteredUsers?.length || 0) / itemsPerPage);
   const paginatedUsers = filteredUsers?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  const allSelected = paginatedUsers?.length > 0 && paginatedUsers?.every(user => selectedUsers.has(user.id));
+  const someSelected = paginatedUsers?.some(user => selectedUsers.has(user.id)) && !allSelected;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      // Deselect all
+      const newSet = new Set(selectedUsers);
+      paginatedUsers?.forEach(user => newSet.delete(user.id));
+      setSelectedUsers(newSet);
+    } else {
+      // Select all
+      const newSet = new Set(selectedUsers);
+      paginatedUsers?.forEach(user => newSet.add(user.id));
+      setSelectedUsers(newSet);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
@@ -78,7 +95,13 @@ export default function UsersTable() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12"><Checkbox /></TableHead>
+                  <TableHead className="w-12">
+                    <Checkbox 
+                      checked={allSelected}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Выделить всех пользователей"
+                    />
+                  </TableHead>
                   <TableHead>ID</TableHead>
                   <TableHead>Пользователь</TableHead>
                   <TableHead>Username</TableHead>
