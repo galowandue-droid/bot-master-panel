@@ -393,10 +393,13 @@ export default function Catalog() {
                         setDeleteTarget({ type: "category", id: cat.id }); 
                         setDeleteDialogOpen(true); 
                       }}
-                      onAddChildCategory={(parentId) => {
+                      onAddChild={(parentId) => {
                         setSelectedCategory(undefined);
                         setParentIdForNewCategory(parentId);
                         setCategoryDialogOpen(true);
+                      }}
+                      onUpdateCategory={(id, updates) => {
+                        updateCategory.mutate({ id, ...updates });
                       }}
                       editMode={true}
                     />
