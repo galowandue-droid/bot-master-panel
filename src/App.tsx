@@ -10,7 +10,7 @@ import Catalog from "./pages/Catalog";
 import Statistics from "./pages/Statistics";
 import Search from "./pages/Search";
 import Mailing from "./pages/Mailing";
-import Users from "./pages/Users";
+import Users from "./pages/UsersTable";
 import Payments from "./pages/Payments";
 import Settings from "./pages/Settings";
 import Database from "./pages/Database";

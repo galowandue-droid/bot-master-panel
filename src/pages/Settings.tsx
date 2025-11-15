@@ -43,7 +43,8 @@ export default function Settings() {
         </div>
       </header>
 
-      <div className="p-6 space-y-6">
+      <div className="p-6 h-[calc(100vh-4rem)] overflow-auto">
+        <div className="space-y-6 max-w-4xl mx-auto">
         {/* FAQ Settings */}
         <Card>
           <CardHeader>
@@ -252,6 +253,7 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );
