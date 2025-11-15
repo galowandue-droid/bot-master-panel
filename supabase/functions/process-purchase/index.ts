@@ -259,9 +259,23 @@ serve(async (req) => {
       await supabaseClient.functions.invoke('deliver-items', {
         body: { purchase_id: purchase.id }
       });
+      
+      // Send notification to admins about new purchase
+      await supabaseClient.functions.invoke('send-notification', {
+        body: {
+          type: 'purchase',
+          telegram_id: userTelegramId,
+          data: {
+            position_name: position.name,
+            quantity,
+            total_price: totalPrice,
+            username: profile.username
+          }
+        }
+      });
     } catch (deliveryError) {
-      console.error('Error delivering items:', deliveryError);
-      // Don't fail the purchase if delivery fails - it can be retried
+      console.error('Error delivering items or sending notifications:', deliveryError);
+      // Don't fail the purchase if delivery/notification fails - it can be retried
     }
 
     return new Response(
