@@ -36,5 +36,6 @@ verify_jwt = false
 [functions.webhook-heleket]
 verify_jwt = false
 
-[functions.webhook-telegram-stars]
-verify_jwt = false
+[functions.send-notification]
+verify_jwt = true
+

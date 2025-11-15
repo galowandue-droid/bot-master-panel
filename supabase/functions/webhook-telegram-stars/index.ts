@@ -64,17 +64,20 @@ serve(async (req) => {
 
         console.log(`Balance updated for user ${userId}: +${amount}`);
 
-        // Send notification to user via Telegram
-        const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-        if (botToken && profile.telegram_id) {
-          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: profile.telegram_id,
-              text: `✅ Баланс успешно пополнен на ${amount} ₽ через Telegram Stars\n\nВаш баланс: ${newBalance} ₽`,
-            }),
+        // Send notification to user via edge function
+        try {
+          await supabaseClient.functions.invoke('send-notification', {
+            body: {
+              type: 'deposit',
+              telegram_id: profile.telegram_id,
+              data: {
+                amount,
+                payment_method: 'telegram_stars'
+              }
+            }
           });
+        } catch (notifError) {
+          console.error('Failed to send notification:', notifError);
         }
       }
     }

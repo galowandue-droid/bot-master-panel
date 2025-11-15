@@ -107,24 +107,28 @@ serve(async (req) => {
 
       console.log(`Balance updated for user ${userId}: +${amount}`);
 
-      // Send notification to user via Telegram
-      const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-      if (botToken) {
-        const { data: userProfile } = await supabaseClient
-          .from('profiles')
-          .select('telegram_id, balance')
-          .eq('id', userId)
-          .single();
+      // Get user's telegram_id for notification
+      const { data: userProfile } = await supabaseClient
+        .from('profiles')
+        .select('telegram_id')
+        .eq('id', userId)
+        .single();
 
-        if (userProfile?.telegram_id) {
-          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: userProfile.telegram_id,
-              text: `✅ Баланс успешно пополнен на ${amount} ₽\n\nВаш баланс: ${userProfile.balance} ₽`,
-            }),
+      // Send notification to user via edge function
+      if (userProfile?.telegram_id) {
+        try {
+          await supabaseClient.functions.invoke('send-notification', {
+            body: {
+              type: 'deposit',
+              telegram_id: userProfile.telegram_id,
+              data: {
+                amount,
+                payment_method: 'cryptobot'
+              }
+            }
           });
+        } catch (notifError) {
+          console.error('Failed to send notification:', notifError);
         }
       }
     }
