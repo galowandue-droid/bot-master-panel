@@ -105,19 +105,25 @@ serve(async (req) => {
       console.error('Error fetching deposits:', depositsError);
     }
 
-    // Aggregate deposits by payment method
+    // Aggregate deposits by payment method (only active systems)
+    const allowedMethods = ['cryptobot', 'telegram_stars', 'wata', 'heleket'];
     const depositsByMethod = deposits?.reduce((acc, deposit) => {
-      if (!acc[deposit.payment_method || 'unknown']) {
-        acc[deposit.payment_method || 'unknown'] = {
+      const method = deposit.payment_method || 'unknown';
+      // Skip old payment methods
+      if (!allowedMethods.includes(method)) {
+        return acc;
+      }
+      if (!acc[method]) {
+        acc[method] = {
           count: 0,
           total: 0,
           completed: 0
         };
       }
-      acc[deposit.payment_method].count++;
-      acc[deposit.payment_method].total += Number(deposit.amount);
+      acc[method].count++;
+      acc[method].total += Number(deposit.amount);
       if (deposit.status === 'completed') {
-        acc[deposit.payment_method].completed++;
+        acc[method].completed++;
       }
       return acc;
     }, {} as Record<string, { count: number; total: number; completed: number }>) || {};

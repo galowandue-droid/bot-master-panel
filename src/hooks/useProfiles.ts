@@ -132,19 +132,42 @@ export function useToggleBlockUser() {
 
       if (error) throw error;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["profiles"] });
-      toast({
-        title: variables.isBlocked ? "Пользователь заблокирован" : "Пользователь разблокирован",
-        description: "Статус пользователя успешно изменен",
+    onMutate: async ({ userId, isBlocked }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["profiles"] });
+      
+      // Snapshot previous value
+      const previousProfiles = queryClient.getQueryData(["profiles"]);
+      
+      // Optimistically update
+      queryClient.setQueryData(["profiles"], (old: any) => {
+        if (!old) return old;
+        return old.map((profile: UserProfile) =>
+          profile.id === userId ? { ...profile, is_blocked: isBlocked } : profile
+        );
       });
+      
+      return { previousProfiles };
     },
-    onError: (error: any) => {
+    onError: (error: any, _, context) => {
+      // Rollback on error
+      if (context?.previousProfiles) {
+        queryClient.setQueryData(["profiles"], context.previousProfiles);
+      }
       toast({
         title: "Ошибка",
         description: error.message,
         variant: "destructive",
       });
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        title: variables.isBlocked ? "Пользователь заблокирован" : "Пользователь разблокирован",
+        description: "Статус пользователя успешно изменен",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
     },
   });
 }
