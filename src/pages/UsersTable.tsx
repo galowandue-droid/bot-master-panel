@@ -1,15 +1,16 @@
 import { useState, useMemo } from "react";
-import { useProfiles } from "@/hooks/useProfiles";
+import { useProfiles, useBulkToggleBlockUser, useBulkUpdateBalance, useDeleteProfiles } from "@/hooks/useProfiles";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Search, Download, MoreVertical, Eye, Ban, Trash2, X } from "lucide-react";
+import { Search, Download, MoreVertical, Eye, Ban, ShieldCheck, Trash2, X, Wallet } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { EmptyState } from "@/components/EmptyState";
 import { UserDetailsDialog } from "@/components/users/UserDetailsDialog";
+import { BulkActionsDialog } from "@/components/users/BulkActionsDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -20,9 +21,13 @@ export default function UsersTable() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "blocked" | "balance">("all");
+  const [bulkAction, setBulkAction] = useState<"block" | "unblock" | "delete" | "balance" | null>(null);
   const itemsPerPage = 25;
 
   const { data: profiles, isLoading } = useProfiles();
+  const bulkToggleBlock = useBulkToggleBlockUser();
+  const bulkUpdateBalance = useBulkUpdateBalance();
+  const deleteProfiles = useDeleteProfiles();
 
   const filteredUsers = useMemo(() => {
     return profiles?.filter(user => {
@@ -52,6 +57,39 @@ export default function UsersTable() {
       setSelectedUsers(newSet);
     }
   };
+
+  const handleBulkAction = (amount?: number) => {
+    const userIds = Array.from(selectedUsers);
+    
+    switch (bulkAction) {
+      case "block":
+        bulkToggleBlock.mutate({ userIds, isBlocked: true }, {
+          onSuccess: () => setSelectedUsers(new Set())
+        });
+        break;
+      case "unblock":
+        bulkToggleBlock.mutate({ userIds, isBlocked: false }, {
+          onSuccess: () => setSelectedUsers(new Set())
+        });
+        break;
+      case "delete":
+        deleteProfiles.mutate(userIds, {
+          onSuccess: () => setSelectedUsers(new Set())
+        });
+        break;
+      case "balance":
+        if (amount !== undefined) {
+          bulkUpdateBalance.mutate({ userIds, amount }, {
+            onSuccess: () => setSelectedUsers(new Set())
+          });
+        }
+        break;
+    }
+  };
+
+  const selectedProfiles = profiles?.filter(p => selectedUsers.has(p.id)) || [];
+  const hasBlockedUsers = selectedProfiles.some(p => p.is_blocked);
+  const hasUnblockedUsers = selectedProfiles.some(p => !p.is_blocked);
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,11 +121,54 @@ export default function UsersTable() {
           </div>
 
           {selectedUsers.size > 0 && (
-            <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
-              <span className="text-sm">Выбрано: {selectedUsers.size}</span>
-              <Button variant="outline" size="sm"><Ban className="h-4 w-4 mr-2" />Заблокировать</Button>
-              <Button variant="outline" size="sm"><Trash2 className="h-4 w-4 mr-2" />Удалить</Button>
-              <Button variant="ghost" size="sm" onClick={() => setSelectedUsers(new Set())}><X className="h-4 w-4" /></Button>
+            <div className="flex items-center gap-2 p-4 bg-muted rounded-lg flex-wrap">
+              <span className="text-sm font-medium">Выбрано: {selectedUsers.size}</span>
+              <div className="flex gap-2 flex-wrap">
+                {hasUnblockedUsers && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setBulkAction("block")}
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    Заблокировать
+                  </Button>
+                )}
+                {hasBlockedUsers && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setBulkAction("unblock")}
+                  >
+                    <ShieldCheck className="h-4 w-4 mr-2" />
+                    Разблокировать
+                  </Button>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setBulkAction("balance")}
+                >
+                  <Wallet className="h-4 w-4 mr-2" />
+                  Изменить баланс
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setBulkAction("delete")}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Удалить
+                </Button>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSelectedUsers(new Set())}
+                className="ml-auto"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           )}
 
@@ -98,6 +179,7 @@ export default function UsersTable() {
                   <TableHead className="w-12">
                     <Checkbox 
                       checked={allSelected}
+                      indeterminate={someSelected}
                       onCheckedChange={handleSelectAll}
                       aria-label="Выделить всех пользователей"
                     />
@@ -146,6 +228,15 @@ export default function UsersTable() {
       </div>
 
       <UserDetailsDialog user={selectedUser} open={detailsOpen} onOpenChange={setDetailsOpen} />
+      
+      <BulkActionsDialog
+        open={bulkAction !== null}
+        onOpenChange={(open) => !open && setBulkAction(null)}
+        action={bulkAction || "block"}
+        selectedCount={selectedUsers.size}
+        onConfirm={handleBulkAction}
+        isPending={bulkToggleBlock.isPending || bulkUpdateBalance.isPending || deleteProfiles.isPending}
+      />
     </div>
   );
 }
