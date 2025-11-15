@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Save, MessageCircle, HeadphonesIcon, Webhook, Eye, Power } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Save, MessageCircle, HeadphonesIcon, Webhook, Eye, Power, Settings2, Bell } from "lucide-react";
 import { useBotSettings } from "@/hooks/useBotSettings";
-import { toast } from "@/hooks/use-toast";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default function Settings() {
   const { getSetting, updateSetting } = useBotSettings();
@@ -31,228 +32,90 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="flex h-16 items-center gap-4 px-6">
           <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Настройки</h1>
-            <p className="text-sm text-muted-foreground">
-              Конфигурация бота и системы
-            </p>
+          <div className="flex-1 space-y-1">
+            <h1 className="text-2xl font-bold">Настройки</h1>
+            <Breadcrumbs items={[{ label: "Настройки" }]} />
           </div>
         </div>
       </header>
 
       <div className="p-6 h-[calc(100vh-4rem)] overflow-auto">
-        <div className="space-y-6 max-w-4xl mx-auto">
-        {/* FAQ Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <MessageCircle className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>FAQ</CardTitle>
-                <CardDescription>
-                  Часто задаваемые вопросы для пользователей
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={(e) => handleSubmit(e, "faq")} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="faq">Текст FAQ</Label>
-                <Textarea
-                  id="faq"
-                  name="faq"
-                  placeholder="Введите текст FAQ (поддерживаются переменные)"
-                  rows={4}
-                  className="resize-none"
-                  defaultValue={getSetting("faq") || ""}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Доступные переменные: {"{username}"}, {"{user_id}"}, {"{balance}"}
-                </p>
-              </div>
-              <Button type="submit" className="gap-2" disabled={updateSetting.isPending}>
-                <Save className="h-4 w-4" />
-                Сохранить
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <div className="max-w-4xl mx-auto">
+          <Tabs defaultValue="general" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="general" className="gap-2"><Settings2 className="h-4 w-4" />Общие</TabsTrigger>
+              <TabsTrigger value="bot" className="gap-2"><MessageCircle className="h-4 w-4" />Бот</TabsTrigger>
+              <TabsTrigger value="notifications" className="gap-2"><Bell className="h-4 w-4" />Уведомления</TabsTrigger>
+            </TabsList>
 
-        {/* Support Contact */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <HeadphonesIcon className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Контакт поддержки</CardTitle>
-                <CardDescription>
-                  Username для связи с технической поддержкой
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={(e) => handleSubmit(e, "support")} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="support">Telegram username</Label>
-                <Input
-                  id="support"
-                  name="support"
-                  placeholder="@support_username"
-                  defaultValue={getSetting("support") || ""}
-                />
-              </div>
-              <Button type="submit" className="gap-2" disabled={updateSetting.isPending}>
-                <Save className="h-4 w-4" />
-                Сохранить
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            <TabsContent value="general" className="space-y-6">
+              <Card>
+                <CardHeader><div className="flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><MessageCircle className="h-5 w-5 text-primary" /></div><div><CardTitle>FAQ</CardTitle><CardDescription>Часто задаваемые вопросы</CardDescription></div></div></CardHeader>
+                <CardContent>
+                  <form onSubmit={(e) => handleSubmit(e, "faq")} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="faq">Текст FAQ</Label>
+                      <Textarea id="faq" name="faq" placeholder="Введите текст FAQ" rows={4} className="resize-none" defaultValue={getSetting("faq") || ""} />
+                    </div>
+                    <Button type="submit" className="gap-2" disabled={updateSetting.isPending}><Save className="h-4 w-4" />Сохранить</Button>
+                  </form>
+                </CardContent>
+              </Card>
 
-        {/* Discord Webhook */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Webhook className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Discord Webhook</CardTitle>
-                <CardDescription>
-                  Для загрузки фотографий товаров
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={(e) => handleSubmit(e, "webhook")} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="webhook">Webhook URL</Label>
-                <Input
-                  id="webhook"
-                  name="webhook"
-                  type="url"
-                  placeholder="https://discord.com/api/webhooks/..."
-                  defaultValue={getSetting("webhook") || ""}
-                />
-              </div>
-              <Button type="submit" className="gap-2" disabled={updateSetting.isPending}>
-                <Save className="h-4 w-4" />
-                Сохранить
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+              <Card>
+                <CardHeader><div className="flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><HeadphonesIcon className="h-5 w-5 text-primary" /></div><div><CardTitle>Контакт поддержки</CardTitle><CardDescription>Username для связи</CardDescription></div></div></CardHeader>
+                <CardContent>
+                  <form onSubmit={(e) => handleSubmit(e, "support_contact")} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="support_contact">Username поддержки</Label>
+                      <Input id="support_contact" name="support_contact" placeholder="@support" defaultValue={getSetting("support_contact") || ""} />
+                    </div>
+                    <Button type="submit" className="gap-2" disabled={updateSetting.isPending}><Save className="h-4 w-4" />Сохранить</Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        {/* Display Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Eye className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Настройки отображения</CardTitle>
-                <CardDescription>
-                  Управление видимостью пустых элементов
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg border border-border">
-              <div className="space-y-0.5">
-                <Label>Скрывать пустые категории</Label>
-                <p className="text-sm text-muted-foreground">
-                  Категории без товаров не будут показаны пользователям
-                </p>
-              </div>
-              <Switch
-                checked={getSetting("hide_empty_categories") === "true"}
-                onCheckedChange={() => handleToggle("hide_empty_categories")}
-              />
-            </div>
+            <TabsContent value="bot" className="space-y-6">
+              <Card>
+                <CardHeader><div className="flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><Webhook className="h-5 w-5 text-primary" /></div><div><CardTitle>Webhook</CardTitle><CardDescription>URL для получения обновлений</CardDescription></div></div></CardHeader>
+                <CardContent>
+                  <form onSubmit={(e) => handleSubmit(e, "webhook_url")} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="webhook_url">URL Webhook</Label>
+                      <Input id="webhook_url" name="webhook_url" type="url" placeholder="https://..." defaultValue={getSetting("webhook_url") || ""} />
+                    </div>
+                    <Button type="submit" className="gap-2" disabled={updateSetting.isPending}><Save className="h-4 w-4" />Сохранить</Button>
+                  </form>
+                </CardContent>
+              </Card>
 
-            <div className="flex items-center justify-between p-3 rounded-lg border border-border">
-              <div className="space-y-0.5">
-                <Label>Скрывать пустые позиции</Label>
-                <p className="text-sm text-muted-foreground">
-                  Позиции без товаров не будут показаны пользователям
-                </p>
-              </div>
-              <Switch
-                checked={getSetting("hide_empty_positions") === "true"}
-                onCheckedChange={() => handleToggle("hide_empty_positions")}
-              />
-            </div>
-          </CardContent>
-        </Card>
+              <Card>
+                <CardHeader><div className="flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><Power className="h-5 w-5 text-primary" /></div><div><CardTitle>Статус бота</CardTitle><CardDescription>Включить/выключить бота</CardDescription></div></div></CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5"><Label htmlFor="bot_enabled">Бот активен</Label><p className="text-sm text-muted-foreground">Когда выключен, бот не отвечает</p></div>
+                    <Switch id="bot_enabled" checked={getSetting("bot_enabled") === "true"} onCheckedChange={() => handleToggle("bot_enabled")} />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        {/* System Controls */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Power className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Выключатели системы</CardTitle>
-                <CardDescription>
-                  Управление доступностью основных функций бота
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-lg border border-border">
-              <div className="space-y-0.5">
-                <Label className="text-base">Технические работы</Label>
-                <p className="text-sm text-muted-foreground">
-                  Бот будет недоступен для пользователей
-                </p>
-              </div>
-              <Switch
-                checked={getSetting("maintenance_mode") === "true"}
-                onCheckedChange={() => handleToggle("maintenance_mode")}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-4 rounded-lg border border-border">
-              <div className="space-y-0.5">
-                <Label className="text-base">Покупки</Label>
-                <p className="text-sm text-muted-foreground">
-                  Отключить возможность совершения покупок
-                </p>
-              </div>
-              <Switch
-                checked={getSetting("purchases_enabled") === "true"}
-                onCheckedChange={() => handleToggle("purchases_enabled")}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-4 rounded-lg border border-border">
-              <div className="space-y-0.5">
-                <Label className="text-base">Пополнения</Label>
-                <p className="text-sm text-muted-foreground">
-                  Отключить возможность пополнения баланса
-                </p>
-              </div>
-              <Switch
-                checked={getSetting("deposits_enabled") === "true"}
-                onCheckedChange={() => handleToggle("deposits_enabled")}
-              />
-            </div>
-          </CardContent>
-        </Card>
+            <TabsContent value="notifications" className="space-y-6">
+              <Card>
+                <CardHeader><div className="flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><Eye className="h-5 w-5 text-primary" /></div><div><CardTitle>Предпросмотр</CardTitle><CardDescription>Показывать preview ссылок</CardDescription></div></div></CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5"><Label htmlFor="preview_enabled">Предпросмотр ссылок</Label><p className="text-sm text-muted-foreground">Показывать превью для URL</p></div>
+                    <Switch id="preview_enabled" checked={getSetting("preview_enabled") === "true"} onCheckedChange={() => handleToggle("preview_enabled")} />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

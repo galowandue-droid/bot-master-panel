@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Plus, Package, FolderOpen, Box, Pencil, Trash2, ArrowLeft } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Plus, Package, FolderOpen, Pencil, Trash2, Search } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import { usePositions } from "@/hooks/usePositions";
 import { useItems } from "@/hooks/useItems";
@@ -12,11 +13,15 @@ import { PositionDialog } from "@/components/catalog/PositionDialog";
 import { ItemDialog } from "@/components/catalog/ItemDialog";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { EmptyState } from "@/components/EmptyState";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Category } from "@/hooks/useCategories";
 import type { Position } from "@/hooks/usePositions";
 
 export default function Catalog() {
-  const [activeTab, setActiveTab] = useState("categories");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [positionDialogOpen, setPositionDialogOpen] = useState(false);
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
@@ -25,335 +30,121 @@ export default function Catalog() {
   const [selectedPosition, setSelectedPosition] = useState<Position | undefined>();
   const [selectedPositionForItems, setSelectedPositionForItems] = useState<string | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<{ type: "category" | "position" | "item"; id: string } | null>(null);
+  const [search, setSearch] = useState("");
 
   const { categories, isLoading: categoriesLoading, deleteCategory } = useCategories();
   const { positions, isLoading: positionsLoading, deletePosition } = usePositions();
-  const { items, isLoading: itemsLoading, deleteItem } = useItems();
+  const { items, deleteItem } = useItems();
 
-  const handleEditCategory = (category: Category) => {
-    setSelectedCategory(category);
-    setCategoryDialogOpen(true);
-  };
-
-  const handleDeleteCategory = (id: string) => {
-    setDeleteTarget({ type: "category", id });
-    setDeleteDialogOpen(true);
-  };
-
-  const handleEditPosition = (position: Position) => {
-    setSelectedPosition(position);
-    setPositionDialogOpen(true);
-  };
-
-  const handleDeletePosition = (id: string) => {
-    setDeleteTarget({ type: "position", id });
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteItem = (id: string) => {
-    setDeleteTarget({ type: "item", id });
-    setDeleteDialogOpen(true);
-  };
+  const filteredPositions = positions?.filter(pos => {
+    const matchesCategory = !selectedCategoryId || pos.category_id === selectedCategoryId;
+    const matchesSearch = !search || pos.name.toLowerCase().includes(search.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-
-    if (deleteTarget.type === "category") {
-      await deleteCategory.mutateAsync(deleteTarget.id);
-    } else if (deleteTarget.type === "position") {
-      await deletePosition.mutateAsync(deleteTarget.id);
-    } else {
-      await deleteItem.mutateAsync(deleteTarget.id);
-    }
-
+    if (deleteTarget.type === "category") await deleteCategory.mutateAsync(deleteTarget.id);
+    else if (deleteTarget.type === "position") await deletePosition.mutateAsync(deleteTarget.id);
+    else await deleteItem.mutateAsync(deleteTarget.id);
     setDeleteDialogOpen(false);
     setDeleteTarget(null);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-xl">
-        <div className="flex h-16 items-center gap-4 px-6">
-          <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">Каталог</h1>
-            <p className="text-sm text-muted-foreground">
-              Управление категориями, позициями и товарами
-            </p>
+    <TooltipProvider>
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
+          <div className="flex h-16 items-center gap-4 px-6">
+            <SidebarTrigger />
+            <div className="flex-1 space-y-1">
+              <h1 className="text-2xl font-bold">Каталог</h1>
+              <Breadcrumbs items={[{ label: "Каталог" }]} />
+            </div>
+          </div>
+        </header>
+
+        <div className="flex h-[calc(100vh-4rem)]">
+          <div className="w-64 border-r bg-muted/10">
+            <div className="p-4 border-b">
+              <Button onClick={() => { setSelectedCategory(undefined); setCategoryDialogOpen(true); }} size="sm" className="w-full gap-2">
+                <Plus className="h-4 w-4" />Новая категория
+              </Button>
+            </div>
+            <ScrollArea className="h-[calc(100vh-9rem)]">
+              <div className="p-2 space-y-1">
+                <Button variant={!selectedCategoryId ? "default" : "ghost"} className="w-full justify-start gap-2" onClick={() => setSelectedCategoryId(null)}>
+                  <Package className="h-4 w-4" />Все товары<Badge variant="secondary" className="ml-auto">{positions?.length || 0}</Badge>
+                </Button>
+                {categoriesLoading ? <div className="space-y-2 p-2">{[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div> : 
+                categories?.map(cat => (
+                  <div key={cat.id} className="group relative">
+                    <Button variant={selectedCategoryId === cat.id ? "default" : "ghost"} className="w-full justify-start gap-2 pr-20" onClick={() => setSelectedCategoryId(cat.id)}>
+                      <FolderOpen className="h-4 w-4" /><span className="truncate">{cat.name}</span><Badge variant="secondary" className="ml-auto">{positions?.filter(p => p.category_id === cat.id).length || 0}</Badge>
+                    </Button>
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 flex gap-1">
+                      <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setSelectedCategory(cat); setCategoryDialogOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Редактировать</TooltipContent></Tooltip>
+                      <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setDeleteTarget({ type: "category", id: cat.id }); setDeleteDialogOpen(true); }}><Trash2 className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Удалить</TooltipContent></Tooltip>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+
+          <div className="flex-1 p-6 overflow-auto">
+            <div className="space-y-4 max-w-6xl mx-auto">
+              <div className="flex items-center gap-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Поиск товаров..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+                </div>
+                <Button onClick={() => { setSelectedPosition(undefined); setPositionDialogOpen(true); }} className="gap-2"><Plus className="h-4 w-4" />Добавить товар</Button>
+              </div>
+
+              {positionsLoading ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-48 w-full" />)}</div>
+              ) : filteredPositions?.length === 0 ? (
+                <EmptyState icon={Package} title="Нет товаров" description={selectedCategoryId ? "В этой категории пока нет товаров" : "Добавьте первый товар"} action={{ label: "Добавить товар", onClick: () => setPositionDialogOpen(true) }} />
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredPositions?.map(pos => (
+                    <Card key={pos.id} className="group hover:shadow-lg transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 flex-1">
+                            <CardTitle className="text-lg line-clamp-1">{pos.name}</CardTitle>
+                            <Badge variant="secondary" className="text-xs">{categories?.find(c => c.id === pos.category_id)?.name || "—"}</Badge>
+                          </div>
+                          <div className="flex gap-1">
+                            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedPosition(pos); setPositionDialogOpen(true); }}><Pencil className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Редактировать</TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setDeleteTarget({ type: "position", id: pos.id }); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Удалить</TooltipContent></Tooltip>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {pos.description && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{pos.description}</p>}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-2xl font-bold text-primary">{Number(pos.price).toFixed(2)} ₽</p>
+                            <p className="text-xs text-muted-foreground">В наличии: {items?.filter(i => i.position_id === pos.id && !i.is_sold).length || 0}</p>
+                          </div>
+                          <Badge variant={pos.is_visible ? "default" : "secondary"}>{pos.is_visible ? "Видим" : "Скрыт"}</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </header>
 
-      <div className="p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="categories" className="gap-2">
-              <FolderOpen className="h-4 w-4" />
-              Категории
-            </TabsTrigger>
-            <TabsTrigger value="positions" className="gap-2">
-              <Package className="h-4 w-4" />
-              Позиции
-            </TabsTrigger>
-            <TabsTrigger value="items" className="gap-2">
-              <Box className="h-4 w-4" />
-              Товары
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="categories" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">Категории</h2>
-                <p className="text-sm text-muted-foreground">
-                  Всего: {categories?.length || 0} категорий
-                </p>
-              </div>
-              <Button 
-                className="gap-2"
-                onClick={() => {
-                  setSelectedCategory(undefined);
-                  setCategoryDialogOpen(true);
-                }}
-              >
-                <Plus className="h-4 w-4" />
-                Создать категорию
-              </Button>
-            </div>
-
-            {categoriesLoading ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="p-6">
-                    <Skeleton className="h-24 w-full" />
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {categories?.map((category) => (
-                  <Card key={category.id} className="p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="rounded-lg bg-primary/10 p-3">
-                        <FolderOpen className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEditCategory(category)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDeleteCategory(category.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <h3 className="font-semibold text-foreground mb-2">
-                      {category.name}
-                    </h3>
-                    {category.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                        {category.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{category.is_visible ? "Видна" : "Скрыта"}</span>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="positions" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">Позиции</h2>
-                <p className="text-sm text-muted-foreground">
-                  Всего: {positions?.length || 0} позиций
-                </p>
-              </div>
-              <Button 
-                className="gap-2"
-                onClick={() => {
-                  setSelectedPosition(undefined);
-                  setPositionDialogOpen(true);
-                }}
-              >
-                <Plus className="h-4 w-4" />
-                Создать позицию
-              </Button>
-            </div>
-
-            {positionsLoading ? (
-              <Card className="p-6">
-                <Skeleton className="h-64 w-full" />
-              </Card>
-            ) : (
-              <Card>
-                <div className="p-4 border-b border-border">
-                  <div className="grid grid-cols-6 gap-4 font-medium text-sm text-muted-foreground">
-                    <div>Название</div>
-                    <div>Категория</div>
-                    <div>Тип</div>
-                    <div>Цена</div>
-                    <div>Видимость</div>
-                    <div className="text-right">Действия</div>
-                  </div>
-                </div>
-                <div className="divide-y divide-border">
-                  {positions?.map((position) => {
-                    const category = categories?.find((c) => c.id === position.category_id);
-                    return (
-                      <div key={position.id} className="p-4 hover:bg-muted/50 transition-colors">
-                        <div className="grid grid-cols-6 gap-4 items-center">
-                          <div className="font-medium text-foreground">
-                            {position.name}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {category?.name || "—"}
-                          </div>
-                          <div className="text-sm text-muted-foreground capitalize">
-                            {position.product_type}
-                          </div>
-                          <div className="text-sm font-semibold text-foreground">
-                            ₽{position.price}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {position.is_visible ? "Видна" : "Скрыта"}
-                          </div>
-                          <div className="flex gap-2 justify-end">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleEditPosition(position)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleDeletePosition(position.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="items" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">Товары</h2>
-                <p className="text-sm text-muted-foreground">
-                  Всего: {items?.length || 0} товаров
-                </p>
-              </div>
-            </div>
-
-            {itemsLoading ? (
-              <Card className="p-6">
-                <Skeleton className="h-64 w-full" />
-              </Card>
-            ) : (
-              <Card>
-                <div className="p-4 border-b border-border">
-                  <div className="grid grid-cols-5 gap-4 font-medium text-sm text-muted-foreground">
-                    <div>Содержимое</div>
-                    <div>Позиция</div>
-                    <div>Статус</div>
-                    <div>Дата</div>
-                    <div className="text-right">Действия</div>
-                  </div>
-                </div>
-                <div className="divide-y divide-border">
-                  {items?.map((item) => {
-                    const position = positions?.find((p) => p.id === item.position_id);
-                    return (
-                      <div key={item.id} className="p-4 hover:bg-muted/50 transition-colors">
-                        <div className="grid grid-cols-5 gap-4 items-center">
-                          <div className="font-mono text-sm text-foreground truncate">
-                            {item.content}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {position?.name || "—"}
-                          </div>
-                          <div className="text-sm">
-                            {item.is_sold ? (
-                              <span className="text-muted-foreground">Продан</span>
-                            ) : (
-                              <span className="text-success">В наличии</span>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(item.created_at).toLocaleDateString()}
-                          </div>
-                          <div className="flex gap-2 justify-end">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleDeleteItem(item.id)}
-                              disabled={item.is_sold}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+        <CategoryDialog category={selectedCategory} open={categoryDialogOpen} onOpenChange={(open) => { setCategoryDialogOpen(open); if (!open) setSelectedCategory(undefined); }} />
+        <PositionDialog position={selectedPosition} open={positionDialogOpen} onOpenChange={(open) => { setPositionDialogOpen(open); if (!open) setSelectedPosition(undefined); }} />
+        <ItemDialog positionId={selectedPositionForItems} open={itemDialogOpen} onOpenChange={(open) => { setItemDialogOpen(open); if (!open) setSelectedPositionForItems(undefined); }} />
+        <DeleteConfirmDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={handleConfirmDelete} title={`Удалить ${deleteTarget?.type === "category" ? "категорию" : deleteTarget?.type === "position" ? "позицию" : "товар"}?`} description="Это действие нельзя отменить." />
       </div>
-
-      <CategoryDialog
-        open={categoryDialogOpen}
-        onOpenChange={setCategoryDialogOpen}
-        category={selectedCategory}
-      />
-      
-      <PositionDialog
-        open={positionDialogOpen}
-        onOpenChange={setPositionDialogOpen}
-        position={selectedPosition}
-      />
-
-      {selectedPositionForItems && (
-        <ItemDialog
-          open={itemDialogOpen}
-          onOpenChange={setItemDialogOpen}
-          positionId={selectedPositionForItems}
-        />
-      )}
-
-      <DeleteConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleConfirmDelete}
-        title={`Удалить ${deleteTarget?.type === "category" ? "категорию" : deleteTarget?.type === "position" ? "позицию" : "товар"}?`}
-        description={`Это действие удалит ${
-          deleteTarget?.type === "category" 
-            ? "категорию и все связанные позиции" 
-            : deleteTarget?.type === "position"
-            ? "позицию и все связанные товары" 
-            : "товар"
-        }. Данные будут удалены безвозвратно.`}
-      />
-    </div>
+    </TooltipProvider>
   );
 }
