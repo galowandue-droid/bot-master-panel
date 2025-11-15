@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Radio } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { useRequiredChannels, type RequiredChannel } from "@/hooks/useRequiredChannels";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -69,18 +70,15 @@ export default function RequiredChannels() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:p-6">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger />
-        <div>
-          <h1 className="text-2xl font-bold">Обязательные каналы</h1>
-          <p className="text-muted-foreground">
-            Управление каналами для обязательной подписки
-          </p>
-        </div>
-      </div>
+    <>
+      <PageHeader
+        title="Обязательные каналы"
+        description="Управление каналами для обязательной подписки"
+        icon={<Radio className="h-5 w-5 text-primary" />}
+      />
 
-      <Card>
+      <PageContainer>
+        <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>

@@ -3,13 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useReferrals } from "@/hooks/useReferrals";
-import { Users, Gift, TrendingUp, Copy, Check, Settings } from "lucide-react";
+import { Users, Gift, TrendingUp, Copy, Check, Settings, UserPlus } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ReferralSettings } from "@/components/referrals/ReferralSettings";
 import { ReferralHistory } from "@/components/referrals/ReferralHistory";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const Referrals = () => {
   const { referrals, stats, settings, isLoading, updateSettings } = useReferrals();
@@ -46,20 +47,14 @@ const Referrals = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center gap-4 px-6">
-          <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">🤝 Реферальная система</h1>
-            <p className="text-sm text-muted-foreground">
-              Управление реферальной программой и вознаграждениями
-            </p>
-          </div>
-        </div>
-      </header>
+    <>
+      <PageHeader
+        title="Реферальная система"
+        description="Управление реферальной программой и вознаграждениями"
+        icon={<UserPlus className="h-5 w-5 text-primary" />}
+      />
 
-      <div className="p-6 space-y-6">
+      <PageContainer>
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
@@ -154,8 +149,8 @@ const Referrals = () => {
             />
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
+      </PageContainer>
+    </>
   );
 };
 

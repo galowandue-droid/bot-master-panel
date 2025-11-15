@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Users, ShoppingCart, TrendingUp, DollarSign, Package, Download, Send } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { useStatistics } from "@/hooks/useStatistics";
@@ -77,18 +78,12 @@ export default function Dashboard() {
   }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-xl">
-        <div className="flex h-16 items-center gap-4 px-6">
-          <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Панель управления
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Обзор статистики за последние 30 дней
-            </p>
-          </div>
+    <>
+      <PageHeader
+        title="Панель управления"
+        description="Обзор статистики за последние 30 дней"
+        gradient
+        actions={
           <Button 
             variant="outline" 
             size="sm" 
@@ -99,10 +94,10 @@ export default function Dashboard() {
             <Download className="mr-2 h-4 w-4" />
             {downloading ? "Загрузка..." : "Скачать БД"}
           </Button>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="p-6 space-y-6">
+      <PageContainer gradient>
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
@@ -278,9 +273,8 @@ export default function Dashboard() {
             </button>
           </div>
         </Card>
-      </div>
-
+      </PageContainer>
       <BroadcastDialog open={broadcastOpen} onOpenChange={setBroadcastOpen} />
-    </div>
+    </>
   );
 }

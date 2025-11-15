@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Send, Trash2, Calendar, Image as ImageIcon } from "lucide-react";
+import { Send, Trash2, Calendar, Image as ImageIcon, Mail } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { useBroadcasts } from "@/hooks/useBroadcasts";
 import { SegmentSelector } from "@/components/broadcasts/SegmentSelector";
 import { KeyboardBuilder } from "@/components/broadcasts/KeyboardBuilder";
@@ -72,18 +73,15 @@ const Mailing = () => {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger />
-        <div>
-          <h1 className="text-3xl font-bold">Рассылки</h1>
-          <p className="text-muted-foreground mt-2">
-            Управление рассылками и сегментами пользователей
-          </p>
-        </div>
-      </div>
+    <>
+      <PageHeader
+        title="Рассылки"
+        description="Управление рассылками и сегментами пользователей"
+        icon={<Mail className="h-5 w-5 text-primary" />}
+      />
 
-      <Tabs defaultValue="create" className="w-full">
+      <PageContainer>
+        <Tabs defaultValue="create" className="w-full">
         <TabsList>
           <TabsTrigger value="create">Создать рассылку</TabsTrigger>
           <TabsTrigger value="history">История рассылок</TabsTrigger>

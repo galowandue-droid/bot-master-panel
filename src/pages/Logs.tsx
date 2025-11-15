@@ -1,10 +1,11 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, Download, Trash2, Search, AlertCircle, AlertTriangle, Info } from "lucide-react";
+import { RefreshCw, Download, Trash2, Search, AlertCircle, AlertTriangle, Info, FileText } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { useLogs } from "@/hooks/useLogs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
@@ -62,18 +63,27 @@ export default function Logs() {
   }, [logs]);
 
   return (
-    <TooltipProvider>
-      <div className="min-h-screen bg-background">
-        <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-          <div className="flex h-16 items-center gap-4 px-6">
-            <SidebarTrigger />
-            <div className="flex-1 space-y-1">
-              <h1 className="text-2xl font-bold">Логи</h1>
-              <Breadcrumbs items={[{ label: "Логи" }]} />
-            </div>
-            <div className="flex gap-2">
-              <Tooltip><TooltipTrigger asChild><Button variant="outline" size="sm" onClick={() => refetch()}><RefreshCw className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Обновить</TooltipContent></Tooltip>
-              <Tooltip><TooltipTrigger asChild><Button variant="outline" size="sm" onClick={handleDownload} disabled={downloading}><Download className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Скачать</TooltipContent></Tooltip>
+    <>
+      <PageHeader
+        title="Логи"
+        icon={<FileText className="h-5 w-5 text-primary" />}
+        breadcrumbs={[{ label: "Логи" }]}
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownload} disabled={downloading}>
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </>
+        }
+      />
+
+      <PageContainer>
               <Tooltip><TooltipTrigger asChild><Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen(true)}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Очистить</TooltipContent></Tooltip>
             </div>
           </div>

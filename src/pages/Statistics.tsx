@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { useStatistics } from "@/hooks/useStatistics";
 import { useCategories } from "@/hooks/useCategories";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, TrendingUp, DollarSign, Wallet, Download } from "lucide-react";
+import { CalendarIcon, TrendingUp, DollarSign, Wallet, Download, BarChart3 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
@@ -94,26 +95,21 @@ export default function Statistics() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-xl">
-        <div className="flex h-16 items-center gap-4 px-6">
-          <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Детальная аналитика
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Статистика продаж и платежей
-            </p>
-          </div>
+    <>
+      <PageHeader
+        title="Детальная аналитика"
+        description="Статистика продаж и платежей"
+        icon={<BarChart3 className="h-5 w-5 text-primary" />}
+        gradient
+        actions={
           <Button variant="outline" size="sm" onClick={handleExportData}>
             <Download className="mr-2 h-4 w-4" />
             Экспорт
           </Button>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="p-6 space-y-6">
+      <PageContainer gradient>
         {/* Filters */}
         <Card className="border-border/40 shadow-lg">
           <CardHeader>
@@ -300,7 +296,7 @@ export default function Statistics() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+      </PageContainer>
+    </>
   );
 }
