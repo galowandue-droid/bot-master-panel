@@ -363,6 +363,7 @@ export default function PaymentSettings() {
                     checked={isEnabled}
                     onCheckedChange={(checked) => handleToggle(system.id, checked)}
                     disabled={!statusInfo.canEnable}
+                    onClick={(e) => e.stopPropagation()}
                   />
                 </div>
               </CardHeader>

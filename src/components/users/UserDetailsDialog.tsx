@@ -51,22 +51,22 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <div className="rounded-full bg-primary/10 p-2">
-              <UserCircle className="h-6 w-6 text-primary" />
+          <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+            <div className="rounded-full bg-primary/10 p-1.5 sm:p-2 shrink-0">
+              <UserCircle className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
-            <div>
-              <p className="text-xl">
+            <div className="flex-1 min-w-0">
+              <p className="text-lg sm:text-xl truncate">
                 {user.first_name || user.username || `User ${user.telegram_id}`}
               </p>
-              <p className="text-sm font-normal text-muted-foreground">
+              <p className="text-xs sm:text-sm font-normal text-muted-foreground break-all">
                 {user.username && `@${user.username}`} • ID: {user.telegram_id}
               </p>
             </div>
             {user.is_blocked && (
-              <Badge variant="destructive" className="ml-auto">
+              <Badge variant="destructive" className="shrink-0 text-xs">
                 Заблокирован
               </Badge>
             )}
@@ -74,11 +74,11 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="mt-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile">Профиль</TabsTrigger>
-            <TabsTrigger value="purchases">Покупки</TabsTrigger>
-            <TabsTrigger value="stats">Статистика</TabsTrigger>
-            <TabsTrigger value="actions">Действия</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 h-auto">
+            <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Профиль</TabsTrigger>
+            <TabsTrigger value="purchases" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Покупки</TabsTrigger>
+            <TabsTrigger value="stats" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Статистика</TabsTrigger>
+            <TabsTrigger value="actions" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Действия</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-4">
@@ -87,24 +87,24 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                 <CardTitle className="text-base">Основная информация</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Telegram ID</Label>
-                    <p className="text-lg font-medium">{user.telegram_id}</p>
+                    <Label className="text-muted-foreground text-xs sm:text-sm">Telegram ID</Label>
+                    <p className="text-base sm:text-lg font-medium break-all">{user.telegram_id}</p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Username</Label>
-                    <p className="text-lg font-medium">
+                    <Label className="text-muted-foreground text-xs sm:text-sm">Username</Label>
+                    <p className="text-base sm:text-lg font-medium break-all">
                       {user.username ? `@${user.username}` : "—"}
                     </p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Имя</Label>
-                    <p className="text-lg font-medium">{user.first_name || "—"}</p>
+                    <Label className="text-muted-foreground text-xs sm:text-sm">Имя</Label>
+                    <p className="text-base sm:text-lg font-medium break-words">{user.first_name || "—"}</p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Дата регистрации</Label>
-                    <p className="text-lg font-medium">
+                    <Label className="text-muted-foreground text-xs sm:text-sm">Дата регистрации</Label>
+                    <p className="text-base sm:text-lg font-medium">
                       {new Date(user.created_at).toLocaleDateString()}
                     </p>
                   </div>
@@ -255,34 +255,34 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Баланс</CardTitle>
-                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                  <Wallet className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₽{user.balance}</div>
+                  <div className="text-xl sm:text-2xl font-bold">₽{user.balance}</div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Покупок</CardTitle>
-                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                  <ShoppingBag className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{user.purchases_count}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{user.purchases_count}</div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Потрачено</CardTitle>
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₽{user.total_spent}</div>
+                  <div className="text-xl sm:text-2xl font-bold">₽{user.total_spent}</div>
                 </CardContent>
               </Card>
             </div>
@@ -297,21 +297,23 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Input
                     type="number"
                     placeholder="Сумма (например, 100 или -50)"
                     value={balanceAmount}
                     onChange={(e) => setBalanceAmount(e.target.value)}
+                    className="flex-1"
                   />
                   <Button
                     onClick={handleBalanceChange}
                     disabled={updateBalance.isPending || !balanceAmount}
+                    className="w-full sm:w-auto"
                   >
                     {updateBalance.isPending ? "Изменение..." : "Изменить"}
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Текущий баланс: <span className="font-semibold">₽{user.balance}</span>
                 </p>
               </CardContent>
