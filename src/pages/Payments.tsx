@@ -5,12 +5,45 @@ import { RefreshCw, TrendingUp, DollarSign } from "lucide-react";
 import { usePaymentStats } from "@/hooks/usePaymentStats";
 import { PaymentCharts } from "@/components/payments/PaymentCharts";
 import { EmptyState } from "@/components/EmptyState";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Payments() {
   const { data: paymentStats, isLoading: isLoadingStats, refetch: refetchStats } = usePaymentStats();
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Real-time subscription to deposits
+  useEffect(() => {
+    const channel = supabase
+      .channel('deposits-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'deposits'
+        },
+        (payload) => {
+          console.log('Deposit change detected:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            toast({
+              title: "Новый платеж!",
+              description: `Поступил платеж на сумму ${payload.new.amount} ₽`,
+            });
+          }
+          
+          // Refetch stats when deposits change
+          refetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetchStats]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
