@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.export-logs]
 verify_jwt = true
+
+[functions.payment-stats]
+verify_jwt = true
