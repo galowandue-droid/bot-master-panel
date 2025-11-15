@@ -37,6 +37,7 @@ export function PurchaseDialog({
   const [quantity, setQuantity] = useState(1);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [canPurchase, setCanPurchase] = useState(false);
+  const [isCheckingChannels, setIsCheckingChannels] = useState(true);
   const [balance, setBalance] = useState<number>(0);
 
   useEffect(() => {
@@ -131,7 +132,7 @@ export function PurchaseDialog({
 
   const totalPrice = Number(position.price) * quantity;
   const hasEnoughBalance = balance >= totalPrice;
-  const canBuy = canPurchase && hasEnoughBalance && quantity <= availableCount;
+  const canBuy = canPurchase && hasEnoughBalance && quantity <= availableCount && !isCheckingChannels;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -147,8 +148,20 @@ export function PurchaseDialog({
           {user && (
             <ChannelSubscriptionCheck 
               userId={user.id}
-              onSubscriptionVerified={setCanPurchase}
+              onSubscriptionVerified={(verified) => {
+                setCanPurchase(verified);
+                setIsCheckingChannels(false);
+              }}
             />
+          )}
+
+          {!canPurchase && !isCheckingChannels && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Покупка заблокирована:</strong> Подпишитесь на все обязательные каналы выше, затем нажмите "Проверить подписку"
+              </AlertDescription>
+            </Alert>
           )}
 
           <div className="space-y-2">
@@ -158,7 +171,7 @@ export function PurchaseDialog({
                 variant="outline"
                 size="icon"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1}
+                disabled={quantity <= 1 || !canPurchase}
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -169,16 +182,22 @@ export function PurchaseDialog({
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, Math.min(availableCount, parseInt(e.target.value) || 1)))}
                 className="text-center"
+                disabled={!canPurchase}
               />
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => setQuantity(Math.min(availableCount, quantity + 1))}
-                disabled={quantity >= availableCount}
+                disabled={quantity >= availableCount || !canPurchase}
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
+            {!canPurchase && !isCheckingChannels && (
+              <p className="text-xs text-muted-foreground">
+                Выбор количества доступен после подписки на каналы
+              </p>
+            )}
           </div>
 
           <div className="space-y-2 p-4 bg-muted rounded-lg">
@@ -202,7 +221,7 @@ export function PurchaseDialog({
             </div>
           </div>
 
-          {!hasEnoughBalance && (
+          {!hasEnoughBalance && canPurchase && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -229,7 +248,7 @@ export function PurchaseDialog({
             onClick={handlePurchase}
             disabled={!canBuy || isPurchasing}
           >
-            {isPurchasing ? "Покупка..." : `Купить за ${totalPrice}₽`}
+            {isPurchasing ? "Обработка..." : isCheckingChannels ? "Проверка..." : !canPurchase ? "Подпишитесь на каналы" : `Купить за ${totalPrice}₽`}
           </Button>
         </DialogFooter>
       </DialogContent>
