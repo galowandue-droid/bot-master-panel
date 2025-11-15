@@ -13,6 +13,7 @@ import { CategoryDialog } from "@/components/catalog/CategoryDialog";
 import { TreeCategoryView } from "@/components/catalog/TreeCategoryView";
 import { PositionDialog } from "@/components/catalog/PositionDialog";
 import { ItemDialog } from "@/components/catalog/ItemDialog";
+import { PurchaseDialog } from "@/components/catalog/PurchaseDialog";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -109,9 +110,10 @@ interface SortablePositionCardProps {
   onDelete: () => void;
   onDuplicate: () => void;
   onUpdate: (id: string, updates: Partial<Position>) => Promise<void>;
+  onPurchase: () => void;
 }
 
-function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDelete, onDuplicate, onUpdate }: SortablePositionCardProps) {
+function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDelete, onDuplicate, onUpdate, onPurchase }: SortablePositionCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: position.id });
   
   const style = {
@@ -163,7 +165,7 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
           </CardHeader>
           <CardContent>
             {position.description && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{position.description}</p>}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-3">
               <div className="space-y-1">
                 <EditableField
                   value={position.price.toString()}
@@ -180,6 +182,14 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
               </div>
               <Badge variant={position.is_visible ? "default" : "secondary"}>{position.is_visible ? "Видим" : "Скрыт"}</Badge>
             </div>
+            <Button 
+              className="w-full" 
+              variant="default"
+              onClick={onPurchase}
+              disabled={itemCount === 0}
+            >
+              {itemCount > 0 ? "Купить" : "Нет в наличии"}
+            </Button>
           </CardContent>
         </Card>
       </ContextMenuTrigger>
@@ -206,10 +216,12 @@ export default function Catalog() {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [positionDialogOpen, setPositionDialogOpen] = useState(false);
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
+  const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>();
   const [selectedPosition, setSelectedPosition] = useState<Position | undefined>();
   const [selectedPositionForItems, setSelectedPositionForItems] = useState<string | undefined>();
+  const [selectedPositionForPurchase, setSelectedPositionForPurchase] = useState<Position | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<{ type: "category" | "position" | "item"; id: string } | null>(null);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "tree">("list");
@@ -463,6 +475,10 @@ export default function Catalog() {
                           onUpdate={async (id, updates) => {
                             await updatePosition.mutateAsync({ id, ...updates });
                           }}
+                          onPurchase={() => {
+                            setSelectedPositionForPurchase(pos);
+                            setPurchaseDialogOpen(true);
+                          }}
                         />
                       ))}
                     </div>
@@ -487,6 +503,19 @@ export default function Catalog() {
         />
         <PositionDialog position={selectedPosition} open={positionDialogOpen} onOpenChange={(open) => { setPositionDialogOpen(open); if (!open) setSelectedPosition(undefined); }} />
         <ItemDialog positionId={selectedPositionForItems} open={itemDialogOpen} onOpenChange={(open) => { setItemDialogOpen(open); if (!open) setSelectedPositionForItems(undefined); }} />
+        <PurchaseDialog 
+          position={selectedPositionForPurchase || null}
+          availableCount={selectedPositionForPurchase ? (items?.filter(i => i.position_id === selectedPositionForPurchase.id && !i.is_sold).length || 0) : 0}
+          open={purchaseDialogOpen} 
+          onOpenChange={(open) => { 
+            setPurchaseDialogOpen(open); 
+            if (!open) setSelectedPositionForPurchase(undefined); 
+          }}
+          onPurchaseComplete={() => {
+            // Refresh items after purchase
+            window.location.reload();
+          }}
+        />
         <DeleteConfirmDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={handleConfirmDelete} title={`Удалить ${deleteTarget?.type === "category" ? "категорию" : deleteTarget?.type === "position" ? "позицию" : "товар"}?`} description="Это действие нельзя отменить." />
       </div>
     </TooltipProvider>
