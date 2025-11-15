@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { UserCircle, Wallet, ShoppingBag, CreditCard, Ban, ShieldCheck, Package, Clock } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUpdateBalance, useToggleBlockUser } from "@/hooks/useProfiles";
 import type { UserProfile } from "@/hooks/useProfiles";
 import { usePurchaseHistory } from "@/hooks/usePurchaseHistory";
@@ -22,16 +22,30 @@ interface UserDetailsDialogProps {
 
 export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialogProps) {
   const [balanceAmount, setBalanceAmount] = useState("");
+  const [optimisticBlocked, setOptimisticBlocked] = useState(user?.is_blocked ?? false);
+  const [optimisticBalance, setOptimisticBalance] = useState(user?.balance ?? 0);
+  
   const updateBalance = useUpdateBalance();
   const toggleBlock = useToggleBlockUser();
   const { data: purchaseHistory, isLoading: purchasesLoading } = usePurchaseHistory(user?.id || null);
 
-  // Use user directly from props - it's already synced via optimistic updates
+  // Sync local optimistic state with user prop changes
+  useEffect(() => {
+    if (user) {
+      setOptimisticBlocked(user.is_blocked ?? false);
+      setOptimisticBalance(user.balance ?? 0);
+    }
+  }, [user?.id, user?.is_blocked, user?.balance]);
+
   if (!user) return null;
 
   const handleBalanceChange = () => {
     const amount = parseFloat(balanceAmount);
     if (isNaN(amount) || amount === 0) return;
+
+    // Optimistically update balance
+    const newBalance = Number(optimisticBalance) + amount;
+    setOptimisticBalance(newBalance);
 
     updateBalance.mutate(
       { userId: user.id, amount },
@@ -39,15 +53,31 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
         onSuccess: () => {
           setBalanceAmount("");
         },
+        onError: () => {
+          // Rollback optimistic update on error
+          setOptimisticBalance(Number(user.balance ?? 0));
+        },
       }
     );
   };
 
   const handleBlockToggle = () => {
-    toggleBlock.mutate({
-      userId: user.id,
-      isBlocked: !user.is_blocked,
-    });
+    // Optimistically toggle block status
+    const nextBlocked = !optimisticBlocked;
+    setOptimisticBlocked(nextBlocked);
+
+    toggleBlock.mutate(
+      {
+        userId: user.id,
+        isBlocked: nextBlocked,
+      },
+      {
+        onError: () => {
+          // Rollback optimistic update on error
+          setOptimisticBlocked(!nextBlocked);
+        },
+      }
+    );
   };
 
   return (
@@ -66,7 +96,7 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                 {user.username && `@${user.username}`} • ID: {user.telegram_id}
               </p>
             </div>
-            {user.is_blocked && (
+            {optimisticBlocked && (
               <Badge variant="destructive" className="shrink-0 text-xs">
                 Заблокирован
               </Badge>
@@ -260,7 +290,7 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                   <Wallet className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">₽{user.balance}</div>
+                  <div className="text-xl sm:text-2xl font-bold">₽{optimisticBalance}</div>
                 </CardContent>
               </Card>
 
@@ -312,7 +342,7 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
                   </Button>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  Текущий баланс: <span className="font-semibold">₽{user.balance}</span>
+                  Текущий баланс: <span className="font-semibold">₽{optimisticBalance}</span>
                 </p>
               </CardContent>
             </Card>
@@ -326,14 +356,14 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
               </CardHeader>
               <CardContent>
                 <Button
-                  variant={user.is_blocked ? "default" : "destructive"}
+                  variant={optimisticBlocked ? "default" : "destructive"}
                   onClick={handleBlockToggle}
                   disabled={toggleBlock.isPending}
                   className="w-full"
                 >
                   {toggleBlock.isPending ? (
                     "Обновление..."
-                  ) : user.is_blocked ? (
+                  ) : optimisticBlocked ? (
                     <>
                       <ShieldCheck className="mr-2 h-4 w-4 shrink-0" />
                       Разблокировать
