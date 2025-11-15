@@ -10,14 +10,6 @@ import { useState } from "react";
 import { useUpdateBalance, useToggleBlockUser } from "@/hooks/useProfiles";
 import type { UserProfile } from "@/hooks/useProfiles";
 import { toast } from "@/hooks/use-toast";
-import { z } from "zod";
-
-const balanceSchema = z.object({
-  amount: z.number().finite("Balance change must be a valid number").refine(
-    (val) => Math.abs(val) <= 1000000 && val !== 0,
-    "Amount must be between -1,000,000 and 1,000,000 and cannot be zero"
-  ),
-});
 
 interface UserDetailsDialogProps {
   open: boolean;
@@ -33,19 +25,19 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
   if (!user) return null;
 
   const handleBalanceChange = async () => {
-    const validation = balanceSchema.safeParse({ amount: parseFloat(balanceAmount) });
+    const amount = parseFloat(balanceAmount);
     
-    if (!validation.success) {
+    if (isNaN(amount) || !isFinite(amount) || amount === 0 || Math.abs(amount) > 1000000) {
       toast({
-        title: "Ошибка валидации",
-        description: validation.error.issues[0]?.message,
+        title: "Ошибка",
+        description: "Введите корректную сумму (от -1,000,000 до 1,000,000)",
         variant: "destructive",
       });
       return;
     }
 
     updateBalance.mutate(
-      { userId: user.id, amount: validation.data.amount },
+      { userId: user.id, amount },
       {
         onSuccess: () => {
           setBalanceAmount("");
