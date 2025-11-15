@@ -14,6 +14,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { validatePaymentToken } from "@/lib/payment-validation";
+import { PaymentCharts } from "@/components/payments/PaymentCharts";
 
 export default function Payments() {
   const { getSetting, updateSetting } = useBotSettings();
@@ -276,6 +277,15 @@ export default function Payments() {
             )}
           </CardContent>
         </Card>
+
+        {/* Графики аналитики */}
+        {paymentStats && paymentStats.dailyStats && depositStats && (
+          <PaymentCharts 
+            dailyStats={paymentStats.dailyStats}
+            depositsByMethod={paymentStats.depositsByMethod}
+            averageCheck={paymentStats.averageCheck}
+          />
+        )}
 
         {/* Статистика депозитов */}
         {depositStats && (
