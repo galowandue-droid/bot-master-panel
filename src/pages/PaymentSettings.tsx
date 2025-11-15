@@ -21,48 +21,58 @@ interface PaymentSystem {
   enabledKey: string;
   placeholder: string;
   testable: boolean;
+  balanceLabel: string;
+  tokenLabel: string;
 }
 
 const paymentSystems: PaymentSystem[] = [
   {
     id: "cryptobot",
     name: "CryptoBot",
-    description: "Прием платежей в криптовалюте через CryptoBot",
+    description: "Прием платежей через CryptoBot (криптовалюта)",
     icon: Bitcoin,
     tokenKey: "cryptobot_token",
     enabledKey: "cryptobot_enabled",
-    placeholder: "Введите API токен CryptoBot",
+    placeholder: "Введите токен CryptoBot...",
     testable: true,
+    balanceLabel: "Баланс",
+    tokenLabel: "API токен",
   },
   {
-    id: "yoomoney",
-    name: "ЮMoney",
-    description: "Прием платежей через ЮMoney",
+    id: "wata",
+    name: "Wata",
+    description: "Прием платежей через Wata (карты, СБП, международные)",
+    icon: CreditCard,
+    tokenKey: "wata_token",
+    enabledKey: "wata_enabled",
+    placeholder: "Введите токен Wata...",
+    testable: true,
+    balanceLabel: "Баланс",
+    tokenLabel: "API токен",
+  },
+  {
+    id: "heleket",
+    name: "Heleket",
+    description: "Прием платежей через Heleket",
     icon: Wallet,
-    tokenKey: "yoomoney_token",
-    enabledKey: "yoomoney_enabled",
-    placeholder: "Введите токен ЮMoney",
-    testable: false,
+    tokenKey: "heleket_token",
+    enabledKey: "heleket_enabled",
+    placeholder: "Введите токен Heleket...",
+    testable: true,
+    balanceLabel: "Баланс",
+    tokenLabel: "API токен",
   },
   {
     id: "telegram_stars",
     name: "Telegram Stars",
-    description: "Прием платежей через Telegram Stars",
+    description: "Встроенная валюта Telegram",
     icon: Star,
-    tokenKey: "telegram_stars_enabled",
+    tokenKey: "telegram_stars_token",
     enabledKey: "telegram_stars_enabled",
     placeholder: "Не требует токена",
     testable: false,
-  },
-  {
-    id: "cards",
-    name: "Банковские карты",
-    description: "Прием платежей по номеру карты",
-    icon: CreditCard,
-    tokenKey: "card_number",
-    enabledKey: "cards_enabled",
-    placeholder: "Введите номер карты",
-    testable: false,
+    balanceLabel: "Баланс",
+    tokenLabel: "Токен",
   },
 ];
 
@@ -74,7 +84,7 @@ export default function PaymentSettings() {
   const [testingSystem, setTestingSystem] = useState<string | null>(null);
   const [lastTestTime, setLastTestTime] = useState<Record<string, Date>>({});
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading, refetch: refetchSettings } = useQuery({
     queryKey: ["payment-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -103,7 +113,7 @@ export default function PaymentSettings() {
     },
   });
 
-  const { data: paymentStats } = useQuery({
+  const { data: paymentStats, refetch: refetchStats } = useQuery({
     queryKey: ["payment-stats"],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('payment-stats');
@@ -317,9 +327,9 @@ export default function PaymentSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Настройки платежей</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Платежные системы</h1>
         <p className="text-muted-foreground">
-          Настройте платежные системы и API токены для приема платежей
+          Управление способами оплаты
         </p>
       </div>
 
@@ -335,41 +345,18 @@ export default function PaymentSettings() {
           const isConnected = lastTestTime[system.id] && isEnabled;
 
           return (
-            <Card key={system.id} className="hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`p-3 rounded-lg transition-colors ${
-                        isConnected
-                          ? "bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400"
-                          : hasError
-                          ? "bg-destructive/10 text-destructive"
-                          : !isEnabled
-                          ? "bg-muted text-muted-foreground"
-                          : "bg-primary/10 text-primary"
-                      }`}
-                    >
-                      <Icon className="h-6 w-6" />
+            <Card key={system.id} className="border-border">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-card">
+                      <Icon className="h-5 w-5 text-foreground" />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <CardTitle>{system.name}</CardTitle>
-                        {statusInfo.badge}
-                      </div>
-                      <CardDescription className="mt-1">{system.description}</CardDescription>
-                      {systemStats?.balance && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Баланс: {JSON.stringify(systemStats.balance)}
-                        </p>
-                      )}
-                      {statusInfo.message}
-                      {hasError && systemStats?.error && (
-                        <div className="flex items-start gap-2 mt-2 p-2 bg-destructive/10 rounded-md">
-                          <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                          <p className="text-sm text-destructive">{systemStats.error}</p>
-                        </div>
-                      )}
+                    <div>
+                      <CardTitle className="text-base font-semibold">{system.name}</CardTitle>
+                      <CardDescription className="text-sm mt-0.5">
+                        {system.description}
+                      </CardDescription>
                     </div>
                   </div>
                   <Switch
@@ -379,49 +366,134 @@ export default function PaymentSettings() {
                   />
                 </div>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 {system.id !== "telegram_stars" && (
-                  <div className="space-y-2">
-                    <Input
-                      type={system.id === "cards" ? "text" : "password"}
-                      placeholder={system.placeholder}
-                      value={tokens[system.id] || ""}
-                      onChange={(e) =>
-                        setTokens({ ...tokens, [system.id]: e.target.value })
-                      }
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleSaveToken(system.id)}
-                        disabled={!tokens[system.id] || saveTokenMutation.isPending}
-                        className="flex-1"
-                      >
-                        {saveTokenMutation.isPending ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Сохранение...
-                          </>
-                        ) : (
-                          "Сохранить"
-                        )}
-                      </Button>
-                      {system.testable && (
-                        <Button
-                          onClick={() => handleTest(system.id)}
-                          disabled={!tokens[system.id] || testingSystem === system.id}
-                          variant="outline"
-                        >
-                          {testingSystem === system.id ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                              Проверка...
-                            </>
-                          ) : (
-                            "Проверить подключение"
-                          )}
-                        </Button>
-                      )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">
+                        {system.tokenLabel}
+                      </label>
+                      <Input
+                        type="password"
+                        placeholder={system.placeholder}
+                        value={tokens[system.id] || ""}
+                        onChange={(e) =>
+                          setTokens({ ...tokens, [system.id]: e.target.value })
+                        }
+                        className="bg-background"
+                      />
                     </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">
+                        {system.balanceLabel}
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="text"
+                          value={
+                            systemStats?.balance
+                              ? typeof systemStats.balance === "object"
+                                ? JSON.stringify(systemStats.balance)
+                                : systemStats.balance
+                              : "₽0.00"
+                          }
+                          disabled
+                          className="bg-background pr-20"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            refetchStats();
+                            toast({ title: "Обновлено", description: "Баланс обновлен" });
+                          }}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-7"
+                        >
+                          Обновить
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {system.id === "telegram_stars" && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      {system.balanceLabel}
+                    </label>
+                    <Input
+                      type="text"
+                      value="Не требует настройки"
+                      disabled
+                      className="bg-background"
+                    />
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  {system.id !== "telegram_stars" && (
+                    <Button
+                      onClick={() => handleSaveToken(system.id)}
+                      disabled={!tokens[system.id] || saveTokenMutation.isPending}
+                      className="flex-1"
+                    >
+                      {saveTokenMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Сохранение...
+                        </>
+                      ) : (
+                        "Сохранить"
+                      )}
+                    </Button>
+                  )}
+                  {system.testable && (
+                    <Button
+                      onClick={() => handleTest(system.id)}
+                      disabled={!tokens[system.id] || testingSystem === system.id}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      {testingSystem === system.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Проверка...
+                        </>
+                      ) : (
+                        "Проверить подключение"
+                      )}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Status messages */}
+                {isConnected && lastTestTime[system.id] && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                        Подключено
+                      </Badge>
+                    </div>
+                    <span className="text-sm text-muted-foreground ml-auto">
+                      Последняя проверка: {format(lastTestTime[system.id], "сегодня в HH:mm", { locale: ru })}
+                    </span>
+                  </div>
+                )}
+
+                {!isEnabled && statusInfo.message && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{statusInfo.message}</span>
+                  </div>
+                )}
+
+                {hasError && systemStats?.error && (
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-destructive">{systemStats.error}</span>
                   </div>
                 )}
               </CardContent>
