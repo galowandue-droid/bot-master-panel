@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 export interface Activity {
   type: string;
@@ -13,6 +14,8 @@ export interface Activity {
 }
 
 export const useRecentActivity = (limit: number = 5) => {
+  const queryClient = useQueryClient();
+  
   const { data: activities, isLoading } = useQuery({
     queryKey: ["recent-activity", limit],
     queryFn: async () => {
@@ -24,10 +27,48 @@ export const useRecentActivity = (limit: number = 5) => {
       if (error) throw error;
       return data as Activity[];
     },
-    staleTime: 30000, // Data is fresh for 30 seconds
-    refetchInterval: 60000, // Auto-refetch every minute
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    staleTime: 30000,
+    refetchInterval: 60000,
+    refetchOnWindowFocus: true,
   });
+
+  // Realtime subscription for new purchases and deposits
+  useEffect(() => {
+    const purchasesChannel = supabase
+      .channel('recent-purchases')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'purchases'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["recent-activity"] });
+        }
+      )
+      .subscribe();
+
+    const depositsChannel = supabase
+      .channel('recent-deposits')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'deposits'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["recent-activity"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(purchasesChannel);
+      supabase.removeChannel(depositsChannel);
+    };
+  }, [queryClient]);
 
   return {
     activities,

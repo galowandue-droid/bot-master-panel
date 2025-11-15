@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 export interface Statistic {
   id: string;
@@ -14,6 +15,8 @@ export interface Statistic {
 }
 
 export const useStatistics = (days: number = 30) => {
+  const queryClient = useQueryClient();
+  
   const { data: statistics, isLoading } = useQuery({
     queryKey: ["statistics", days],
     queryFn: async () => {
@@ -42,6 +45,28 @@ export const useStatistics = (days: number = 30) => {
     }),
     { users: 0, newUsers: 0, purchases: 0, revenue: 0, deposits: 0, depositsAmount: 0 }
   );
+
+  // Realtime subscription for statistics updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('statistics-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'statistics'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["statistics"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   return {
     statistics,

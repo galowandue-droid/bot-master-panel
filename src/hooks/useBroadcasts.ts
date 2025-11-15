@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export interface BroadcastButton {
   id?: string;
@@ -76,6 +77,28 @@ export const useBroadcasts = () => {
       return broadcastsWithButtons as Broadcast[];
     },
   });
+
+  // Realtime subscription for broadcast status updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('broadcasts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'broadcasts'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["broadcasts"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const createBroadcast = useMutation({
     mutationFn: async (input: CreateBroadcastInput) => {
