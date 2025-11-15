@@ -84,66 +84,65 @@ export default function Logs() {
       />
 
       <PageContainer>
-              <Tooltip><TooltipTrigger asChild><Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen(true)}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Очистить</TooltipContent></Tooltip>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Поиск по логам..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+            </div>
+            <div className="flex gap-2">
+              {(["ALL", "INFO", "WARNING", "ERROR"] as const).map(level => (
+                <Button key={level} variant={levelFilter === level ? "default" : "outline"} size="sm" onClick={() => setLevelFilter(level)} className="gap-2">
+                  {level !== "ALL" && getLevelIcon(level)}{level}<Badge variant="secondary">{logCounts[level]}</Badge>
+                </Button>
+              ))}
             </div>
           </div>
-        </header>
 
-        <div className="p-6 h-[calc(100vh-4rem)] overflow-hidden">
-          <div className="space-y-4 max-w-7xl mx-auto h-full flex flex-col">
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Поиск по логам..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
-              </div>
-              <div className="flex gap-2">
-                {(["ALL", "INFO", "WARNING", "ERROR"] as const).map(level => (
-                  <Button key={level} variant={levelFilter === level ? "default" : "outline"} size="sm" onClick={() => setLevelFilter(level)} className="gap-2">
-                    {level !== "ALL" && getLevelIcon(level)}{level}<Badge variant="secondary">{logCounts[level]}</Badge>
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <Card className="flex-1 overflow-hidden">
-              <CardContent className="p-0 h-full">
-                <ScrollArea className="h-full">
-                  {isLoading ? (
-                    <div className="p-4 space-y-2">{[1,2,3,4,5].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
-                  ) : filteredLogs?.length === 0 ? (
-                    <EmptyState icon={Search} title="Логи не найдены" description={searchQuery || levelFilter !== "ALL" ? "Попробуйте изменить фильтры" : "В системе пока нет логов"} />
-                  ) : (
-                    <div className="divide-y divide-border">
-                      {filteredLogs?.map(log => (
-                        <div key={log.id} className="p-4 hover:bg-muted/50 transition-colors">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-1">{getLevelIcon(log.level)}</div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Badge variant={getLevelColor(log.level)}>{log.level}</Badge>
-                                <span className="text-xs text-muted-foreground">{format(new Date(log.created_at), "dd.MM.yyyy HH:mm:ss")}</span>
-                              </div>
-                              <p className="text-sm mb-2">{log.message}</p>
-                              {log.metadata && Object.keys(log.metadata).length > 0 && (
-                                <details className="text-xs">
-                                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Metadata</summary>
-                                  <pre className="mt-2 p-2 bg-muted rounded-md overflow-x-auto">{JSON.stringify(log.metadata, null, 2)}</pre>
-                                </details>
-                              )}
+          <Card>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[600px]">
+                {isLoading ? (
+                  <div className="p-4 space-y-2">{[1,2,3,4,5].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
+                ) : filteredLogs?.length === 0 ? (
+                  <EmptyState icon={Search} title="Логи не найдены" description={searchQuery || levelFilter !== "ALL" ? "Попробуйте изменить фильтры" : "В системе пока нет логов"} />
+                ) : (
+                  <div className="divide-y divide-border">
+                    {filteredLogs?.map(log => (
+                      <div key={log.id} className="p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1">{getLevelIcon(log.level)}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant={getLevelColor(log.level)}>{log.level}</Badge>
+                              <span className="text-xs text-muted-foreground">{format(new Date(log.created_at), "dd.MM.yyyy HH:mm:ss")}</span>
                             </div>
+                            <p className="text-sm mb-2">{log.message}</p>
+                            {log.metadata && Object.keys(log.metadata).length > 0 && (
+                              <details className="text-xs">
+                                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Metadata</summary>
+                                <pre className="mt-2 p-2 bg-muted rounded-md overflow-x-auto">{JSON.stringify(log.metadata, null, 2)}</pre>
+                              </details>
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
+      </PageContainer>
 
-        <DeleteConfirmDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={() => { clearLogs.mutate(); setDeleteDialogOpen(false); }} title="Очистить все логи?" description="Это действие нельзя отменить." />
-      </div>
-    </TooltipProvider>
+      <DeleteConfirmDialog 
+        open={deleteDialogOpen} 
+        onOpenChange={setDeleteDialogOpen} 
+        onConfirm={() => { clearLogs.mutate(); setDeleteDialogOpen(false); }} 
+        title="Очистить все логи?" 
+        description="Это действие нельзя отменить." 
+      />
+    </>
   );
 }
