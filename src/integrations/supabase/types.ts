@@ -457,6 +457,36 @@ export type Database = {
           },
         ]
       }
+      required_channels: {
+        Row: {
+          channel_id: string
+          channel_name: string
+          channel_username: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          channel_id: string
+          channel_name: string
+          channel_username?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          channel_id?: string
+          channel_name?: string
+          channel_username?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       statistics: {
         Row: {
           created_at: string | null
@@ -492,6 +522,41 @@ export type Database = {
           total_users?: number | null
         }
         Relationships: []
+      }
+      user_channel_subscriptions: {
+        Row: {
+          channel_id: string
+          id: string
+          is_subscribed: boolean
+          last_checked_at: string
+          subscribed_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          id?: string
+          is_subscribed?: boolean
+          last_checked_at?: string
+          subscribed_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          id?: string
+          is_subscribed?: boolean
+          last_checked_at?: string
+          subscribed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_channel_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
