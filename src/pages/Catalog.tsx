@@ -24,6 +24,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Category } from "@/hooks/useCategories";
 import type { Position } from "@/hooks/usePositions";
 import { toast } from "@/hooks/use-toast";
+import { EditableField } from "@/components/catalog/EditableField";
 
 interface SortableCategoryItemProps {
   category: Category;
@@ -105,9 +106,10 @@ interface SortablePositionCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onUpdate: (id: string, updates: Partial<Position>) => Promise<void>;
 }
 
-function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDelete, onDuplicate }: SortablePositionCardProps) {
+function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDelete, onDuplicate, onUpdate }: SortablePositionCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: position.id });
   
   const style = {
@@ -127,7 +129,13 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
                   <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <CardTitle className="text-lg line-clamp-1">{position.name}</CardTitle>
+                  <EditableField
+                    value={position.name}
+                    onSave={async (newName) => {
+                      await onUpdate(position.id, { name: newName });
+                    }}
+                    className="font-semibold text-lg"
+                  />
                 </div>
                 <Badge variant="secondary" className="text-xs">{categoryName}</Badge>
               </div>
@@ -154,8 +162,18 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
           <CardContent>
             {position.description && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{position.description}</p>}
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-primary">{Number(position.price).toFixed(2)} ₽</p>
+              <div className="space-y-1">
+                <EditableField
+                  value={position.price.toString()}
+                  onSave={async (newPrice) => {
+                    const price = parseFloat(newPrice);
+                    if (!isNaN(price) && price >= 0) {
+                      await onUpdate(position.id, { price });
+                    }
+                  }}
+                  type="number"
+                  className="text-2xl font-bold text-primary"
+                />
                 <p className="text-xs text-muted-foreground">В наличии: {itemCount}</p>
               </div>
               <Badge variant={position.is_visible ? "default" : "secondary"}>{position.is_visible ? "Видим" : "Скрыт"}</Badge>
@@ -368,6 +386,9 @@ export default function Catalog() {
                           onEdit={() => { setSelectedPosition(pos); setPositionDialogOpen(true); }}
                           onDelete={() => { setDeleteTarget({ type: "position", id: pos.id }); setDeleteDialogOpen(true); }}
                           onDuplicate={() => handleDuplicatePosition(pos)}
+                          onUpdate={async (id, updates) => {
+                            await updatePosition.mutateAsync({ id, ...updates });
+                          }}
                         />
                       ))}
                     </div>
