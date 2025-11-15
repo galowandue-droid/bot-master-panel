@@ -103,11 +103,27 @@ export const useBroadcasts = () => {
         if (buttonsError) throw buttonsError;
       }
 
+      // If not scheduled, send immediately
+      if (!broadcast.schedule_at) {
+        const { error: sendError } = await supabase.functions.invoke('send-broadcast', {
+          body: { broadcast_id: broadcast.id }
+        });
+
+        if (sendError) {
+          console.error('Error sending broadcast:', sendError);
+          toast({ title: "Ошибка при отправке рассылки", variant: "destructive" });
+        }
+      }
+
       return broadcast;
     },
-    onSuccess: () => {
+    onSuccess: (broadcast) => {
       queryClient.invalidateQueries({ queryKey: ["broadcasts"] });
-      toast({ title: "Рассылка создана" });
+      if (broadcast.schedule_at) {
+        toast({ title: "Рассылка запланирована" });
+      } else {
+        toast({ title: "Рассылка отправляется" });
+      }
     },
     onError: () => {
       toast({ title: "Ошибка при создании рассылки", variant: "destructive" });
