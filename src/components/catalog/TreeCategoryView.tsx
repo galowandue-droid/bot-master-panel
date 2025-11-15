@@ -16,22 +16,22 @@ interface TreeNode extends Category {
 
 interface TreeCategoryItemProps {
   node: TreeNode;
-  isSelected: boolean;
-  positionCount: number;
-  onSelect: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onAddChild: () => void;
+  selectedCategoryId: string | null;
+  positionCounts: Record<string, number>;
+  onSelectCategory: (id: string) => void;
+  onEditCategory: (category: Category) => void;
+  onDeleteCategory: (category: Category) => void;
+  onAddChild: (parentId: string) => void;
   canDrag: boolean;
 }
 
 function TreeCategoryItem({
   node,
-  isSelected,
-  positionCount,
-  onSelect,
-  onEdit,
-  onDelete,
+  selectedCategoryId,
+  positionCounts,
+  onSelectCategory,
+  onEditCategory,
+  onDeleteCategory,
   onAddChild,
   canDrag,
 }: TreeCategoryItemProps) {
@@ -56,7 +56,7 @@ function TreeCategoryItem({
       <div
         className={cn(
           "group flex items-center gap-2 py-2 px-3 rounded-md hover:bg-accent transition-colors",
-          isSelected && "bg-accent"
+          selectedCategoryId === node.id && "bg-accent"
         )}
         style={{ paddingLeft: `${paddingLeft + 12}px` }}
       >
@@ -95,14 +95,14 @@ function TreeCategoryItem({
         {/* Category Name */}
         <button
           className="flex-1 text-left text-sm truncate"
-          onClick={onSelect}
+          onClick={() => onSelectCategory(node.id)}
         >
           {node.name}
         </button>
 
         {/* Position Count Badge */}
         <Badge variant="secondary" className="text-xs">
-          {positionCount}
+          {positionCounts[node.id] || 0}
         </Badge>
 
         {/* Action Buttons */}
@@ -113,7 +113,7 @@ function TreeCategoryItem({
             className="h-6 w-6"
             onClick={(e) => {
               e.stopPropagation();
-              onAddChild();
+              onAddChild(node.id);
             }}
           >
             <Plus className="h-3 w-3" />
@@ -124,7 +124,7 @@ function TreeCategoryItem({
             className="h-6 w-6"
             onClick={(e) => {
               e.stopPropagation();
-              onEdit();
+              onEditCategory(node);
             }}
           >
             <Pencil className="h-3 w-3" />
@@ -135,7 +135,7 @@ function TreeCategoryItem({
             className="h-6 w-6 text-destructive"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              onDeleteCategory(node);
             }}
           >
             <Trash2 className="h-3 w-3" />
@@ -147,7 +147,17 @@ function TreeCategoryItem({
       {hasChildren && isExpanded && (
         <div>
           {node.children.map((child) => (
-            <TreeCategoryItemWrapper key={child.id} {...child} />
+            <TreeCategoryItem
+              key={child.id}
+              node={child}
+              selectedCategoryId={selectedCategoryId}
+              positionCounts={positionCounts}
+              onSelectCategory={onSelectCategory}
+              onEditCategory={onEditCategory}
+              onDeleteCategory={onDeleteCategory}
+              onAddChild={onAddChild}
+              canDrag={canDrag}
+            />
           ))}
         </div>
       )}
@@ -155,10 +165,6 @@ function TreeCategoryItem({
   );
 }
 
-// Wrapper to handle props passing correctly
-function TreeCategoryItemWrapper(props: any) {
-  return <TreeCategoryItem {...props} />;
-}
 
 interface TreeCategoryViewProps {
   categories: Category[];
@@ -255,12 +261,12 @@ export function TreeCategoryView({
       <TreeCategoryItem
         key={node.id}
         node={node}
-        isSelected={selectedCategoryId === node.id}
-        positionCount={positionCounts[node.id] || 0}
-        onSelect={() => onSelectCategory(node.id)}
-        onEdit={() => onEditCategory(node)}
-        onDelete={() => onDeleteCategory(node)}
-        onAddChild={() => onAddChild(node.id)}
+        selectedCategoryId={selectedCategoryId}
+        positionCounts={positionCounts}
+        onSelectCategory={onSelectCategory}
+        onEditCategory={onEditCategory}
+        onDeleteCategory={onDeleteCategory}
+        onAddChild={onAddChild}
         canDrag={editMode}
       />
     ));
