@@ -79,96 +79,98 @@ export default function RequiredChannels() {
 
       <PageContainer>
         <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Список каналов</CardTitle>
-              <CardDescription>
-                Пользователи должны подписаться на эти каналы перед покупкой
-              </CardDescription>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Список каналов</CardTitle>
+                <CardDescription>
+                  Пользователи должны подписаться на эти каналы перед покупкой
+                </CardDescription>
+              </div>
+              <Button onClick={() => handleOpenDialog()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Добавить канал
+              </Button>
             </div>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Добавить канал
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : channels && channels.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Название</TableHead>
-                  <TableHead>ID канала</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Статус</TableHead>
-                  <TableHead className="text-right">Действия</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {channels.map((channel) => (
-                  <TableRow key={channel.id}>
-                    <TableCell className="font-medium">{channel.channel_name}</TableCell>
-                    <TableCell className="font-mono text-sm">{channel.channel_id}</TableCell>
-                    <TableCell>
-                      {channel.channel_username ? (
-                        <a
-                          href={`https://t.me/${channel.channel_username}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-primary hover:underline"
-                        >
-                          @{channel.channel_username}
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={channel.is_active ? "default" : "secondary"}>
-                        {channel.is_active ? "Активен" : "Неактивен"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenDialog(channel)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedChannel(channel);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
                 ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Нет обязательных каналов</p>
-              <p className="text-sm mt-2">Добавьте канал для обязательной подписки</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            ) : channels && channels.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Название канала</TableHead>
+                    <TableHead>ID канала</TableHead>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Статус</TableHead>
+                    <TableHead className="text-right">Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {channels.map((channel) => (
+                    <TableRow key={channel.id}>
+                      <TableCell className="font-medium">{channel.channel_name}</TableCell>
+                      <TableCell className="font-mono text-sm">{channel.channel_id}</TableCell>
+                      <TableCell>
+                        {channel.channel_username ? (
+                          <a
+                            href={`https://t.me/${channel.channel_username}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-primary hover:underline"
+                          >
+                            @{channel.channel_username}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={channel.is_active ? "default" : "secondary"}>
+                          {channel.is_active ? "Активен" : "Неактивен"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenDialog(channel)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedChannel(channel);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <Radio className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Нет обязательных каналов</p>
+                <p className="text-sm">Добавьте первый канал для обязательной подписки</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </PageContainer>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
@@ -177,47 +179,47 @@ export default function RequiredChannels() {
               {selectedChannel ? "Редактировать канал" : "Добавить канал"}
             </DialogTitle>
             <DialogDescription>
-              Укажите данные Telegram канала для обязательной подписки
+              Укажите информацию о канале для обязательной подписки
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="channelId">ID канала *</Label>
+              <Label htmlFor="channel-id">ID канала *</Label>
               <Input
-                id="channelId"
+                id="channel-id"
                 placeholder="-1001234567890"
                 value={channelId}
                 onChange={(e) => setChannelId(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Получите ID канала через @userinfobot
+                ID канала можно получить через бота @userinfobot
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="channelName">Название канала *</Label>
+              <Label htmlFor="channel-name">Название канала *</Label>
               <Input
-                id="channelName"
+                id="channel-name"
                 placeholder="Мой канал"
                 value={channelName}
                 onChange={(e) => setChannelName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="channelUsername">Username канала</Label>
+              <Label htmlFor="channel-username">Username канала</Label>
               <Input
-                id="channelUsername"
+                id="channel-username"
                 placeholder="mychannel"
                 value={channelUsername}
                 onChange={(e) => setChannelUsername(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Без @, используется для создания ссылки
+                Без символа @, будет использоваться для создания ссылки
               </p>
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">Активен</Label>
+              <Label htmlFor="is-active">Активный канал</Label>
               <Switch
-                id="isActive"
+                id="is-active"
                 checked={isActive}
                 onCheckedChange={setIsActive}
               />
@@ -227,10 +229,7 @@ export default function RequiredChannels() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Отмена
             </Button>
-            <Button
-              onClick={handleSave}
-              disabled={!channelId || !channelName || createChannel.isPending || updateChannel.isPending}
-            >
+            <Button onClick={handleSave} disabled={!channelId || !channelName}>
               {selectedChannel ? "Сохранить" : "Добавить"}
             </Button>
           </DialogFooter>
@@ -242,8 +241,8 @@ export default function RequiredChannels() {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDelete}
         title="Удалить канал?"
-        description={`Вы уверены, что хотите удалить канал "${selectedChannel?.channel_name}"?`}
+        description="Это действие нельзя отменить."
       />
-    </div>
+    </>
   );
 }
