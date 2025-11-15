@@ -12,8 +12,17 @@ interface PaymentChartsProps {
 }
 
 export function PaymentCharts({ dailyStats, depositsByMethod, averageCheck }: PaymentChartsProps) {
+  const methodNames: Record<string, string> = {
+    cryptobot: "CryptoBot",
+    yoomoney: "ЮMoney",
+    cards: "Банковские карты",
+    telegram_stars: "Telegram Stars",
+    wata: "Wata",
+    heleket: "Heleket",
+  };
+
   const pieData = Object.entries(depositsByMethod).map(([method, stats]) => ({
-    name: method,
+    name: methodNames[method] || method,
     value: stats.total,
   }));
 
@@ -141,25 +150,28 @@ export function PaymentCharts({ dailyStats, depositsByMethod, averageCheck }: Pa
               </PieChart>
             </ResponsiveContainer>
 
-            <div className="flex flex-col justify-center space-y-3">
+            <div className="flex flex-col justify-center space-y-4">
               {Object.entries(depositsByMethod).map(([method, stats], index) => (
-                <div key={method} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/40">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    />
-                    <div>
-                      <div className="font-medium capitalize">{method}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {stats.count} транзакций
-                      </div>
+                <div 
+                  key={method}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div 
+                    className="w-3 h-3 rounded-full mt-1.5 shrink-0"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="font-medium text-sm">{methodNames[method] || method}</span>
+                      <span className="font-semibold text-foreground">
+                        {Number(stats.total).toFixed(2)} ₽
+                      </span>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold">{stats.total.toFixed(2)} ₽</div>
-                    <div className="text-sm text-muted-foreground">
-                      {((stats.completed / stats.count) * 100).toFixed(0)}% успех
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>{stats.count} транзакций</span>
+                      <span className="text-success">
+                        {((stats.completed / stats.count) * 100).toFixed(0)}% успех
+                      </span>
                     </div>
                   </div>
                 </div>

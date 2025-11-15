@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Search, UserCircle, Wallet, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, UserCircle, Wallet, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { UserDetailsDialog } from "@/components/users/UserDetailsDialog";
 import { useProfiles } from "@/hooks/useProfiles";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,45 +104,50 @@ export default function Users() {
             {paginatedUsers.map((user) => (
               <Card
                 key={user.id}
-                className="p-4 cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => handleUserClick(user.id)}
+                className="p-4 hover:shadow-lg transition-shadow"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-full bg-primary/10 p-2">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="rounded-full bg-primary/10 p-2 shrink-0">
                       <UserCircle className="h-5 w-5 text-primary" />
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {user.first_name || user.username || `User ${user.telegram_id}`}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {user.username ? `@${user.username}` : `ID: ${user.telegram_id}`}
-                      </p>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold truncate">
+                          {user.first_name || user.username || `User ${user.telegram_id}`}
+                        </h3>
+                        {user.is_blocked && (
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-destructive/10 text-destructive">
+                            Заблокирован
+                          </span>
+                        )}
+                      </div>
+                      {user.username && (
+                        <p className="text-sm text-muted-foreground">@{user.username}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">ID: {user.telegram_id}</p>
                     </div>
                   </div>
-                  {user.is_blocked && (
-                    <span className="px-2 py-1 text-xs rounded-full bg-destructive/10 text-destructive">
-                      Заблокирован
-                    </span>
-                  )}
-                </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Wallet className="h-3 w-3" />
-                      Баланс
-                    </p>
-                    <p className="text-sm font-medium">₽{user.balance}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Покупок</p>
-                    <p className="text-sm font-medium">{user.purchases_count}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Потрачено</p>
-                    <p className="text-sm font-medium">₽{user.total_spent}</p>
+                  <div className="flex items-start gap-3">
+                    <div className="text-right shrink-0">
+                      <div className="flex items-center gap-1.5 text-success mb-2">
+                        <Wallet className="h-4 w-4" />
+                        <span className="font-semibold">₽{user.balance.toFixed(0)}</span>
+                      </div>
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        <p>Покупок: {user.purchases_count}</p>
+                        <p>Потрачено: ₽{user.total_spent.toFixed(0)}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleUserClick(user.id)}
+                      className="shrink-0"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </Card>

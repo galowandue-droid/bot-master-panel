@@ -39,28 +39,38 @@ export function RecentActivity() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Последняя активность</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <ShoppingCart className="h-5 w-5 text-primary" />
+          Последняя активность
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {activities.map((activity) => (
           <div
             key={activity.id}
-            className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+            className="flex items-start gap-3 p-4 rounded-lg border border-border bg-gradient-to-br from-card to-card/50 hover:shadow-md transition-all"
           >
-            <div className="rounded-full bg-primary/10 p-2">
-              <ShoppingCart className="h-4 w-4 text-primary" />
+            <div className="rounded-full bg-gradient-to-br from-success/20 to-success/10 p-2.5 ring-2 ring-success/20">
+              <ShoppingCart className="h-5 w-5 text-success" />
             </div>
-            <div className="flex-1 space-y-1">
-              <p className="text-sm text-foreground">
-                <span className="font-medium">
-                  @{activity.username || activity.first_name || "Пользователь"}
-                </span>{" "}
-                → <span className="text-muted-foreground">Покупка</span> →{" "}
-                <span className="font-medium">{activity.item_name}</span>{" "}
-                <span className="text-success">(₽{Number(activity.amount).toFixed(0)})</span>
-              </p>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">
+                    {activity.username ? `@${activity.username}` : activity.first_name || "Пользователь"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Покупка: <span className="font-medium text-foreground">{activity.item_name}</span>
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-lg font-bold text-success">
+                    ₽{Number(activity.amount).toFixed(0)}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
                 {formatDistanceToNow(new Date(activity.created_at), {
                   addSuffix: true,
                   locale: ru,
