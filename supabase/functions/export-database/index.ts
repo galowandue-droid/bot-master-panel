@@ -19,6 +19,31 @@ serve(async (req) => {
 
     const { table } = await req.json();
 
+    // Whitelist of allowed tables for export
+    const ALLOWED_TABLES = [
+      'profiles',
+      'purchases',
+      'deposits',
+      'broadcasts',
+      'logs',
+      'categories',
+      'positions',
+      'items',
+      'bot_settings',
+      'statistics',
+      'user_roles'
+    ];
+
+    if (!ALLOWED_TABLES.includes(table)) {
+      return new Response(
+        JSON.stringify({ error: 'Table export not authorized' }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // Fetch all data from the specified table
     const { data, error } = await supabaseClient
       .from(table)

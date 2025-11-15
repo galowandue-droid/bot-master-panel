@@ -8,6 +8,17 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Position, usePositions } from "@/hooks/usePositions";
 import { useCategories } from "@/hooks/useCategories";
+import { toast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const positionSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
+  price: z.number().positive("Price must be positive").min(0.01, "Minimum price is 0.01").max(999999, "Maximum price is 999,999"),
+  category_id: z.string().uuid("Valid category must be selected"),
+  description: z.string().max(500, "Description must be less than 500 characters").optional(),
+  product_type: z.enum(["account", "promo", "link"]),
+  is_visible: z.boolean(),
+});
 
 interface PositionDialogProps {
   open: boolean;
@@ -31,17 +42,29 @@ export function PositionDialog({ open, onOpenChange, position, categoryId }: Pos
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = positionSchema.safeParse({
+      name,
+      price: parseFloat(price),
+      category_id: selectedCategory,
+      description: description || undefined,
+      product_type: productType,
+      is_visible: isVisible,
+    });
+
+    if (!validation.success) {
+      toast({ 
+        title: "Ошибка валидации", 
+        description: validation.error.issues[0]?.message,
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const data = {
-        name,
-        price: parseFloat(price),
-        category_id: selectedCategory,
-        description,
-        product_type: productType,
-        is_visible: isVisible,
-      };
+      const data = validation.data;
 
       if (position) {
         await updatePosition.mutateAsync({ id: position.id, ...data });
