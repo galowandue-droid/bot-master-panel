@@ -10,6 +10,9 @@ import { Bitcoin, Wallet, Star, CreditCard, Check, X, Loader2, TrendingUp, Dolla
 import { useBotSettings } from "@/hooks/useBotSettings";
 import { usePaymentStats } from "@/hooks/usePaymentStats";
 import { toast } from "@/hooks/use-toast";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Payments() {
   const { getSetting, updateSetting } = useBotSettings();
@@ -74,38 +77,36 @@ export default function Payments() {
   };
 
   const handleTest = async (systemId: string) => {
-    setTestingStatus({ ...testingStatus, [systemId]: true });
+    setTestingStatus(prev => ({ ...prev, [systemId]: true }));
     
-    const system = paymentSystems.find(s => s.id === systemId);
-    const token = system ? getSetting(system.tokenKey) : null;
-
-    if (!token) {
-      toast({
-        title: "Ошибка",
-        description: "Токен не настроен",
-        variant: "destructive",
-      });
-      setTestingStatus({ ...testingStatus, [systemId]: false });
-      return;
-    }
-
     try {
-      // В реальном приложении здесь был бы запрос к API платежной системы
-      // Для демонстрации используем задержку
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call payment-stats edge function
+      const { data, error } = await supabase.functions.invoke('payment-stats');
       
-      toast({
-        title: "Проверка завершена",
-        description: "Подключение успешно",
-      });
-    } catch (error) {
+      if (error) throw error;
+
+      const systemStats = data?.paymentStats?.find((s: any) => s.system === systemId);
+      
+      if (systemStats?.error) {
+        toast({
+          title: "Ошибка подключения",
+          description: systemStats.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Проверка завершена",
+          description: `Подключение успешно. Статус: ${systemStats?.status || 'OK'}`,
+        });
+      }
+    } catch (error: any) {
       toast({
         title: "Ошибка подключения",
-        description: "Не удалось подключиться к платежной системе",
+        description: error.message || "Не удалось проверить подключение",
         variant: "destructive",
       });
     } finally {
-      setTestingStatus({ ...testingStatus, [systemId]: false });
+      setTestingStatus(prev => ({ ...prev, [systemId]: false }));
     }
   };
 

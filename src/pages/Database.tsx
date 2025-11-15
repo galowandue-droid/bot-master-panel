@@ -1,22 +1,18 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Database as DatabaseIcon, Calendar } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Download, Database as DatabaseIcon, FileArchive } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useTableStats } from "@/hooks/useTableStats";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function Database() {
   const [downloading, setDownloading] = useState(false);
-
-  const tables = [
-    { name: "profiles", records: 8945 },
-    { name: "categories", records: 12 },
-    { name: "positions", records: 45 },
-    { name: "items", records: 342 },
-    { name: "purchases", records: 6334 },
-  ];
+  const { data: tableStats, isLoading } = useTableStats();
 
   const handleDownloadTable = async (tableName: string) => {
     try {
@@ -25,14 +21,8 @@ export default function Database() {
         body: { table: tableName },
       });
 
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(`Не удалось экспортировать таблицу: ${error.message}`);
-      }
-
-      if (!data) {
-        throw new Error('Нет данных для экспорта');
-      }
+      if (error) throw new Error(`Не удалось экспортировать таблицу: ${error.message}`);
+      if (!data) throw new Error('Нет данных для экспорта');
 
       const blob = new Blob([data], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
@@ -49,7 +39,6 @@ export default function Database() {
         description: `Таблица ${tableName} успешно загружена`,
       });
     } catch (error: any) {
-      console.error('Error downloading table:', error);
       toast({
         title: "Ошибка экспорта",
         description: error.message || 'Не удалось экспортировать таблицу',
@@ -60,20 +49,14 @@ export default function Database() {
     }
   };
 
-  const backups = [
-    { name: "bot-backup-2024-01-15.db", date: "Сегодня в 00:00" },
-    { name: "bot-backup-2024-01-14.db", date: "Вчера в 00:00" },
-    { name: "bot-backup-2024-01-13.db", date: "2 дня назад в 00:00" },
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center gap-4 px-6">
           <SidebarTrigger />
-          <div className="flex-1">
+          <div className="flex-1 space-y-1">
             <h1 className="text-2xl font-bold text-foreground">База данных</h1>
-            <p className="text-sm text-muted-foreground">Управление данными и резервные копии</p>
+            <Breadcrumbs items={[{ label: "База данных" }]} />
           </div>
         </div>
       </header>
@@ -82,26 +65,21 @@ export default function Database() {
         <div className="space-y-6 max-w-7xl mx-auto">
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-primary/10 p-2">
-                  <DatabaseIcon className="h-5 w-5 text-primary" />
-                </div>
-                <CardTitle>Информация о БД</CardTitle>
-              </div>
+              <CardTitle>Информация о БД</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Размер БД</p>
-                  <p className="text-2xl font-bold text-foreground">24.3 МБ</p>
-                </div>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Всего записей</p>
-                  <p className="text-2xl font-bold text-foreground">15,678</p>
+                  {isLoading ? <Skeleton className="h-8 w-24" /> : (
+                    <p className="text-2xl font-bold">{tableStats?.totalRecords.toLocaleString()}</p>
+                  )}
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Последнее обновление</p>
-                  <p className="text-2xl font-bold text-foreground">Сегодня</p>
+                  <p className="text-sm text-muted-foreground">Таблиц</p>
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : (
+                    <p className="text-2xl font-bold">{tableStats?.tables.length}</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -109,70 +87,44 @@ export default function Database() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Таблицы</CardTitle>
+              <CardTitle>Экспорт таблиц</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {tables.map((table) => (
-                  <div
-                    key={table.name}
-                    className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-primary/10 p-2">
-                        <DatabaseIcon className="h-4 w-4 text-primary" />
-                      </div>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {tableStats?.tables.map((table) => (
+                    <div key={table.name} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <p className="font-medium text-foreground">{table.name}</p>
-                        <p className="text-sm text-muted-foreground">{table.records} записей</p>
+                        <p className="font-medium">{table.name}</p>
+                        <p className="text-sm text-muted-foreground">{table.records.toLocaleString()} записей</p>
                       </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownloadTable(table.name)}
-                      disabled={downloading}
-                      className="gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Экспорт
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Резервные копии</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {backups.map((backup) => (
-                  <div
-                    key={backup.name}
-                    className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-secondary/50 p-2">
-                        <Calendar className="h-4 w-4 text-secondary-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">{backup.name}</p>
-                        <p className="text-sm text-muted-foreground">{backup.date}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge variant="secondary">Авто</Badge>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Download className="h-4 w-4" />
+                      <Button variant="outline" size="sm" onClick={() => handleDownloadTable(table.name)} disabled={downloading}>
+                        <Download className="h-4 w-4 mr-2" />
                         Скачать
                       </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Автоматические резервные копии</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EmptyState
+                icon={FileArchive}
+                title="Резервные копии недоступны"
+                description="Используйте экспорт таблиц выше для создания резервных копий"
+              />
             </CardContent>
           </Card>
         </div>
