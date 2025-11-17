@@ -42,6 +42,7 @@ export default function Analytics() {
     to: new Date(),
   });
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [desktopOpen, setDesktopOpen] = useState(false);
   const isMobile = useIsMobile();
   
   const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
@@ -218,14 +219,16 @@ export default function Analytics() {
                   </SheetContent>
                 </Sheet>
               ) : (
-                <Popover>
+                <Popover open={desktopOpen} onOpenChange={setDesktopOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal text-xs xs:text-sm">
-                      <CalendarIcon className="mr-2 h-3 w-3 xs:h-4 xs:w-4" />
-                      <span className="truncate">{format(dateRange.from, "dd MMM yyyy", { locale: ru })} - {format(dateRange.to, "dd MMM yyyy", { locale: ru })}</span>
+                    <Button variant="outline" size="sm" className="w-auto md:min-w-[280px] justify-start text-left font-normal text-sm gap-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span className="truncate">
+                        {format(dateRange.from, "dd MMM yyyy", { locale: ru })} — {format(dateRange.to, "dd MMM yyyy", { locale: ru })}
+                      </span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start" side="bottom">
+                  <PopoverContent className="p-0 md:w-[620px] max-w-[95vw]" align="start" side="bottom" sideOffset={8}>
                     <div className="p-3 space-y-3">
                       {/* Быстрые пресеты */}
                       <div className="grid grid-cols-4 gap-2">
@@ -233,7 +236,10 @@ export default function Analytics() {
                           variant="outline"
                           size="sm"
                           className="text-xs"
-                          onClick={() => setDateRange({ from: new Date(), to: new Date() })}
+                          onClick={() => {
+                            setDateRange({ from: new Date(), to: new Date() });
+                            setDesktopOpen(false);
+                          }}
                         >
                           Сегодня
                         </Button>
@@ -241,7 +247,10 @@ export default function Analytics() {
                           variant="outline"
                           size="sm"
                           className="text-xs"
-                          onClick={() => setDateRange({ from: subDays(new Date(), 7), to: new Date() })}
+                          onClick={() => {
+                            setDateRange({ from: subDays(new Date(), 7), to: new Date() });
+                            setDesktopOpen(false);
+                          }}
                         >
                           7 дней
                         </Button>
@@ -249,7 +258,10 @@ export default function Analytics() {
                           variant="outline"
                           size="sm"
                           className="text-xs"
-                          onClick={() => setDateRange({ from: subDays(new Date(), 30), to: new Date() })}
+                          onClick={() => {
+                            setDateRange({ from: subDays(new Date(), 30), to: new Date() });
+                            setDesktopOpen(false);
+                          }}
                         >
                           30 дней
                         </Button>
@@ -257,10 +269,22 @@ export default function Analytics() {
                           variant="outline"
                           size="sm"
                           className="text-xs"
-                          onClick={() => setDateRange({ from: subDays(new Date(), 90), to: new Date() })}
+                          onClick={() => {
+                            setDateRange({ from: subDays(new Date(), 90), to: new Date() });
+                            setDesktopOpen(false);
+                          }}
                         >
                           90 дней
                         </Button>
+                      </div>
+
+                      {/* Отображение выбранного периода */}
+                      <div className="text-sm text-muted-foreground text-center">
+                        {dateRange.from && dateRange.to && (
+                          <>
+                            {format(dateRange.from, "dd MMM", { locale: ru })} — {format(dateRange.to, "dd MMM yyyy", { locale: ru })}
+                          </>
+                        )}
                       </div>
                       
                       {/* Range Calendar */}
@@ -269,15 +293,42 @@ export default function Analytics() {
                         selected={{ from: dateRange.from, to: dateRange.to }}
                         onSelect={(range) => {
                           if (range?.from) {
-                            setDateRange({
-                              from: range.from,
-                              to: range.to || range.from
-                            });
+                            const newRange = { from: range.from, to: range.to || range.from };
+                            setDateRange(newRange);
+                            if (range?.to) {
+                              setDesktopOpen(false);
+                            }
                           }
                         }}
                         locale={ru}
                         numberOfMonths={2}
+                        pagedNavigation
+                        fixedWeeks
+                        showOutsideDays
                       />
+
+                      {/* Управление */}
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => {
+                            setDateRange({ from: subDays(new Date(), 30), to: new Date() });
+                            setDesktopOpen(false);
+                          }}
+                        >
+                          Сбросить
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => setDesktopOpen(false)}
+                        >
+                          Готово
+                        </Button>
+                      </div>
                     </div>
                   </PopoverContent>
                 </Popover>
