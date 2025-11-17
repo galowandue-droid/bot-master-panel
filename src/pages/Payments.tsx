@@ -27,8 +27,6 @@ export default function Payments() {
           table: 'deposits'
         },
         (payload) => {
-          console.log('Deposit change detected:', payload);
-          
           if (payload.eventType === 'INSERT') {
             toast({
               title: "Новый платеж!",
