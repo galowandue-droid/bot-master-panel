@@ -26,7 +26,7 @@ export function PageContainer({
       gradient ? "bg-gradient-to-br from-background via-background to-muted/20" : "bg-background"
     )}>
       <div className={cn(
-        "p-6 space-y-6 mx-auto",
+        "p-3 md:p-6 space-y-3 md:space-y-6 mx-auto",
         maxWidthClasses[maxWidth],
         className
       )}>

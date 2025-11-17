@@ -47,7 +47,7 @@ export function ConversionMetrics() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <Skeleton key={i} className="h-32 w-full" />
         ))}
@@ -56,7 +56,7 @@ export function ConversionMetrics() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card className="relative overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center justify-between">
@@ -65,7 +65,7 @@ export function ConversionMetrics() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-primary">{metrics?.conversion}%</div>
+          <div className="text-2xl md:text-3xl font-bold text-primary">{metrics?.conversion}%</div>
           <p className="text-xs text-muted-foreground mt-1">
             {metrics?.uniqueBuyers} из {metrics?.totalUsers} купили
           </p>
@@ -83,7 +83,7 @@ export function ConversionMetrics() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-success">{metrics?.uniqueBuyers}</div>
+          <div className="text-2xl md:text-3xl font-bold text-success">{metrics?.uniqueBuyers}</div>
           <p className="text-xs text-muted-foreground mt-1">
             Уникальных покупателей
           </p>
@@ -101,7 +101,7 @@ export function ConversionMetrics() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-blue-600">{metrics?.averageCheck} ₽</div>
+          <div className="text-2xl md:text-3xl font-bold text-blue-600">{metrics?.averageCheck} ₽</div>
           <p className="text-xs text-muted-foreground mt-1">
             На одну покупку
           </p>
@@ -119,7 +119,7 @@ export function ConversionMetrics() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-green-600">{metrics?.totalRevenue} ₽</div>
+          <div className="text-2xl md:text-3xl font-bold text-green-600">{metrics?.totalRevenue} ₽</div>
           <p className="text-xs text-muted-foreground mt-1">
             Всего заработано
           </p>
