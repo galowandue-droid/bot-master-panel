@@ -24,15 +24,15 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <header className={cn(
-      "sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-xl",
+      "sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur-xl shadow-sm",
       className
     )}>
-      <div className="flex h-16 items-center gap-4 px-6">
+      <div className="flex h-20 items-center gap-6 px-6">
         <SidebarTrigger />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
             {icon && (
-              <div className="rounded-lg bg-primary/10 p-2 shrink-0">
+              <div className="rounded-xl bg-primary/10 p-2.5 shrink-0 shadow-sm">
                 {icon}
               </div>
             )}

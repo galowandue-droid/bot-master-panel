@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Package, FolderOpen, Pencil, Trash2, Search, Copy, GripVertical, List, GitBranch, LayoutGrid } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Package, FolderOpen, Pencil, Trash2, Copy, GripVertical, List, GitBranch, LayoutGrid } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCategories } from "@/hooks/useCategories";
 import { usePositions } from "@/hooks/usePositions";
@@ -17,7 +14,6 @@ import { ItemDialog } from "@/components/catalog/ItemDialog";
 import { PurchaseDialog } from "@/components/catalog/PurchaseDialog";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { EmptyState } from "@/components/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -29,6 +25,9 @@ import type { Category } from "@/hooks/useCategories";
 import type { Position } from "@/hooks/usePositions";
 import { toast } from "@/hooks/use-toast";
 import { EditableField } from "@/components/catalog/EditableField";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeaderSearch } from "@/components/layout/PageHeaderSearch";
 
 interface SortableCategoryItemProps {
   category: Category;
@@ -342,18 +341,22 @@ export default function Catalog() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-background">
-        <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-          <div className="flex h-16 items-center gap-4 px-6">
-            <SidebarTrigger />
-            <div className="flex-1 space-y-1">
-              <h1 className="text-2xl font-bold">Каталог</h1>
-              <Breadcrumbs items={[{ label: "Каталог" }]} />
-            </div>
-          </div>
-        </header>
+      <>
+        <PageHeader
+          title="Каталог"
+          description="Управление категориями и товарами"
+          icon={<Package className="h-5 w-5 text-primary" />}
+          gradient
+          actions={
+            <PageHeaderSearch 
+              placeholder="Поиск товаров..." 
+              value={search} 
+              onChange={setSearch} 
+            />
+          }
+        />
 
-        <div className="flex h-[calc(100vh-4rem)]">
+        <div className="flex h-[calc(100vh-5rem)]">
           <div className="w-64 border-r bg-muted/10">
             <div className="p-4 border-b space-y-2">
               <Button 
@@ -463,10 +466,6 @@ export default function Catalog() {
           <div className="flex-1 p-6 overflow-auto bg-background">
             <div className="space-y-4 max-w-6xl mx-auto">
               <div className="flex items-center gap-4 flex-wrap">
-                <div className="relative flex-1 min-w-[200px] max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Поиск товаров..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-                </div>
                 <ToggleGroup type="single" value={compactMode ? "compact" : "cards"} onValueChange={(v) => v && setCompactMode(v === "compact")}>
                   <ToggleGroupItem value="cards" className="gap-2">
                     <LayoutGrid className="h-4 w-4" />
@@ -542,7 +541,7 @@ export default function Catalog() {
           }}
         />
         <DeleteConfirmDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={handleConfirmDelete} title={`Удалить ${deleteTarget?.type === "category" ? "категорию" : deleteTarget?.type === "position" ? "позицию" : "товар"}?`} description="Это действие нельзя отменить." />
-      </div>
+      </> 
     </TooltipProvider>
   );
 }

@@ -94,8 +94,9 @@ export default function Dashboard() {
   return (
     <>
       <PageHeader
-        title="Панель управления"
-        description="Аналитика и статистика проекта"
+        title="Дашборд"
+        description="Быстрый обзор ключевых метрик"
+        icon={<Activity className="h-5 w-5 text-primary" />}
         gradient
         actions={
           <div className="flex gap-2">
