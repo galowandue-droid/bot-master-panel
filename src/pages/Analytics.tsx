@@ -132,22 +132,28 @@ export default function Analytics() {
 
       <PageContainer gradient>
         <Card className="border-border/40 shadow-lg">
-          <CardHeader>
-            <CardTitle>Фильтры</CardTitle>
-            <CardDescription>Настройте период и категорию для анализа</CardDescription>
+          <CardHeader className="pb-3 md:pb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              <div>
+                <CardTitle className="text-base md:text-lg">Фильтры</CardTitle>
+                <CardDescription className="text-xs md:text-sm">Настройте период и категорию</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="flex flex-col xs:flex-row gap-2 xs:gap-4">
-            <div className="flex-1 min-w-[200px]">
+          <CardContent className="space-y-3 md:space-y-4">
+            {/* Фильтры периода */}
+            <div>
               <DateRangePicker 
                 dateRange={dateRange} 
                 onDateRangeChange={setDateRange}
               />
             </div>
 
-            <div className="flex-1 min-w-[200px]">
+            {/* Фильтр категорий */}
+            <div>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="text-xs xs:text-sm">
-                  <SelectValue placeholder="Выберите категорию" />
+                <SelectTrigger className="w-full h-9 text-sm">
+                  <SelectValue placeholder="Все категории" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Все категории</SelectItem>
