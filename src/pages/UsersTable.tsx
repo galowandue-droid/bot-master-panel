@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Download, MoreVertical, Eye, Ban, ShieldCheck, Trash2, X, Wallet, Columns3, Users } from "lucide-react";
+import { Search, Download, MoreVertical, Eye, Ban, ShieldCheck, Trash2, X, Wallet, Columns3, Users, User } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { UserDetailsDialog } from "@/components/users/UserDetailsDialog";
 import { BulkActionsDialog } from "@/components/users/BulkActionsDialog";
@@ -15,6 +15,8 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeaderSearch } from "@/components/layout/PageHeaderSearch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { ResponsiveTable } from "@/components/ui/responsive-table";
+import { MobileCard, MobileCardRow, MobileCardHeader } from "@/components/ui/mobile-card";
 
 
 const COLUMN_STORAGE_KEY = "usersTableColumns";
@@ -278,7 +280,61 @@ export default function UsersTable() {
             </div>
           )}
 
-          <Card>
+          <ResponsiveTable
+            cardView={true}
+            data={paginatedUsers}
+            renderCard={(user, index) => (
+              <MobileCard key={user.id}>
+                <MobileCardHeader
+                  title={user.username ? `@${user.username}` : user.first_name || "Пользователь"}
+                  subtitle={`ID: ${user.telegram_id}`}
+                  actions={
+                    <>
+                      <Checkbox 
+                        checked={selectedUsers.has(user.id)} 
+                        onCheckedChange={(checked) => {
+                          const newSet = new Set(selectedUsers);
+                          if (checked) newSet.add(user.id);
+                          else newSet.delete(user.id);
+                          setSelectedUsers(newSet);
+                        }} 
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => { setSelectedUser(user); setDetailsOpen(true); }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </>
+                  }
+                />
+                <MobileCardRow 
+                  label="Статус" 
+                  value={
+                    <Badge variant={user.is_blocked ? "destructive" : "default"}>
+                      {user.is_blocked ? "Заблокирован" : "Активен"}
+                    </Badge>
+                  }
+                />
+                <MobileCardRow 
+                  label="Баланс" 
+                  icon={<Wallet className="h-4 w-4" />}
+                  value={`${Number(user.balance).toFixed(2)} ₽`}
+                />
+                <MobileCardRow 
+                  label="Имя" 
+                  icon={<User className="h-4 w-4" />}
+                  value={user.first_name || "—"}
+                />
+                <MobileCardRow 
+                  label="Дата регистрации" 
+                  value={new Date(user.created_at).toLocaleDateString('ru-RU')}
+                />
+              </MobileCard>
+            )}
+          >
+            <Card>
             <div className="overflow-x-auto">
               <Table>
               <TableHeader>
@@ -348,6 +404,7 @@ export default function UsersTable() {
               </Table>
             </div>
           </Card>
+          </ResponsiveTable>
         </div>
         )}
       </PageContainer>

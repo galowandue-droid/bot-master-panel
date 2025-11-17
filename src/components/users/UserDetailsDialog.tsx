@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,32 +81,30 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-            <div className="rounded-full bg-primary/10 p-1.5 sm:p-2 shrink-0">
-              <UserCircle className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-lg sm:text-xl truncate">
-                {user.first_name || user.username || `User ${user.telegram_id}`}
-              </p>
-              <p className="text-xs sm:text-sm font-normal text-muted-foreground break-all">
-                {user.username && `@${user.username}`} • ID: {user.telegram_id}
-              </p>
-            </div>
-            {optimisticBlocked && (
-              <Badge variant="destructive" className="shrink-0 text-xs">
-                Заблокирован
-              </Badge>
-            )}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Детальная информация о пользователе
-          </DialogDescription>
-        </DialogHeader>
-
+    <ResponsiveDialog 
+      open={open} 
+      onOpenChange={onOpenChange}
+      title={
+        <div className="flex items-center gap-3">
+          <div className="rounded-full bg-primary/10 p-2 shrink-0">
+            <UserCircle className="h-6 w-6 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xl truncate">
+              {user.first_name || user.username || `User ${user.telegram_id}`}
+            </p>
+            <p className="text-sm font-normal text-muted-foreground break-all">
+              {user.username && `@${user.username}`} • ID: {user.telegram_id}
+            </p>
+          </div>
+          {optimisticBlocked && (
+            <Badge variant="destructive" className="shrink-0">
+              Заблокирован
+            </Badge>
+          )}
+        </div>
+      }
+    >
         <Tabs defaultValue="profile" className="mt-4">
           <TabsList className="grid w-full grid-cols-4 h-auto">
             <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Профиль</TabsTrigger>
@@ -379,7 +377,6 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
             </Card>
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }
