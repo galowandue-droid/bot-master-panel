@@ -116,3 +116,35 @@ export function createErrorResponse(
     }
   );
 }
+
+/**
+ * Logs webhook request to database
+ */
+export async function logWebhookRequest(params: {
+  supabaseClient: any;
+  webhookName: string;
+  requestBody: any;
+  responseStatus: number;
+  responseBody?: string;
+  errorMessage?: string;
+  processingTimeMs: number;
+  ipAddress?: string;
+}): Promise<void> {
+  try {
+    await params.supabaseClient
+      .from('webhook_logs')
+      .insert({
+        webhook_name: params.webhookName,
+        request_body: params.requestBody,
+        response_status: params.responseStatus,
+        response_body: params.responseBody,
+        error_message: params.errorMessage,
+        processing_time_ms: params.processingTimeMs,
+        ip_address: params.ipAddress,
+      });
+  } catch (error) {
+    // Don't throw error if logging fails, just log to console
+    console.error('Failed to log webhook request:', error);
+  }
+}
+
