@@ -226,25 +226,58 @@ export default function Analytics() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start" side="bottom">
-                    <div className="p-2 xs:p-3 space-y-2">
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium">От</div>
-                        <Calendar
-                          mode="single"
-                          selected={dateRange.from}
-                          onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
-                          locale={ru}
-                        />
+                    <div className="p-3 space-y-3">
+                      {/* Быстрые пресеты */}
+                      <div className="grid grid-cols-4 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => setDateRange({ from: new Date(), to: new Date() })}
+                        >
+                          Сегодня
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => setDateRange({ from: subDays(new Date(), 7), to: new Date() })}
+                        >
+                          7 дней
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => setDateRange({ from: subDays(new Date(), 30), to: new Date() })}
+                        >
+                          30 дней
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => setDateRange({ from: subDays(new Date(), 90), to: new Date() })}
+                        >
+                          90 дней
+                        </Button>
                       </div>
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium">До</div>
-                        <Calendar
-                          mode="single"
-                          selected={dateRange.to}
-                          onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
-                          locale={ru}
-                        />
-                      </div>
+                      
+                      {/* Range Calendar */}
+                      <Calendar
+                        mode="range"
+                        selected={{ from: dateRange.from, to: dateRange.to }}
+                        onSelect={(range) => {
+                          if (range?.from) {
+                            setDateRange({
+                              from: range.from,
+                              to: range.to || range.from
+                            });
+                          }
+                        }}
+                        locale={ru}
+                        numberOfMonths={2}
+                      />
                     </div>
                   </PopoverContent>
                 </Popover>
