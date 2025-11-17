@@ -5,7 +5,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 
 export function AppLayout() {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <CommandPalette />
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />

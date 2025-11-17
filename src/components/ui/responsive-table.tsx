@@ -10,7 +10,7 @@ export function ResponsiveTable({ children, className, ...props }: ResponsiveTab
   return (
     <div className={cn("relative w-full", className)} {...props}>
       <ScrollArea className="w-full rounded-md border">
-        <div className="min-w-[640px] md:min-w-full">
+        <div className="min-w-[800px] lg:min-w-full">
           {children}
         </div>
       </ScrollArea>
