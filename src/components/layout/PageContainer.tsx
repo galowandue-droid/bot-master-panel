@@ -21,10 +21,10 @@ export function PageContainer({
   };
 
   return (
-    <div className={cn(
-      "min-h-screen",
-      gradient ? "bg-gradient-to-br from-background via-background to-muted/20" : "bg-background"
-    )}>
+      <div className={cn(
+        "min-h-screen overflow-x-hidden",
+        gradient ? "bg-gradient-to-br from-background via-background to-muted/20" : "bg-background"
+      )}>
       <div className={cn(
         "p-3 md:p-6 space-y-3 md:space-y-6 mx-auto",
         maxWidthClasses[maxWidth],
