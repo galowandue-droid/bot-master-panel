@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Filter } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { ru } from "date-fns/locale";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -49,10 +49,10 @@ export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePicke
 
   if (isMobile) {
     return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+      <div className="space-y-2.5">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <CalendarIcon className="h-3.5 w-3.5" />
-          <span>{formatDateRange()}</span>
+          <span className="font-medium">{formatDateRange()}</span>
         </div>
         <div className="grid grid-cols-4 gap-1.5">
           {presets.map((preset) => (
@@ -61,7 +61,7 @@ export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePicke
               variant={activePreset === preset.days ? "default" : "outline"}
               size="sm"
               onClick={() => handlePresetClick(preset.days)}
-              className="text-xs h-8 px-2"
+              className="text-xs h-8 px-1.5"
             >
               {preset.label}
             </Button>
@@ -72,19 +72,19 @@ export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePicke
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <CalendarIcon className="h-4 w-4" />
-        <span>{formatDateRange()}</span>
+        <span className="font-medium">{formatDateRange()}</span>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {presets.map((preset) => (
           <Button
             key={preset.label}
             variant={activePreset === preset.days ? "default" : "outline"}
             size="sm"
             onClick={() => handlePresetClick(preset.days)}
-            className="text-sm"
+            className="text-sm h-9"
           >
             {preset.label}
           </Button>
