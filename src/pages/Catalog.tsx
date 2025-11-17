@@ -128,7 +128,7 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
     <ContextMenu>
       <ContextMenuTrigger>
         <Card ref={setNodeRef} style={style} className="group hover:shadow-lg transition-shadow">
-          <CardHeader className="p-3 xs:p-4 md:p-6 pb-2 xs:pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-start justify-between gap-1 xs:gap-2">
               <div className="space-y-0.5 xs:space-y-1 flex-1 min-w-0">
                 <div className="flex items-center gap-1 xs:gap-2">
@@ -140,24 +140,24 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
                     onSave={async (newName) => {
                       await onUpdate(position.id, { name: newName });
                     }}
-                    className="font-semibold text-sm xs:text-base md:text-lg"
+                    className="font-semibold text-xs xs:text-sm md:text-base"
                   />
                 </div>
-                <Badge variant="secondary" className="text-[10px] xs:text-xs h-4 xs:h-5">{categoryName}</Badge>
+                <Badge variant="secondary" className="text-[9px] xs:text-[10px] md:text-xs h-3.5 xs:h-4 md:h-5 px-1 xs:px-1.5">{categoryName}</Badge>
               </div>
               <div className="flex gap-0.5 xs:gap-1 shrink-0">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 xs:h-8 xs:w-8" onClick={onEdit}>
-                      <Pencil className="h-3 w-3 xs:h-4 xs:w-4" />
+                    <Button variant="ghost" size="icon" className="h-5 w-5 xs:h-6 xs:w-6 md:h-8 md:w-8" onClick={onEdit}>
+                      <Pencil className="h-2.5 w-2.5 xs:h-3 xs:w-3 md:h-4 md:w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Редактировать</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 xs:h-8 xs:w-8" onClick={onDelete}>
-                      <Trash2 className="h-3 w-3 xs:h-4 xs:w-4" />
+                    <Button variant="ghost" size="icon" className="h-5 w-5 xs:h-6 xs:w-6 md:h-8 md:w-8" onClick={onDelete}>
+                      <Trash2 className="h-2.5 w-2.5 xs:h-3 xs:w-3 md:h-4 md:w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Удалить</TooltipContent>
@@ -165,10 +165,10 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-3 xs:p-4 md:p-6 pt-0">
-            {position.description && <p className="text-xs xs:text-sm text-muted-foreground line-clamp-2 mb-2 xs:mb-3">{position.description}</p>}
-            <div className="flex items-center justify-between mb-2 xs:mb-3">
-              <div className="space-y-0.5 xs:space-y-1">
+          <CardContent className="pt-0">
+            {position.description && <p className="text-[10px] xs:text-xs md:text-sm text-muted-foreground line-clamp-2 mb-1.5 xs:mb-2 md:mb-3">{position.description}</p>}
+            <div className="flex items-center justify-between mb-1.5 xs:mb-2 md:mb-3">
+              <div className="space-y-0.5">
                 <EditableField
                   value={position.price.toString()}
                   onSave={async (newPrice) => {
@@ -178,11 +178,11 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
                     }
                   }}
                   type="number"
-                  className="text-lg xs:text-xl md:text-2xl font-bold text-primary"
+                  className="text-base xs:text-lg md:text-xl font-bold text-primary"
                 />
-                <p className="text-[10px] xs:text-xs text-muted-foreground">В наличии: {itemCount}</p>
+                <p className="text-[9px] xs:text-[10px] md:text-xs text-muted-foreground">В наличии: {itemCount}</p>
               </div>
-              <Badge variant={position.is_visible ? "default" : "secondary"} className="text-[10px] xs:text-xs h-4 xs:h-5">{position.is_visible ? "Видим" : "Скрыт"}</Badge>
+              <Badge variant={position.is_visible ? "default" : "secondary"} className="text-[9px] xs:text-[10px] md:text-xs h-3.5 xs:h-4 md:h-5 px-1 xs:px-1.5">{position.is_visible ? "Видим" : "Скрыт"}</Badge>
             </div>
             <Button 
               className="w-full text-xs xs:text-sm h-8 xs:h-9 md:h-10" 
@@ -376,10 +376,11 @@ export default function Catalog() {
           {isMobile && (
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
               <SheetContent side="left" className="w-[280px] p-0">
-                <div className="p-3 border-b">
+                <div className="p-3 border-b space-y-2">
                   <Button 
                     onClick={() => { 
                       setSelectedCategory(undefined); 
+                      setParentIdForNewCategory(null);
                       setCategoryDialogOpen(true);
                       setSidebarOpen(false);
                     }} 
@@ -388,16 +389,67 @@ export default function Catalog() {
                   >
                     <Plus className="h-3 w-3 mr-2" />Новая категория
                   </Button>
+                  
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground px-1">Режим отображения</p>
+                    <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as "list" | "tree")} className="grid grid-cols-2 gap-2">
+                      <ToggleGroupItem value="list" className="flex-col gap-1 h-auto py-2 text-xs">
+                        <List className="h-4 w-4" />
+                        <span>Список</span>
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="tree" className="flex-col gap-1 h-auto py-2 text-xs">
+                        <GitBranch className="h-4 w-4" />
+                        <span>Дерево</span>
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
                 </div>
-                <ScrollArea className="h-[calc(100vh-8rem)]">
-                  <div className="p-2">
+                <ScrollArea className="h-[calc(100vh-12rem)]">
+                  <div className="p-2 space-y-1">
                     <Button 
                       variant={!selectedCategoryId ? "default" : "ghost"} 
-                      className="w-full justify-start" 
+                      className="w-full justify-start gap-2" 
                       onClick={() => { setSelectedCategoryId(null); setSidebarOpen(false); }}
                     >
-                      <Package className="h-4 w-4 mr-2" />Все товары
+                      <Package className="h-4 w-4" />Все товары
                     </Button>
+                    
+                    {categoriesLoading ? (
+                      <div className="space-y-2">
+                        {[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+                      </div>
+                    ) : categories && categories.length > 0 ? (
+                      viewMode === "tree" ? (
+                        <TreeCategoryView
+                          categories={categories}
+                          selectedCategoryId={selectedCategoryId}
+                          positionCounts={
+                            categories.reduce((acc, cat) => {
+                              acc[cat.id] = positions?.filter(p => p.category_id === cat.id).length || 0;
+                              return acc;
+                            }, {} as Record<string, number>)
+                          }
+                          onSelectCategory={(id) => { setSelectedCategoryId(id); setSidebarOpen(false); }}
+                          onEditCategory={(cat) => { setSelectedCategory(cat); setCategoryDialogOpen(true); }}
+                          onDeleteCategory={(cat) => { setDeleteTarget({ type: "category", id: cat.id }); setDeleteDialogOpen(true); }}
+                          onAddChild={(parentId) => { setParentIdForNewCategory(parentId); setSelectedCategory(undefined); setCategoryDialogOpen(true); }}
+                          onUpdateCategory={(id, updates) => { updateCategory.mutate({ id, ...updates }); }}
+                        />
+                      ) : (
+                        categories.map(cat => (
+                          <Button
+                            key={cat.id}
+                            variant={selectedCategoryId === cat.id ? "default" : "ghost"}
+                            className="w-full justify-start gap-2"
+                            onClick={() => { setSelectedCategoryId(cat.id); setSidebarOpen(false); }}
+                          >
+                            <FolderOpen className="h-4 w-4" />
+                            <span className="truncate">{cat.name}</span>
+                            <Badge variant="secondary" className="ml-auto">{positions?.filter(p => p.category_id === cat.id).length || 0}</Badge>
+                          </Button>
+                        ))
+                      )
+                    ) : null}
                   </div>
                 </ScrollArea>
               </SheetContent>
