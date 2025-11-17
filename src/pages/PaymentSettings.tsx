@@ -16,7 +16,8 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { PaymentSystemCard } from "@/components/payments/PaymentSystemCard";
+import { PaymentSystemOverview } from "@/components/payments/PaymentSystemOverview";
+import { PaymentSystemDetailsSheet } from "@/components/payments/PaymentSystemDetailsSheet";
 
 interface PaymentSystem {
   id: string;
@@ -98,6 +99,8 @@ export default function PaymentSettings() {
   const [statuses, setStatuses] = useState<Record<string, "connected" | "disconnected" | "checking">>({});
   const [lastChecks, setLastChecks] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedSystem, setSelectedSystem] = useState<string | null>(null);
+  
   
   // Message settings
   const [successMessage, setSuccessMessage] = useState("");
@@ -447,32 +450,46 @@ export default function PaymentSettings() {
         <TabsContent value="systems" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             {paymentSystems.map((system) => (
-              <PaymentSystemCard
+              <PaymentSystemOverview
                 key={system.id}
-                id={system.id}
-                name={system.name}
-                description={system.description}
-                icon={system.icon}
-                isEnabled={enabled[system.id]}
-                token={tokens[system.id] || ""}
-                tokenLabel={system.tokenLabel}
-                tokenPlaceholder={system.placeholder}
-                commission={commissions[system.id] || system.defaultCommission}
+                system={system}
+                enabled={enabled[system.id] || false}
+                status={statuses[system.id] || "disconnected"}
                 balance={balances[system.id]}
-                status={statuses[system.id]}
-                lastCheck={lastChecks[system.id]}
+                commission={commissions[system.id] || system.defaultCommission}
                 onToggle={() => handleToggleSystem(system.id)}
-                onSaveToken={() => handleSaveToken(system.id)}
-                onSaveCommission={() => handleSaveCommission(system.id)}
                 onCheckConnection={() => handleCheckConnection(system.id)}
                 onRefreshBalance={() => handleRefreshBalance(system.id)}
-                onTokenChange={(value) => setTokens((prev) => ({ ...prev, [system.id]: value }))}
-                onCommissionChange={(value) => setCommissions((prev) => ({ ...prev, [system.id]: value }))}
-                isSaving={saveSettings.isPending || isSaving}
+                onOpenDetails={() => setSelectedSystem(system.id)}
               />
             ))}
           </div>
         </TabsContent>
+
+        {selectedSystem && (
+          <PaymentSystemDetailsSheet
+            open={!!selectedSystem}
+            onOpenChange={(open) => !open && setSelectedSystem(null)}
+            system={paymentSystems.find(s => s.id === selectedSystem)!}
+            token={tokens[selectedSystem] || ""}
+            commission={commissions[selectedSystem] || ""}
+            customLink={customLinks[selectedSystem] || ""}
+            status={statuses[selectedSystem] || "disconnected"}
+            balance={balances[selectedSystem]}
+            lastCheck={lastChecks[selectedSystem]}
+            onTokenChange={(value) => setTokens(prev => ({ ...prev, [selectedSystem]: value }))}
+            onCommissionChange={(value) => setCommissions(prev => ({ ...prev, [selectedSystem]: value }))}
+            onCustomLinkChange={(value) => setCustomLinks(prev => ({ ...prev, [selectedSystem]: value }))}
+            onCheckConnection={() => handleCheckConnection(selectedSystem)}
+            onRefreshBalance={() => handleRefreshBalance(selectedSystem)}
+            onSave={() => {
+              handleSaveToken(selectedSystem);
+              handleSaveCommission(selectedSystem);
+              handleSaveCustomLink(selectedSystem);
+            }}
+            isSaving={saveSettings.isPending || isSaving}
+          />
+        )}
 
         <TabsContent value="messages" className="space-y-4">
           <Card>

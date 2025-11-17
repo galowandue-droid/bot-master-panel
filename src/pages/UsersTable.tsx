@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useProfiles, useBulkToggleBlockUser, useBulkUpdateBalance, useDeleteProfiles } from "@/hooks/useProfiles";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
@@ -7,13 +7,28 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Download, MoreVertical, Eye, Ban, ShieldCheck, Trash2, X, Wallet } from "lucide-react";
+import { Search, Download, MoreVertical, Eye, Ban, ShieldCheck, Trash2, X, Wallet, Columns3 } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { EmptyState } from "@/components/EmptyState";
 import { UserDetailsDialog } from "@/components/users/UserDetailsDialog";
 import { BulkActionsDialog } from "@/components/users/BulkActionsDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+
+
+const COLUMN_STORAGE_KEY = "usersTableColumns";
+
+const DEFAULT_COLUMNS = {
+  id: true,
+  username: true,
+  firstName: true,
+  telegramId: true,
+  balance: true,
+  totalSpent: true,
+  purchases: true,
+  createdAt: true,
+  blocked: true,
+};
 
 export default function UsersTable() {
   const [search, setSearch] = useState("");
@@ -23,12 +38,25 @@ export default function UsersTable() {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "blocked" | "balance">("all");
   const [bulkAction, setBulkAction] = useState<"block" | "unblock" | "delete" | "balance" | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+    const stored = localStorage.getItem(COLUMN_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : DEFAULT_COLUMNS;
+  });
   const itemsPerPage = 25;
+
 
   const { data: profiles, isLoading } = useProfiles();
   const bulkToggleBlock = useBulkToggleBlockUser();
   const bulkUpdateBalance = useBulkUpdateBalance();
   const deleteProfiles = useDeleteProfiles();
+
+  useEffect(() => {
+    localStorage.setItem(COLUMN_STORAGE_KEY, JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  const toggleColumn = (column: string) => {
+    setVisibleColumns(prev => ({ ...prev, [column]: !prev[column] }));
+  };
 
   const filteredUsers = useMemo(() => {
     return profiles?.filter(user => {
@@ -150,6 +178,45 @@ export default function UsersTable() {
                   {f === "all" ? "Все" : f === "active" ? "Активные" : f === "blocked" ? "Заблокированные" : "С балансом"}
                 </Button>
               ))}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Columns3 className="h-4 w-4 mr-2" />
+                    Колонки
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Отображение колонок</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem checked={visibleColumns.id} onCheckedChange={() => toggleColumn("id")}>
+                    ID
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={visibleColumns.username} onCheckedChange={() => toggleColumn("username")}>
+                    Username
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={visibleColumns.firstName} onCheckedChange={() => toggleColumn("firstName")}>
+                    Имя
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={visibleColumns.telegramId} onCheckedChange={() => toggleColumn("telegramId")}>
+                    Telegram ID
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={visibleColumns.balance} onCheckedChange={() => toggleColumn("balance")}>
+                    Баланс
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={visibleColumns.totalSpent} onCheckedChange={() => toggleColumn("totalSpent")}>
+                    Потрачено
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={visibleColumns.purchases} onCheckedChange={() => toggleColumn("purchases")}>
+                    Покупок
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={visibleColumns.createdAt} onCheckedChange={() => toggleColumn("createdAt")}>
+                    Дата регистрации
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={visibleColumns.blocked} onCheckedChange={() => toggleColumn("blocked")}>
+                    Статус
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -217,11 +284,15 @@ export default function UsersTable() {
                       />
                     </div>
                   </TableHead>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Пользователь</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead className="text-right">Баланс</TableHead>
-                  <TableHead>Статус</TableHead>
+                  {visibleColumns.id && <TableHead>ID</TableHead>}
+                  {visibleColumns.username && <TableHead>Username</TableHead>}
+                  {visibleColumns.firstName && <TableHead>Имя</TableHead>}
+                  {visibleColumns.telegramId && <TableHead>Telegram ID</TableHead>}
+                  {visibleColumns.balance && <TableHead className="text-right">Баланс</TableHead>}
+                  {visibleColumns.totalSpent && <TableHead className="text-right">Потрачено</TableHead>}
+                  {visibleColumns.purchases && <TableHead className="text-right">Покупок</TableHead>}
+                  {visibleColumns.createdAt && <TableHead>Дата регистрации</TableHead>}
+                  {visibleColumns.blocked && <TableHead>Статус</TableHead>}
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -247,11 +318,15 @@ export default function UsersTable() {
                           }} 
                         />
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{user.telegram_id}</TableCell>
-                      <TableCell>{user.first_name || "—"}</TableCell>
-                      <TableCell>{user.username ? `@${user.username}` : "—"}</TableCell>
-                      <TableCell className="text-right">{Number(user.balance).toFixed(2)} ₽</TableCell>
-                      <TableCell><Badge variant={user.is_blocked ? "destructive" : "default"}>{user.is_blocked ? "Заблокирован" : "Активен"}</Badge></TableCell>
+                      {visibleColumns.id && <TableCell className="font-mono text-xs">{user.id.slice(0, 8)}</TableCell>}
+                      {visibleColumns.username && <TableCell>{user.username ? `@${user.username}` : <span className="text-muted-foreground">—</span>}</TableCell>}
+                      {visibleColumns.firstName && <TableCell>{user.first_name || <span className="text-muted-foreground">—</span>}</TableCell>}
+                      {visibleColumns.telegramId && <TableCell className="font-mono text-xs">{user.telegram_id}</TableCell>}
+                      {visibleColumns.balance && <TableCell className="text-right">{Number(user.balance).toFixed(2)} ₽</TableCell>}
+                      {visibleColumns.totalSpent && <TableCell className="text-right text-muted-foreground">—</TableCell>}
+                      {visibleColumns.purchases && <TableCell className="text-right text-muted-foreground">—</TableCell>}
+                      {visibleColumns.createdAt && <TableCell className="text-sm text-muted-foreground">{new Date(user.created_at).toLocaleDateString('ru-RU')}</TableCell>}
+                      {visibleColumns.blocked && <TableCell><Badge variant={user.is_blocked ? "destructive" : "default"}>{user.is_blocked ? "Заблокирован" : "Активен"}</Badge></TableCell>}
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>

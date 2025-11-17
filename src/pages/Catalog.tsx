@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Package, FolderOpen, Pencil, Trash2, Search, Copy, GripVertical, List, GitBranch } from "lucide-react";
+import { Plus, Package, FolderOpen, Pencil, Trash2, Search, Copy, GripVertical, List, GitBranch, LayoutGrid } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCategories } from "@/hooks/useCategories";
 import { usePositions } from "@/hooks/usePositions";
 import { useItems } from "@/hooks/useItems";
@@ -224,8 +225,21 @@ export default function Catalog() {
   const [selectedPositionForPurchase, setSelectedPositionForPurchase] = useState<Position | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<{ type: "category" | "position" | "item"; id: string } | null>(null);
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "tree">("list");
+  const [viewMode, setViewMode] = useState<"list" | "tree">(() => {
+    return (localStorage.getItem("catalogViewMode") as "list" | "tree") || "list";
+  });
+  const [compactMode, setCompactMode] = useState(() => {
+    return localStorage.getItem("catalogCompactMode") === "true";
+  });
   const [parentIdForNewCategory, setParentIdForNewCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem("catalogViewMode", viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem("catalogCompactMode", compactMode.toString());
+  }, [compactMode]);
 
   const { categories, isLoading: categoriesLoading, deleteCategory, updateCategory, createCategory } = useCategories();
   const { positions, isLoading: positionsLoading, deletePosition, updatePosition, createPosition } = usePositions();
@@ -354,18 +368,19 @@ export default function Catalog() {
                 <Plus className="h-4 w-4" />Новая категория
               </Button>
               
-              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "list" | "tree")} className="w-full">
-                <TabsList className="w-full grid grid-cols-2">
-                  <TabsTrigger value="list" className="gap-1">
-                    <List className="h-3 w-3" />
-                    Список
-                  </TabsTrigger>
-                  <TabsTrigger value="tree" className="gap-1">
-                    <GitBranch className="h-3 w-3" />
-                    Дерево
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground px-1">Режим отображения</p>
+                <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as "list" | "tree")} className="grid grid-cols-2 gap-2">
+                  <ToggleGroupItem value="list" className="flex-col gap-1 h-auto py-2">
+                    <List className="h-4 w-4" />
+                    <span className="text-xs">Плоский список</span>
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="tree" className="flex-col gap-1 h-auto py-2">
+                    <GitBranch className="h-4 w-4" />
+                    <span className="text-xs">Дерево категорий</span>
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
             </div>
             
             <ScrollArea className="h-[calc(100vh-11rem)]">
@@ -445,13 +460,23 @@ export default function Catalog() {
             </ScrollArea>
           </div>
 
-          <div className="flex-1 p-6 overflow-auto">
+          <div className="flex-1 p-6 overflow-auto bg-background">
             <div className="space-y-4 max-w-6xl mx-auto">
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1 max-w-sm">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="relative flex-1 min-w-[200px] max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="Поиск товаров..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
                 </div>
+                <ToggleGroup type="single" value={compactMode ? "compact" : "cards"} onValueChange={(v) => v && setCompactMode(v === "compact")}>
+                  <ToggleGroupItem value="cards" className="gap-2">
+                    <LayoutGrid className="h-4 w-4" />
+                    Карточки
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="compact" className="gap-2">
+                    <List className="h-4 w-4" />
+                    Компактно
+                  </ToggleGroupItem>
+                </ToggleGroup>
                 <Button onClick={() => { setSelectedPosition(undefined); setPositionDialogOpen(true); }} className="gap-2"><Plus className="h-4 w-4" />Добавить товар</Button>
               </div>
 
@@ -462,7 +487,7 @@ export default function Catalog() {
               ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePositionDragEnd}>
                   <SortableContext items={filteredPositions?.map(p => p.id) || []} strategy={verticalListSortingStrategy}>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className={compactMode ? "space-y-2" : "grid gap-4 md:grid-cols-2 lg:grid-cols-3"}>
                       {filteredPositions?.map(pos => (
                         <SortablePositionCard
                           key={pos.id}
