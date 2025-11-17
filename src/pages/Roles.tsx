@@ -86,18 +86,21 @@ export default function Roles() {
           </Card>
 
           <Tabs defaultValue="all" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3 h-auto">
-              <TabsTrigger value="all" className="px-2 py-2 text-xs sm:text-sm flex-col sm:flex-row gap-0.5 sm:gap-1">
-                <span className="font-medium">Все</span>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">({profiles?.length || 0})</span>
+            <TabsList className="grid w-full grid-cols-3 max-w-md text-xs xs:text-sm">
+              <TabsTrigger value="all" className="px-1 xs:px-3">
+                <span className="hidden xs:inline">Все</span>
+                <span className="inline xs:hidden">Все</span>
+                {" "}({profiles?.length || 0})
               </TabsTrigger>
-              <TabsTrigger value="admins" className="px-2 py-2 text-xs sm:text-sm flex-col sm:flex-row gap-0.5 sm:gap-1">
-                <span className="font-medium">Админы</span>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">({admins.length})</span>
+              <TabsTrigger value="admins" className="px-1 xs:px-3">
+                <span className="hidden xs:inline">Админы</span>
+                <span className="inline xs:hidden">Адм.</span>
+                {" "}({admins.length})
               </TabsTrigger>
-              <TabsTrigger value="users" className="px-2 py-2 text-xs sm:text-sm flex-col sm:flex-row gap-0.5 sm:gap-1">
-                <span className="font-medium truncate max-w-full">Польз.</span>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">({regularUsers.length})</span>
+              <TabsTrigger value="users" className="px-1 xs:px-3 truncate">
+                <span className="hidden xs:inline">Пользователи</span>
+                <span className="inline xs:hidden">Польз.</span>
+                {" "}({regularUsers.length})
               </TabsTrigger>
             </TabsList>
 
