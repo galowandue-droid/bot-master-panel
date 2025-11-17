@@ -142,37 +142,79 @@ export default function Analytics() {
               {isMobile ? (
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-full justify-center">
-                      <CalendarIcon className="h-4 w-4 mr-2" />
-                      <span className="text-xs">{format(dateRange.from, "dd.MM", { locale: ru })} - {format(dateRange.to, "dd.MM", { locale: ru })}</span>
+                    <Button variant="outline" size="sm" className="w-full justify-center gap-1.5 px-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span className="text-xs whitespace-nowrap">
+                        {format(dateRange.from, "dd.MM", { locale: ru })}-{format(dateRange.to, "dd.MM", { locale: ru })}
+                      </span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="bottom" className="h-auto max-h-[80vh]">
-                    <SheetHeader>
+                  <SheetContent side="bottom" className="h-auto max-h-[60vh] overflow-y-auto">
+                    <SheetHeader className="pb-3">
                       <SheetTitle>Выберите период</SheetTitle>
                     </SheetHeader>
-                    <div className="space-y-4 mt-4 overflow-y-auto max-h-[calc(80vh-80px)]">
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium">От: {format(dateRange.from, "dd MMM yyyy", { locale: ru })}</div>
-                        <Calendar
-                          mode="single"
-                          selected={dateRange.from}
-                          onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
-                          locale={ru}
-                          className="mx-auto"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium">До: {format(dateRange.to, "dd MMM yyyy", { locale: ru })}</div>
-                        <Calendar
-                          mode="single"
-                          selected={dateRange.to}
-                          onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
-                          locale={ru}
-                          className="mx-auto"
-                        />
-                      </div>
+                    
+                    {/* Быстрые пресеты */}
+                    <div className="grid grid-cols-4 gap-2 mb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs px-2"
+                        onClick={() => setDateRange({ from: new Date(), to: new Date() })}
+                      >
+                        Сегодня
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs px-2"
+                        onClick={() => setDateRange({ from: subDays(new Date(), 7), to: new Date() })}
+                      >
+                        7 дней
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs px-2"
+                        onClick={() => setDateRange({ from: subDays(new Date(), 30), to: new Date() })}
+                      >
+                        30 дней
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs px-2"
+                        onClick={() => setDateRange({ from: subDays(new Date(), 90), to: new Date() })}
+                      >
+                        90 дней
+                      </Button>
                     </div>
+                    
+                    {/* Отображение выбранного периода */}
+                    <div className="text-sm text-muted-foreground mb-3 text-center">
+                      {dateRange.from && dateRange.to && (
+                        <>
+                          {format(dateRange.from, "dd MMM", { locale: ru })} - {format(dateRange.to, "dd MMM yyyy", { locale: ru })}
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Range Calendar */}
+                    <Calendar
+                      mode="range"
+                      selected={{ from: dateRange.from, to: dateRange.to }}
+                      onSelect={(range) => {
+                        if (range?.from) {
+                          setDateRange({
+                            from: range.from,
+                            to: range.to || range.from
+                          });
+                        }
+                      }}
+                      locale={ru}
+                      numberOfMonths={1}
+                      className="mx-auto"
+                    />
                   </SheetContent>
                 </Sheet>
               ) : (
