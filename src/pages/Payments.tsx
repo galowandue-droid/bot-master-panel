@@ -100,6 +100,7 @@ export default function Payments() {
         title="Платежи"
         description="Статистика платежей и пополнений"
         icon={<Wallet className="h-5 w-5 text-primary" />}
+        gradient
         actions={
           <Button
             onClick={handleRefresh}

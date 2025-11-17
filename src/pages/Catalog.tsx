@@ -342,12 +342,12 @@ export default function Catalog() {
   return (
     <TooltipProvider>
       <>
-        <PageHeader
-          title="Каталог"
-          description="Управление категориями и товарами"
-          icon={<Package className="h-5 w-5 text-primary" />}
-          gradient
-          actions={
+      <PageHeader
+        title="Каталог"
+        description="Управление категориями и товарами"
+        icon={<Package className="h-5 w-5 text-primary" />}
+        gradient
+        actions={
             <PageHeaderSearch 
               placeholder="Поиск товаров..." 
               value={search} 

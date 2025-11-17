@@ -37,6 +37,7 @@ export default function Settings() {
         title="Настройки"
         icon={<Settings2 className="h-5 w-5 text-primary" />}
         breadcrumbs={[{ label: "Настройки" }]}
+        gradient
       />
 
       <PageContainer className="h-[calc(100vh-4rem)] overflow-auto">
