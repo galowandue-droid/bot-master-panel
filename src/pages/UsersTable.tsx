@@ -211,11 +211,11 @@ export default function UsersTable() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
-                    <Checkbox 
-                      checked={allSelected}
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Выделить всех пользователей"
-                    />
+                    <div role="button" aria-label="Выделить всех пользователей" onClick={handleSelectAll}>
+                      <Checkbox 
+                        checked={allSelected}
+                      />
+                    </div>
                   </TableHead>
                   <TableHead>ID</TableHead>
                   <TableHead>Пользователь</TableHead>
