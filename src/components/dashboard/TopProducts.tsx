@@ -55,15 +55,15 @@ export function TopProducts() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+        <CardHeader className="px-3 xs:px-6 pt-3 xs:pt-6 pb-2 xs:pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm xs:text-base">
+            <Package className="h-4 w-4 xs:h-5 xs:w-5" />
             Топ товаров
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 xs:space-y-4 px-3 xs:px-6 pb-3 xs:pb-6">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 w-full" />
+            <Skeleton key={i} className="h-14 xs:h-16 w-full" />
           ))}
         </CardContent>
       </Card>
@@ -73,14 +73,14 @@ export function TopProducts() {
   if (!topProducts || topProducts.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+        <CardHeader className="px-3 xs:px-6 pt-3 xs:pt-6 pb-2 xs:pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm xs:text-base">
+            <Package className="h-4 w-4 xs:h-5 xs:w-5" />
             Топ товаров
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Нет данных о продажах</p>
+        <CardContent className="px-3 xs:px-6 pb-3 xs:pb-6">
+          <p className="text-xs xs:text-sm text-muted-foreground">Нет данных о продажах</p>
         </CardContent>
       </Card>
     );
@@ -88,24 +88,24 @@ export function TopProducts() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5 text-primary" />
+      <CardHeader className="px-3 xs:px-6 pt-3 xs:pt-6 pb-2 xs:pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm xs:text-base">
+          <Package className="h-4 w-4 xs:h-5 xs:w-5 text-primary" />
           Топ товаров
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2 xs:space-y-3 px-3 xs:px-6 pb-3 xs:pb-6">
         {topProducts.map((product, index) => (
           <div
             key={product.id}
-            className="flex items-center gap-4 p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors"
+            className="flex items-center gap-2 xs:gap-4 p-2 xs:p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
+            <div className="flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 rounded-full bg-primary/10 text-primary text-xs xs:text-sm font-bold">
               {index + 1}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{product.name}</p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <p className="text-sm font-medium truncate">{product.name}</p>
+              <div className="flex items-center gap-1.5 xs:gap-2 text-xs xs:text-sm text-muted-foreground">
                 <span>{product.count} продаж</span>
                 <span>•</span>
                 <span className="text-success font-medium">
@@ -114,8 +114,8 @@ export function TopProducts() {
               </div>
             </div>
             {index === 0 && (
-              <Badge variant="default" className="shrink-0">
-                <TrendingUp className="h-3 w-3 mr-1" />
+              <Badge variant="default" className="shrink-0 text-[10px] xs:text-xs px-1.5 xs:px-2 py-0.5">
+                <TrendingUp className="h-2.5 w-2.5 xs:h-3 xs:w-3 mr-0.5 xs:mr-1" />
                 #1
               </Badge>
             )}

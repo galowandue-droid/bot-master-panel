@@ -47,84 +47,84 @@ export function ConversionMetrics() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2 xs:gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-32 w-full" />
+          <Skeleton key={i} className="h-28 xs:h-32 w-full" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-2 xs:gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card className="relative overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center justify-between">
+        <CardHeader className="pb-1 xs:pb-2 px-3 xs:px-6 pt-3 xs:pt-6">
+          <CardTitle className="text-xs xs:text-sm font-medium flex items-center justify-between">
             <span>Конверсия</span>
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <TrendingUp className="h-3 w-3 xs:h-4 xs:w-4 text-primary" />
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl md:text-3xl font-bold text-primary">{metrics?.conversion}%</div>
-          <p className="text-xs text-muted-foreground mt-1">
+        <CardContent className="px-3 xs:px-6 pb-3 xs:pb-6">
+          <div className="text-xl xs:text-2xl md:text-3xl font-bold text-primary">{metrics?.conversion}%</div>
+          <p className="text-[10px] xs:text-xs text-muted-foreground mt-0.5 xs:mt-1">
             {metrics?.uniqueBuyers} из {metrics?.totalUsers} купили
           </p>
         </CardContent>
-        <div className="absolute bottom-0 right-0 w-24 h-24 -mr-8 -mb-8 opacity-5">
+        <div className="absolute bottom-0 right-0 w-20 h-20 xs:w-24 xs:h-24 -mr-6 -mb-6 xs:-mr-8 xs:-mb-8 opacity-5">
           <TrendingUp className="w-full h-full" />
         </div>
       </Card>
 
       <Card className="relative overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center justify-between">
+        <CardHeader className="pb-1 xs:pb-2 px-3 xs:px-6 pt-3 xs:pt-6">
+          <CardTitle className="text-xs xs:text-sm font-medium flex items-center justify-between">
             <span>Покупатели</span>
-            <Users className="h-4 w-4 text-success" />
+            <Users className="h-3 w-3 xs:h-4 xs:w-4 text-success" />
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl md:text-3xl font-bold text-success">{metrics?.uniqueBuyers}</div>
-          <p className="text-xs text-muted-foreground mt-1">
+        <CardContent className="px-3 xs:px-6 pb-3 xs:pb-6">
+          <div className="text-xl xs:text-2xl md:text-3xl font-bold text-success">{metrics?.uniqueBuyers}</div>
+          <p className="text-[10px] xs:text-xs text-muted-foreground mt-0.5 xs:mt-1">
             Уникальных покупателей
           </p>
         </CardContent>
-        <div className="absolute bottom-0 right-0 w-24 h-24 -mr-8 -mb-8 opacity-5">
+        <div className="absolute bottom-0 right-0 w-20 h-20 xs:w-24 xs:h-24 -mr-6 -mb-6 xs:-mr-8 xs:-mb-8 opacity-5">
           <Users className="w-full h-full" />
         </div>
       </Card>
 
       <Card className="relative overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center justify-between">
+        <CardHeader className="pb-1 xs:pb-2 px-3 xs:px-6 pt-3 xs:pt-6">
+          <CardTitle className="text-xs xs:text-sm font-medium flex items-center justify-between">
             <span>Средний чек</span>
-            <ShoppingCart className="h-4 w-4 text-blue-600" />
+            <ShoppingCart className="h-3 w-3 xs:h-4 xs:w-4 text-blue-600" />
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl md:text-3xl font-bold text-blue-600">{metrics?.averageCheck} ₽</div>
-          <p className="text-xs text-muted-foreground mt-1">
+        <CardContent className="px-3 xs:px-6 pb-3 xs:pb-6">
+          <div className="text-xl xs:text-2xl md:text-3xl font-bold text-blue-600">{metrics?.averageCheck} ₽</div>
+          <p className="text-[10px] xs:text-xs text-muted-foreground mt-0.5 xs:mt-1">
             На одну покупку
           </p>
         </CardContent>
-        <div className="absolute bottom-0 right-0 w-24 h-24 -mr-8 -mb-8 opacity-5">
+        <div className="absolute bottom-0 right-0 w-20 h-20 xs:w-24 xs:h-24 -mr-6 -mb-6 xs:-mr-8 xs:-mb-8 opacity-5">
           <ShoppingCart className="w-full h-full" />
         </div>
       </Card>
 
       <Card className="relative overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center justify-between">
+        <CardHeader className="pb-1 xs:pb-2 px-3 xs:px-6 pt-3 xs:pt-6">
+          <CardTitle className="text-xs xs:text-sm font-medium flex items-center justify-between">
             <span>Выручка</span>
-            <DollarSign className="h-4 w-4 text-green-600" />
+            <DollarSign className="h-3 w-3 xs:h-4 xs:w-4 text-green-600" />
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl md:text-3xl font-bold text-green-600">{metrics?.totalRevenue} ₽</div>
-          <p className="text-xs text-muted-foreground mt-1">
+        <CardContent className="px-3 xs:px-6 pb-3 xs:pb-6">
+          <div className="text-xl xs:text-2xl md:text-3xl font-bold text-green-600">{metrics?.totalRevenue} ₽</div>
+          <p className="text-[10px] xs:text-xs text-muted-foreground mt-0.5 xs:mt-1">
             Всего заработано
           </p>
         </CardContent>
-        <div className="absolute bottom-0 right-0 w-24 h-24 -mr-8 -mb-8 opacity-5">
+        <div className="absolute bottom-0 right-0 w-20 h-20 xs:w-24 xs:h-24 -mr-6 -mb-6 xs:-mr-8 xs:-mb-8 opacity-5">
           <DollarSign className="w-full h-full" />
         </div>
       </Card>
