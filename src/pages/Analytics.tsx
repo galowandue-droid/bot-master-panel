@@ -6,14 +6,13 @@ import { useStatistics } from "@/hooks/useStatistics";
 import { useCategories } from "@/hooks/useCategories";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarIcon, TrendingUp, DollarSign, Users, ShoppingCart, Wallet, Download, BarChart3, Target } from "lucide-react";
+import { TrendingUp, DollarSign, Users, ShoppingCart, Wallet, Download, BarChart3, Target } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { ru } from "date-fns/locale";
+import { DateRangePicker } from "@/components/analytics/DateRangePicker";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   AreaChart,
   Area,
@@ -32,7 +31,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
-import { useIsMobile } from "@/hooks/use-mobile";
+
 
 const COLORS = ['hsl(250, 95%, 63%)', 'hsl(280, 89%, 66%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)'];
 
@@ -42,7 +41,6 @@ export default function Analytics() {
     to: new Date(),
   });
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [desktopOpen, setDesktopOpen] = useState(false);
   const isMobile = useIsMobile();
   
   const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
@@ -140,193 +138,10 @@ export default function Analytics() {
           </CardHeader>
           <CardContent className="flex flex-col xs:flex-row gap-2 xs:gap-4">
             <div className="flex-1 min-w-[200px]">
-              {isMobile ? (
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-full justify-center gap-1.5 px-2">
-                      <CalendarIcon className="h-4 w-4" />
-                      <span className="text-xs whitespace-nowrap">
-                        {format(dateRange.from, "dd.MM", { locale: ru })}-{format(dateRange.to, "dd.MM", { locale: ru })}
-                      </span>
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="bottom" className="h-auto max-h-[60vh] overflow-y-auto">
-                    <SheetHeader className="pb-3">
-                      <SheetTitle>Выберите период</SheetTitle>
-                    </SheetHeader>
-                    
-                    {/* Быстрые пресеты */}
-                    <div className="grid grid-cols-4 gap-2 mb-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => setDateRange({ from: new Date(), to: new Date() })}
-                      >
-                        Сегодня
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => setDateRange({ from: subDays(new Date(), 7), to: new Date() })}
-                      >
-                        7 дней
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => setDateRange({ from: subDays(new Date(), 30), to: new Date() })}
-                      >
-                        30 дней
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => setDateRange({ from: subDays(new Date(), 90), to: new Date() })}
-                      >
-                        90 дней
-                      </Button>
-                    </div>
-                    
-                    {/* Отображение выбранного периода */}
-                    <div className="text-sm text-muted-foreground mb-3 text-center">
-                      {dateRange.from && dateRange.to && (
-                        <>
-                          {format(dateRange.from, "dd MMM", { locale: ru })} - {format(dateRange.to, "dd MMM yyyy", { locale: ru })}
-                        </>
-                      )}
-                    </div>
-                    
-                    {/* Range Calendar */}
-                    <Calendar
-                      mode="range"
-                      selected={{ from: dateRange.from, to: dateRange.to }}
-                      onSelect={(range) => {
-                        if (range?.from) {
-                          setDateRange({
-                            from: range.from,
-                            to: range.to || range.from
-                          });
-                        }
-                      }}
-                      locale={ru}
-                      numberOfMonths={1}
-                      className="mx-auto"
-                    />
-                  </SheetContent>
-                </Sheet>
-              ) : (
-                <Popover open={desktopOpen} onOpenChange={setDesktopOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-auto md:min-w-[280px] justify-start text-left font-normal text-sm gap-2">
-                      <CalendarIcon className="h-4 w-4" />
-                      <span className="truncate">
-                        {format(dateRange.from, "dd MMM yyyy", { locale: ru })} — {format(dateRange.to, "dd MMM yyyy", { locale: ru })}
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-              <PopoverContent className="p-0 w-auto max-w-[400px]" align="start" side="bottom" sideOffset={8}>
-                <div className="p-4 space-y-4">
-                      {/* Быстрые пресеты */}
-                      <div className="grid grid-cols-4 gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setDateRange({ from: new Date(), to: new Date() });
-                            setDesktopOpen(false);
-                          }}
-                        >
-                          Сегодня
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setDateRange({ from: subDays(new Date(), 7), to: new Date() });
-                            setDesktopOpen(false);
-                          }}
-                        >
-                          7 дней
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setDateRange({ from: subDays(new Date(), 30), to: new Date() });
-                            setDesktopOpen(false);
-                          }}
-                        >
-                          30 дней
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setDateRange({ from: subDays(new Date(), 90), to: new Date() });
-                            setDesktopOpen(false);
-                          }}
-                        >
-                          90 дней
-                        </Button>
-                      </div>
-
-                      {/* Отображение выбранного периода */}
-                      <div className="text-sm text-muted-foreground text-center">
-                        {dateRange.from && dateRange.to && (
-                          <>
-                            {format(dateRange.from, "dd MMM", { locale: ru })} — {format(dateRange.to, "dd MMM yyyy", { locale: ru })}
-                          </>
-                        )}
-                      </div>
-                      
-                      {/* Range Calendar */}
-                  <Calendar
-                    mode="range"
-                    selected={{ from: dateRange.from, to: dateRange.to }}
-                    onSelect={(range) => {
-                      if (range?.from) {
-                        const newRange = { from: range.from, to: range.to || range.from };
-                        setDateRange(newRange);
-                        if (range?.to) {
-                          setDesktopOpen(false);
-                        }
-                      }
-                    }}
-                    locale={ru}
-                    numberOfMonths={1}
-                    pagedNavigation
-                    fixedWeeks
-                    showOutsideDays
-                  />
-
-                      {/* Управление */}
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setDateRange({ from: subDays(new Date(), 30), to: new Date() });
-                        setDesktopOpen(false);
-                      }}
-                    >
-                      Сбросить
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => setDesktopOpen(false)}
-                    >
-                      Готово
-                    </Button>
-                  </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              )}
+              <DateRangePicker 
+                dateRange={dateRange} 
+                onDateRangeChange={setDateRange}
+              />
             </div>
 
             <div className="flex-1 min-w-[200px]">
