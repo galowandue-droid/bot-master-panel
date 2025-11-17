@@ -111,14 +111,14 @@ export default function Search() {
 
       <PageContainer>
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="users" className="gap-2">
-              <User className="h-4 w-4" />
-              Пользователи
+          <TabsList className="grid grid-cols-2 w-full xs:w-auto xs:inline-flex">
+            <TabsTrigger value="users" className="gap-1 xs:gap-2 text-xs xs:text-sm">
+              <User className="h-3 w-3 xs:h-4 xs:w-4" />
+              <span className="truncate">Пользователи</span>
             </TabsTrigger>
-            <TabsTrigger value="purchases" className="gap-2">
-              <FileText className="h-4 w-4" />
-              Покупки
+            <TabsTrigger value="purchases" className="gap-1 xs:gap-2 text-xs xs:text-sm">
+              <FileText className="h-3 w-3 xs:h-4 xs:w-4" />
+              <span className="truncate">Покупки</span>
             </TabsTrigger>
           </TabsList>
 
