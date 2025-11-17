@@ -1,12 +1,9 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CalendarIcon } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { ru } from "date-fns/locale";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface DateRangePickerProps {
   dateRange: { from: Date; to: Date };
@@ -14,7 +11,6 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePickerProps) {
-  const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const presets = [
@@ -28,93 +24,72 @@ export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePicke
     const from = days === 0 ? new Date() : subDays(new Date(), days);
     const to = new Date();
     onDateRangeChange({ from, to });
-    if (!isMobile) setOpen(false);
-  };
-
-  const handleCalendarSelect = (range: any) => {
-    if (range?.from) {
-      onDateRangeChange({
-        from: range.from,
-        to: range.to || range.from,
-      });
-      if (range?.to && !isMobile) {
-        setOpen(false);
-      }
-    }
   };
 
   const formatDateRange = () => {
-    return `${format(dateRange.from, "dd MMM yyyy", { locale: ru })} — ${format(dateRange.to, "dd MMM yyyy", { locale: ru })}`;
+    if (isMobile) {
+      return `${format(dateRange.from, "dd.MM", { locale: ru })}—${format(dateRange.to, "dd.MM", { locale: ru })}`;
+    }
+    return `${format(dateRange.from, "dd MMM", { locale: ru })} — ${format(dateRange.to, "dd MMM yyyy", { locale: ru })}`;
   };
 
-  const CalendarContent = () => (
-    <div className="space-y-4">
-      {/* Пресеты */}
-      <div className="grid grid-cols-4 gap-2">
+  const getActivePreset = () => {
+    const today = new Date();
+    const diffTime = today.getTime() - dateRange.from.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 0;
+    if (diffDays <= 7) return 7;
+    if (diffDays <= 30) return 30;
+    if (diffDays <= 90) return 90;
+    return null;
+  };
+
+  const activePreset = getActivePreset();
+
+  if (isMobile) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+          <CalendarIcon className="h-3.5 w-3.5" />
+          <span>{formatDateRange()}</span>
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {presets.map((preset) => (
+            <Button
+              key={preset.label}
+              variant={activePreset === preset.days ? "default" : "outline"}
+              size="sm"
+              onClick={() => handlePresetClick(preset.days)}
+              className="text-xs h-8 px-2"
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <CalendarIcon className="h-4 w-4" />
+        <span>{formatDateRange()}</span>
+      </div>
+      <div className="flex gap-2">
         {presets.map((preset) => (
           <Button
             key={preset.label}
-            variant="outline"
+            variant={activePreset === preset.days ? "default" : "outline"}
             size="sm"
             onClick={() => handlePresetClick(preset.days)}
-            className="text-xs"
+            className="text-sm"
           >
             {preset.label}
           </Button>
         ))}
       </div>
-
-      {/* Выбранный период */}
-      {dateRange.from && dateRange.to && (
-        <div className="text-sm text-center text-muted-foreground">
-          {format(dateRange.from, "dd MMM", { locale: ru })} — {format(dateRange.to, "dd MMM yyyy", { locale: ru })}
-        </div>
-      )}
-
-      {/* Календарь */}
-      <Calendar
-        mode="range"
-        selected={{ from: dateRange.from, to: dateRange.to }}
-        onSelect={handleCalendarSelect}
-        locale={ru}
-        numberOfMonths={1}
-        className="mx-auto"
-      />
     </div>
-  );
-
-  if (isMobile) {
-    return (
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full justify-start text-left gap-2">
-            <CalendarIcon className="h-4 w-4" />
-            <span className="truncate text-xs">{formatDateRange()}</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="bottom" className="h-auto max-h-[70vh]">
-          <SheetHeader className="pb-4">
-            <SheetTitle>Выберите период</SheetTitle>
-          </SheetHeader>
-          <div className="overflow-y-auto px-1">
-            <CalendarContent />
-          </div>
-        </SheetContent>
-      </Sheet>
-    );
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="w-auto min-w-[280px] justify-start text-left gap-2">
-          <CalendarIcon className="h-4 w-4" />
-          <span className="truncate text-sm">{formatDateRange()}</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-4" align="start" sideOffset={8}>
-        <CalendarContent />
-      </PopoverContent>
-    </Popover>
   );
 }
