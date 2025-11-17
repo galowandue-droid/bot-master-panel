@@ -1,17 +1,18 @@
 import { useState, useMemo, useEffect } from "react";
 import { useProfiles, useBulkToggleBlockUser, useBulkUpdateBalance, useDeleteProfiles } from "@/hooks/useProfiles";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Download, MoreVertical, Eye, Ban, ShieldCheck, Trash2, X, Wallet, Columns3 } from "lucide-react";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { Search, Download, MoreVertical, Eye, Ban, ShieldCheck, Trash2, X, Wallet, Columns3, Users } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { UserDetailsDialog } from "@/components/users/UserDetailsDialog";
 import { BulkActionsDialog } from "@/components/users/BulkActionsDialog";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeaderSearch } from "@/components/layout/PageHeaderSearch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 
@@ -121,19 +122,28 @@ export default function UsersTable() {
   const hasUnblockedUsers = selectedProfiles.some(p => !p.is_blocked);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="flex h-16 items-center gap-4 px-6">
-          <SidebarTrigger />
-          <div className="flex-1 space-y-1">
-            <h1 className="text-2xl font-bold">Пользователи</h1>
-            <Breadcrumbs items={[{ label: "Пользователи" }]} />
+    <>
+      <PageHeader
+        title="Пользователи"
+        description="Управление пользователями системы"
+        icon={<Users className="h-5 w-5 text-primary" />}
+        gradient
+        actions={
+          <div className="flex items-center gap-2">
+            <PageHeaderSearch 
+              placeholder="Поиск пользователей..." 
+              value={search} 
+              onChange={setSearch} 
+            />
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Экспорт
+            </Button>
           </div>
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-2" />Экспорт</Button>
-        </div>
-      </header>
-
-      <div className="p-6 h-[calc(100vh-4rem)] overflow-auto">
+        }
+      />
+      
+      <PageContainer gradient>
         {isLoading ? (
           <div className="space-y-4 max-w-7xl mx-auto">
             <Card>
@@ -167,11 +177,7 @@ export default function UsersTable() {
           </div>
         ) : (
         <div className="space-y-4 max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Поиск..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-            </div>
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="flex gap-2">
               {["all", "active", "blocked", "balance"].map(f => (
                 <Button key={f} variant={filterStatus === f ? "default" : "outline"} size="sm" onClick={() => setFilterStatus(f as any)}>
@@ -344,7 +350,7 @@ export default function UsersTable() {
           </Card>
         </div>
         )}
-      </div>
+      </PageContainer>
 
       <UserDetailsDialog user={selectedUser} open={detailsOpen} onOpenChange={setDetailsOpen} />
       
@@ -356,6 +362,6 @@ export default function UsersTable() {
         onConfirm={handleBulkAction}
         isPending={bulkToggleBlock.isPending || bulkUpdateBalance.isPending || deleteProfiles.isPending}
       />
-    </div>
+    </>
   );
 }

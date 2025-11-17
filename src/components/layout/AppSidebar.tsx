@@ -70,13 +70,13 @@ const menuItems: MenuItem[] = [{
   title: "Аналитика",
   icon: TrendingUp,
   items: [{
-    title: "Статистика",
-    url: "/statistics",
-    icon: BarChart3
+    title: "Дашборд",
+    url: "/",
+    icon: LayoutDashboard
   }, {
     title: "Аналитика",
     url: "/analytics",
-    icon: TrendingUp
+    icon: BarChart3
   }, {
     title: "Поиск",
     url: "/search",

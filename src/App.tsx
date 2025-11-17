@@ -7,7 +7,6 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Catalog from "./pages/Catalog";
-import Statistics from "./pages/Statistics";
 import Search from "./pages/Search";
 import Mailing from "./pages/Mailing";
 import Users from "./pages/UsersTable";
@@ -39,7 +38,6 @@ const App = () => (
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/catalog" element={<Catalog />} />
-            <Route path="/statistics" element={<Statistics />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/search" element={<Search />} />
             <Route path="/mailing" element={<Mailing />} />
