@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarIcon, TrendingUp, DollarSign, Users, ShoppingCart, Wallet, Download, BarChart3, Target } from "lucide-react";
@@ -138,36 +139,74 @@ export default function Analytics() {
           </CardHeader>
           <CardContent className="flex flex-col xs:flex-row gap-2 xs:gap-4">
             <div className="flex-1 min-w-[200px]">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal text-xs xs:text-sm">
-                    <CalendarIcon className="mr-2 h-3 w-3 xs:h-4 xs:w-4" />
-                    <span className="truncate">{format(dateRange.from, "dd MMM yyyy", { locale: ru })} - {format(dateRange.to, "dd MMM yyyy", { locale: ru })}</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start" side="bottom">
-                  <div className="p-2 xs:p-3 space-y-2">
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">От</div>
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.from}
-                        onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
-                        locale={ru}
-                      />
+              {isMobile ? (
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full justify-center">
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      <span className="text-xs">{format(dateRange.from, "dd.MM", { locale: ru })} - {format(dateRange.to, "dd.MM", { locale: ru })}</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="h-auto max-h-[80vh]">
+                    <SheetHeader>
+                      <SheetTitle>Выберите период</SheetTitle>
+                    </SheetHeader>
+                    <div className="space-y-4 mt-4 overflow-y-auto max-h-[calc(80vh-80px)]">
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">От: {format(dateRange.from, "dd MMM yyyy", { locale: ru })}</div>
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.from}
+                          onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
+                          locale={ru}
+                          className="mx-auto"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">До: {format(dateRange.to, "dd MMM yyyy", { locale: ru })}</div>
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.to}
+                          onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
+                          locale={ru}
+                          className="mx-auto"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">До</div>
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.to}
-                        onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
-                        locale={ru}
-                      />
+                  </SheetContent>
+                </Sheet>
+              ) : (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal text-xs xs:text-sm">
+                      <CalendarIcon className="mr-2 h-3 w-3 xs:h-4 xs:w-4" />
+                      <span className="truncate">{format(dateRange.from, "dd MMM yyyy", { locale: ru })} - {format(dateRange.to, "dd MMM yyyy", { locale: ru })}</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start" side="bottom">
+                    <div className="p-2 xs:p-3 space-y-2">
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">От</div>
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.from}
+                          onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
+                          locale={ru}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">До</div>
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.to}
+                          onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
+                          locale={ru}
+                        />
+                      </div>
                     </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
 
             <div className="flex-1 min-w-[200px]">
