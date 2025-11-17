@@ -50,27 +50,6 @@ export type Database = {
         }
         Relationships: []
       }
-      bot_settings: {
-        Row: {
-          id: string
-          key: string
-          updated_at: string | null
-          value: string | null
-        }
-        Insert: {
-          id?: string
-          key: string
-          updated_at?: string | null
-          value?: string | null
-        }
-        Update: {
-          id?: string
-          key?: string
-          updated_at?: string | null
-          value?: string | null
-        }
-        Relationships: []
-      }
       broadcast_buttons: {
         Row: {
           broadcast_id: string
@@ -416,6 +395,27 @@ export type Database = {
         }
         Relationships: []
       }
+      public_bot_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
       purchase_items: {
         Row: {
           id: string
@@ -556,6 +556,27 @@ export type Database = {
           id?: string
           is_active?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      secure_bot_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string | null
         }
         Relationships: []
       }

@@ -75,7 +75,7 @@ export const useReferrals = () => {
     queryKey: ["referral-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("bot_settings")
+        .from("public_bot_settings")
         .select("key, value")
         .in("key", [
           "referral_enabled",
@@ -97,7 +97,7 @@ export const useReferrals = () => {
     mutationFn: async (settings: Record<string, string>) => {
       const promises = Object.entries(settings).map(([key, value]) =>
         supabase
-          .from("bot_settings")
+          .from("public_bot_settings")
           .upsert({ key, value }, { onConflict: "key" })
       );
 
