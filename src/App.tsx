@@ -23,6 +23,8 @@ import Referrals from "./pages/Referrals";
 import RequiredChannels from "./pages/RequiredChannels";
 import Roles from "./pages/Roles";
 import Analytics from "./pages/Analytics";
+import AuditLog from "./pages/AuditLog";
+import WebhookLogs from "./pages/WebhookLogs";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,8 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/database" element={<Database />} />
             <Route path="/logs" element={<Logs />} />
+            <Route path="/audit-log" element={<AuditLog />} />
+            <Route path="/webhook-logs" element={<WebhookLogs />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
           <Route path="*" element={<NotFound />} />

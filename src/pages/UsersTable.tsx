@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Download, MoreVertical, Eye, Ban, ShieldCheck, Trash2, X, Wallet } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { EmptyState } from "@/components/EmptyState";
@@ -105,6 +106,38 @@ export default function UsersTable() {
       </header>
 
       <div className="p-6 h-[calc(100vh-4rem)] overflow-auto">
+        {isLoading ? (
+          <div className="space-y-4 max-w-7xl mx-auto">
+            <Card>
+              <div className="p-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+                  <Skeleton className="h-10 w-full md:w-80" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-9 w-20" />
+                    <Skeleton className="h-9 w-20" />
+                    <Skeleton className="h-9 w-24" />
+                    <Skeleton className="h-9 w-32" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {[...Array(10)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 border rounded-lg">
+                      <Skeleton className="h-4 w-4" />
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </div>
+        ) : (
         <div className="space-y-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-sm">
@@ -173,7 +206,8 @@ export default function UsersTable() {
           )}
 
           <Card>
-            <Table>
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
@@ -222,9 +256,11 @@ export default function UsersTable() {
                   ))
                 )}
               </TableBody>
-            </Table>
+              </Table>
+            </div>
           </Card>
         </div>
+        )}
       </div>
 
       <UserDetailsDialog user={selectedUser} open={detailsOpen} onOpenChange={setDetailsOpen} />

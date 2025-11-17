@@ -2,7 +2,7 @@ import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Package, Users, CreditCard, Settings as SettingsIcon, ChevronRight, ChevronDown, Wrench, Bot, BarChart3, Search, Send, Database, FileText, LogOut, User, ShoppingBag, FolderTree, Gift, Radio, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Package, Users, CreditCard, Settings as SettingsIcon, ChevronRight, ChevronDown, Wrench, Bot, BarChart3, Search, Send, Database, FileText, LogOut, User, ShoppingBag, FolderTree, Gift, Radio, TrendingUp, Shield, Webhook } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
@@ -98,6 +98,14 @@ const toolsItems: MenuItem = {
     title: "Логи",
     url: "/logs",
     icon: FileText
+  }, {
+    title: "Журнал действий",
+    url: "/audit-log",
+    icon: Shield
+  }, {
+    title: "Webhook логи",
+    url: "/webhook-logs",
+    icon: Webhook
   }]
 };
 export function AppSidebar() {
