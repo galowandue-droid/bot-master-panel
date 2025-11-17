@@ -426,6 +426,7 @@ export default function PaymentSettings() {
         title="Настройки платежей"
         description="Управление платежными системами и параметрами оплаты"
         icon={<Wallet className="h-5 w-5 text-primary" />}
+        gradient
       />
 
       <PageContainer>

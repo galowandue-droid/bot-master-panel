@@ -56,6 +56,7 @@ export default function Database() {
         title="База данных"
         icon={<DatabaseIcon className="h-5 w-5 text-primary" />}
         breadcrumbs={[{ label: "База данных" }]}
+        gradient
       />
 
       <PageContainer className="h-[calc(100vh-4rem)] overflow-auto">

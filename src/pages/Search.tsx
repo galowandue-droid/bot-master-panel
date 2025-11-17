@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 export default function Search() {
   const [userQuery, setUserQuery] = useState("");
@@ -100,18 +101,15 @@ export default function Search() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center gap-4 px-6">
-          <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Поиск</h1>
-            <p className="text-sm text-muted-foreground">Поиск пользователей и покупок</p>
-          </div>
-        </div>
-      </header>
+    <>
+      <PageHeader
+        title="Поиск"
+        description="Поиск пользователей и покупок"
+        icon={<SearchIcon className="h-5 w-5 text-primary" />}
+        gradient
+      />
 
-      <div className="p-6">
+      <PageContainer>
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList>
             <TabsTrigger value="users" className="gap-2">
@@ -274,7 +272,7 @@ export default function Search() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
+      </PageContainer>
+    </>
   );
 }
