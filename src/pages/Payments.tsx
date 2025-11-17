@@ -229,8 +229,8 @@ export default function Payments() {
                         <p className="text-base xs:text-xl md:text-2xl font-bold text-success">
                           {stat.total.toLocaleString()} ₽
                         </p>
-                        <p className="text-[10px] xs:text-xs md:text-sm text-muted-foreground">
-                          ~{stat.averageCheck} ₽ средний чек
+                        <p className="text-[10px] xs:text-xs md:text-sm text-muted-foreground truncate">
+                          ~{stat.averageCheck} ₽
                         </p>
                       </div>
                     </div>

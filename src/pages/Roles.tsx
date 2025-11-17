@@ -74,12 +74,12 @@ export default function Roles() {
                 </div>
               </div>
               <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Search className="absolute left-2 xs:left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3.5 w-3.5 xs:h-4 xs:w-4" />
                 <Input
                   placeholder="Поиск по имени, username или telegram ID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-7 xs:pl-10 text-xs xs:text-sm"
                 />
               </div>
             </CardHeader>

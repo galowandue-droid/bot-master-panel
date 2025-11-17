@@ -192,25 +192,27 @@ export function BroadcastDialog({ open, onOpenChange, onCreateSegment }: Broadca
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
+                  <Label className="flex items-center gap-2 text-sm xs:text-base">
+                    <Calendar className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
                     Отложенная отправка
                   </Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col xs:grid xs:grid-cols-2 gap-2">
                     <Input
                       type="date"
                       value={scheduleDate}
                       onChange={(e) => setScheduleDate(e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
+                      className="text-xs xs:text-sm"
                     />
                     <Input
                       type="time"
                       value={scheduleTime}
                       onChange={(e) => setScheduleTime(e.target.value)}
+                      className="text-xs xs:text-sm"
                     />
                   </div>
                   {scheduleDate && scheduleTime && (
-                    <Alert>
+                    <Alert className="text-xs xs:text-sm">
                       <AlertDescription>
                         Рассылка будет отправлена: {new Date(`${scheduleDate}T${scheduleTime}`).toLocaleString('ru-RU')}
                       </AlertDescription>

@@ -180,10 +180,17 @@ export default function UsersTable() {
         ) : (
         <div className="space-y-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {["all", "active", "blocked", "balance"].map(f => (
-                <Button key={f} variant={filterStatus === f ? "default" : "outline"} size="sm" onClick={() => setFilterStatus(f as any)}>
-                  {f === "all" ? "Все" : f === "active" ? "Активные" : f === "blocked" ? "Заблокированные" : "С балансом"}
+                <Button 
+                  key={f} 
+                  variant={filterStatus === f ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setFilterStatus(f as any)}
+                  className="text-xs xs:text-sm px-2 xs:px-3"
+                >
+                  <span className="hidden xs:inline">{f === "all" ? "Все" : f === "active" ? "Активные" : f === "blocked" ? "Заблокированные" : "С балансом"}</span>
+                  <span className="inline xs:hidden">{f === "all" ? "Все" : f === "active" ? "Активн." : f === "blocked" ? "Заблок." : "Баланс"}</span>
                 </Button>
               ))}
               <DropdownMenu>
