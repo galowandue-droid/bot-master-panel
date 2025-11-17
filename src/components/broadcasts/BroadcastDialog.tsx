@@ -92,7 +92,7 @@ export function BroadcastDialog({ open, onOpenChange, onCreateSegment }: Broadca
           {/* Left side - Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <Tabs defaultValue="message" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="w-full overflow-x-auto no-scrollbar md:grid md:grid-cols-4">
                 <TabsTrigger value="message">Текст</TabsTrigger>
                 <TabsTrigger value="media">Медиа</TabsTrigger>
                 <TabsTrigger value="buttons">Кнопки</TabsTrigger>

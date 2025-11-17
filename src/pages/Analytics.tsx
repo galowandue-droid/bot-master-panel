@@ -251,7 +251,7 @@ export default function Analytics() {
         </div>
 
         <Tabs defaultValue="revenue" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+          <TabsList className="w-full overflow-x-auto no-scrollbar md:grid md:grid-cols-3 md:w-full lg:w-[400px]">
             <TabsTrigger value="revenue">Выручка</TabsTrigger>
             <TabsTrigger value="users">Пользователи</TabsTrigger>
             <TabsTrigger value="conversion">Воронка</TabsTrigger>

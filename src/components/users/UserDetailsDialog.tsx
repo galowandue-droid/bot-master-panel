@@ -106,7 +106,7 @@ export function UserDetailsDialog({ open, onOpenChange, user }: UserDetailsDialo
       }
     >
         <Tabs defaultValue="profile" className="mt-4">
-          <TabsList className="grid w-full grid-cols-4 h-auto">
+          <TabsList className="w-full overflow-x-auto no-scrollbar md:grid md:w-full md:grid-cols-4 h-auto">
             <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Профиль</TabsTrigger>
             <TabsTrigger value="purchases" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Покупки</TabsTrigger>
             <TabsTrigger value="stats" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Статистика</TabsTrigger>
