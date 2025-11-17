@@ -42,7 +42,7 @@ export function ResponsiveDialog({
               {description && <DrawerDescription>{description}</DrawerDescription>}
             </DrawerHeader>
           )}
-          <div className="px-4 pb-4">{children}</div>
+          <div className="px-3 pb-3 xs:px-4 xs:pb-4">{children}</div>
         </DrawerContent>
       </Drawer>
     );
