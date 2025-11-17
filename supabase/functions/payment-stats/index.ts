@@ -17,16 +17,29 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get payment system tokens from bot_settings
-    const { data: settings, error: settingsError } = await supabaseClient
-      .from('bot_settings')
+    // Get payment tokens from secure_bot_settings (SERVICE_ROLE only)
+    const { data: secureSettings, error: secureError } = await supabaseClient
+      .from('secure_bot_settings')
       .select('*')
-      .in('key', ['cryptobot_token', 'cryptobot_enabled', 'yoomoney_token', 'yoomoney_enabled', 'telegram_stars_enabled', 'cards_enabled']);
+      .in('key', ['cryptobot_token', 'yoomoney_token']);
 
-    if (settingsError) {
-      console.error('Error fetching settings:', settingsError);
-      throw settingsError;
+    if (secureError) {
+      console.error('Error fetching secure settings:', secureError);
+      throw secureError;
     }
+
+    // Get public settings from public_bot_settings
+    const { data: publicSettings, error: publicError } = await supabaseClient
+      .from('public_bot_settings')
+      .select('*')
+      .in('key', ['cryptobot_enabled', 'yoomoney_enabled', 'telegram_stars_enabled', 'cards_enabled']);
+
+    if (publicError) {
+      console.error('Error fetching public settings:', publicError);
+      throw publicError;
+    }
+
+    const settings = [...(secureSettings || []), ...(publicSettings || [])];
 
     const settingsMap = settings?.reduce((acc, setting) => {
       acc[setting.key] = setting.value;

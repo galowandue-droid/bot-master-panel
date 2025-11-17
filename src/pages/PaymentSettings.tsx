@@ -112,7 +112,7 @@ export default function PaymentSettings() {
     queryKey: ["payment-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("bot_settings")
+        .from("public_bot_settings")
         .select("key, value");
 
       if (error) throw error;
@@ -127,7 +127,7 @@ export default function PaymentSettings() {
       const newCustomLinks: Record<string, string> = {};
 
       paymentSystems.forEach((system) => {
-        newTokens[system.id] = settingsMap[system.tokenKey] || "";
+        newTokens[system.id] = ""; // Never load tokens on client
         newEnabled[system.id] = settingsMap[system.enabledKey] === "true";
         newCustomLinks[system.id] = settingsMap[system.customLinkKey] || "";
       });
@@ -157,14 +157,24 @@ export default function PaymentSettings() {
   });
 
   const saveSettings = useMutation({
-    mutationFn: async (updates: Record<string, string>) => {
-      const promises = Object.entries(updates).map(([key, value]) =>
-        supabase.from("bot_settings").upsert({ key, value }, { onConflict: "key" })
-      );
+    mutationFn: async ({ updates, isSecure = false }: { updates: Record<string, string>, isSecure?: boolean }) => {
+      if (isSecure) {
+        // Save secure tokens via edge function
+        const secureUpdates = Object.entries(updates).map(([key, value]) => ({ key, value }));
+        const { error } = await supabase.functions.invoke('update-secure-setting', {
+          body: { settings: secureUpdates }
+        });
+        if (error) throw error;
+      } else {
+        // Save public settings directly
+        const promises = Object.entries(updates).map(([key, value]) =>
+          supabase.from("public_bot_settings").upsert({ key, value }, { onConflict: "key" })
+        );
 
-      const results = await Promise.all(promises);
-      const error = results.find((r) => r.error)?.error;
-      if (error) throw error;
+        const results = await Promise.all(promises);
+        const error = results.find((r) => r.error)?.error;
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-settings"] });
@@ -186,7 +196,8 @@ export default function PaymentSettings() {
     setEnabled((prev) => ({ ...prev, [systemId]: newEnabled }));
 
     saveSettings.mutate({
-      [system.enabledKey]: newEnabled.toString(),
+      updates: { [system.enabledKey]: newEnabled.toString() },
+      isSecure: false
     });
   };
 
@@ -206,8 +217,18 @@ export default function PaymentSettings() {
       return;
     }
 
+    // Save token securely via edge function
     saveSettings.mutate({
-      [system.tokenKey]: token,
+      updates: { [system.tokenKey]: token },
+      isSecure: true
+    });
+    
+    // Clear token from UI after save
+    setTokens(prev => ({ ...prev, [systemId]: "" }));
+    
+    toast({
+      title: "Токен сохранен",
+      description: "Из соображений безопасности токены не отображаются в интерфейсе",
     });
   };
 
@@ -216,22 +237,29 @@ export default function PaymentSettings() {
     if (!system) return;
 
     saveSettings.mutate({
-      [system.customLinkKey]: customLinks[systemId] || "",
+      updates: { [system.customLinkKey]: customLinks[systemId] || "" },
+      isSecure: false
     });
   };
 
   const handleSaveMessages = () => {
     saveSettings.mutate({
-      payment_success_message: successMessage,
-      payment_failed_message: failedMessage,
-      payment_pending_message: pendingMessage,
+      updates: {
+        payment_success_message: successMessage,
+        payment_failed_message: failedMessage,
+        payment_pending_message: pendingMessage,
+      },
+      isSecure: false
     });
   };
 
   const handleSaveLimits = () => {
     saveSettings.mutate({
-      payment_min_amount: minAmount,
-      payment_max_amount: maxAmount,
+      updates: {
+        payment_min_amount: minAmount,
+        payment_max_amount: maxAmount,
+      },
+      isSecure: false
     });
   };
 
@@ -240,7 +268,8 @@ export default function PaymentSettings() {
     if (!system) return;
 
     saveSettings.mutate({
-      [system.commissionKey]: commissions[systemId] || system.defaultCommission,
+      updates: { [system.commissionKey]: commissions[systemId] || system.defaultCommission },
+      isSecure: false
     });
   };
 

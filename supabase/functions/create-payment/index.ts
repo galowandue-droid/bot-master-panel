@@ -63,15 +63,23 @@ serve(async (req) => {
       });
     }
 
-    const { data: settings } = await supabaseClient
-      .from('bot_settings')
+    // Fetch secure token
+    const { data: secureSettings } = await supabaseClient
+      .from('secure_bot_settings')
+      .select('*')
+      .in('key', [`${payment_method}_token`]);
+
+    // Fetch public settings
+    const { data: publicSettings } = await supabaseClient
+      .from('public_bot_settings')
       .select('*')
       .in('key', [
-        `${payment_method}_token`,
         `${payment_method}_enabled`,
         `${payment_method}_min_amount`,
         `${payment_method}_max_amount`
       ]);
+
+    const settings = [...(secureSettings || []), ...(publicSettings || [])];
 
     const settingsMap = settings?.reduce((acc, s) => {
       acc[s.key] = s.value;

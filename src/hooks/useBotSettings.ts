@@ -13,10 +13,10 @@ export const useBotSettings = () => {
   const queryClient = useQueryClient();
 
   const { data: settings, isLoading } = useQuery({
-    queryKey: ["bot-settings"],
+    queryKey: ["public-bot-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("bot_settings")
+        .from("public_bot_settings")
         .select("*")
         .order("key");
 
@@ -32,7 +32,7 @@ export const useBotSettings = () => {
   const updateSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
       const { data, error } = await supabase
-        .from("bot_settings")
+        .from("public_bot_settings")
         .upsert(
           { key, value, updated_at: new Date().toISOString() },
           { onConflict: 'key' }
@@ -44,7 +44,7 @@ export const useBotSettings = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bot-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["public-bot-settings"] });
       toast({
         title: "Настройки сохранены",
         description: "Настройки бота успешно обновлены",
