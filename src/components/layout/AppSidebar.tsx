@@ -36,7 +36,7 @@ const menuItems: MenuItem[] = [{
   }, {
     title: "Роли",
     url: "/roles",
-    icon: SettingsIcon
+    icon: Shield
   }]
 }, {
   title: "Финансы",
@@ -46,12 +46,12 @@ const menuItems: MenuItem[] = [{
     url: "/payments",
     icon: CreditCard
   }, {
-    title: "Настройки",
+    title: "Настройки платежей",
     url: "/payment-settings",
     icon: Wrench
   }]
 }, {
-  title: "Маркетинг",
+  title: "Коммуникация",
   icon: Send,
   items: [{
     title: "Рассылки",
@@ -65,7 +65,11 @@ const menuItems: MenuItem[] = [{
     title: "Рефералы",
     url: "/referrals",
     icon: Gift
-  }, {
+  }]
+}, {
+  title: "Аналитика",
+  icon: TrendingUp,
+  items: [{
     title: "Статистика",
     url: "/statistics",
     icon: BarChart3
@@ -80,12 +84,8 @@ const menuItems: MenuItem[] = [{
   }]
 }, {
   title: "Настройки",
-  icon: SettingsIcon,
-  items: [{
-    title: "Общие",
-    url: "/settings",
-    icon: SettingsIcon
-  }]
+  url: "/settings",
+  icon: SettingsIcon
 }];
 const toolsItems: MenuItem = {
   title: "Инструменты",
@@ -180,21 +180,22 @@ export function AppSidebar() {
     // Group with children
     const isOpen = !collapsedGroups[item.title];
     const hasActiveChild = isGroupActive(item.items);
+    const itemCount = item.items?.length || 0;
     return <Collapsible key={item.title} open={isOpen} onOpenChange={() => toggleGroup(item.title)}>
         <SidebarMenuItem>
           <CollapsibleTrigger asChild>
             <SidebarMenuButton className={cn("flex items-center gap-3 rounded-lg px-3 py-2 transition-colors w-full", hasActiveChild ? "bg-sidebar-accent/30 text-sidebar-accent-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent/50")}>
               <item.icon className="h-4 w-4" />
-              {open && <>
+              {open ? <>
                   <span>{item.title}</span>
                   {isOpen ? <ChevronDown className="ml-auto h-4 w-4" /> : <ChevronRight className="ml-auto h-4 w-4" />}
-                </>}
+                </> : <span className="sr-only">{item.title} ({itemCount})</span>}
             </SidebarMenuButton>
           </CollapsibleTrigger>
-          <CollapsibleContent className="ml-6 space-y-1 mt-1">
+          <CollapsibleContent className="ml-6 space-y-1 mt-1 relative before:absolute before:left-1 before:top-0 before:bottom-0 before:w-px before:bg-border/40">
             {item.items?.map(subItem => {
             const isActive = location.pathname === subItem.url;
-            return <NavLink key={subItem.title} to={subItem.url} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors", isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground")}>
+            return <NavLink key={subItem.title} to={subItem.url} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors pl-6", isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground")}>
                   <subItem.icon className="h-4 w-4" />
                   {open && <>
                       <span>{subItem.title}</span>
@@ -224,11 +225,17 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Управление</SidebarGroupLabel>
+          <SidebarGroupLabel>Меню</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>{menuItems.map(renderMenuItem)}</SidebarMenu>
+            <SidebarMenu>
+              {menuItems.map(renderMenuItem)}
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <div className="my-2 px-3">
+          <div className="h-px bg-border/40" />
+        </div>
 
         <SidebarGroup>
           
