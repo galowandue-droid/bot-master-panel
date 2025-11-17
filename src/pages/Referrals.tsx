@@ -56,44 +56,44 @@ const Referrals = () => {
 
       <PageContainer>
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-2 xs:gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Всего рефералов</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs xs:text-sm font-medium">Всего рефералов</CardTitle>
+              <Users className="h-3 w-3 xs:h-4 xs:w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.total || 0}</div>
+              <div className="text-xl xs:text-2xl font-bold">{stats?.total || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ожидают</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs xs:text-sm font-medium">Ожидают</CardTitle>
+              <TrendingUp className="h-3 w-3 xs:h-4 xs:w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.pending || 0}</div>
+              <div className="text-xl xs:text-2xl font-bold">{stats?.pending || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Выполнено</CardTitle>
-              <Check className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs xs:text-sm font-medium">Выполнено</CardTitle>
+              <Check className="h-3 w-3 xs:h-4 xs:w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.completed || 0}</div>
+              <div className="text-xl xs:text-2xl font-bold">{stats?.completed || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Выплачено</CardTitle>
-              <Gift className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs xs:text-sm font-medium">Выплачено</CardTitle>
+              <Gift className="h-3 w-3 xs:h-4 xs:w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalRewards.toFixed(2) || "0.00"} ₽</div>
+              <div className="text-xl xs:text-2xl font-bold">{stats?.totalRewards.toFixed(2) || "0.00"} ₽</div>
             </CardContent>
           </Card>
         </div>

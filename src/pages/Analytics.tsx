@@ -128,13 +128,13 @@ export default function Analytics() {
             <CardTitle>Фильтры</CardTitle>
             <CardDescription>Настройте период и категорию для анализа</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-4">
+          <CardContent className="flex flex-col xs:flex-row gap-2 xs:gap-4">
             <div className="flex-1 min-w-[200px]">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {format(dateRange.from, "dd MMM yyyy", { locale: ru })} - {format(dateRange.to, "dd MMM yyyy", { locale: ru })}
+                  <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal text-xs xs:text-sm">
+                    <CalendarIcon className="mr-2 h-3 w-3 xs:h-4 xs:w-4" />
+                    <span className="truncate">{format(dateRange.from, "dd MMM yyyy", { locale: ru })} - {format(dateRange.to, "dd MMM yyyy", { locale: ru })}</span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -164,7 +164,7 @@ export default function Analytics() {
 
             <div className="flex-1 min-w-[200px]">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger>
+                <SelectTrigger className="text-xs xs:text-sm">
                   <SelectValue placeholder="Выберите категорию" />
                 </SelectTrigger>
                 <SelectContent>
@@ -180,19 +180,19 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-2 xs:gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
           <Card className="border-border/40 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Новые пользователи</CardTitle>
-              <Users className="h-4 w-4 text-primary" />
+              <CardTitle className="text-xs xs:text-sm font-medium">Новые пользователи</CardTitle>
+              <Users className="h-3 w-3 xs:h-4 xs:w-4 text-primary" />
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-6 xs:h-8 w-16 xs:w-24" />
               ) : (
-                <div className="text-2xl font-bold">{totals?.newUsers || 0}</div>
+                <div className="text-xl xs:text-2xl font-bold">{totals?.newUsers || 0}</div>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] xs:text-xs text-muted-foreground mt-1">
                 Всего: {totals?.users || 0}
               </p>
             </CardContent>
@@ -200,16 +200,16 @@ export default function Analytics() {
 
           <Card className="border-border/40 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Покупки</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-primary" />
+              <CardTitle className="text-xs xs:text-sm font-medium">Покупки</CardTitle>
+              <ShoppingCart className="h-3 w-3 xs:h-4 xs:w-4 text-primary" />
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-6 xs:h-8 w-16 xs:w-24" />
               ) : (
-                <div className="text-2xl font-bold">{totals?.purchases || 0}</div>
+                <div className="text-xl xs:text-2xl font-bold">{totals?.purchases || 0}</div>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] xs:text-xs text-muted-foreground mt-1">
                 Конверсия: {conversionRate}%
               </p>
             </CardContent>
@@ -217,34 +217,34 @@ export default function Analytics() {
 
           <Card className="border-border/40 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Выручка</CardTitle>
-              <DollarSign className="h-4 w-4 text-primary" />
+              <CardTitle className="text-xs xs:text-sm font-medium">Выручка</CardTitle>
+              <DollarSign className="h-3 w-3 xs:h-4 xs:w-4 text-primary" />
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-6 xs:h-8 w-20 xs:w-32" />
               ) : (
-                <div className="text-2xl font-bold">{totals?.revenue.toFixed(2) || 0} ₽</div>
+                <div className="text-xl xs:text-2xl font-bold">{totals?.revenue?.toFixed(2) || 0} ₽</div>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
-                Средний чек: {totals?.purchases ? (totals.revenue / totals.purchases).toFixed(2) : 0} ₽
+              <p className="text-[10px] xs:text-xs text-muted-foreground mt-1">
+                Средний чек: {totals?.purchases ? (totals.revenue / totals.purchases).toFixed(0) : 0} ₽
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-border/40 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Депозиты</CardTitle>
-              <Wallet className="h-4 w-4 text-primary" />
+              <CardTitle className="text-xs xs:text-sm font-medium">Депозиты</CardTitle>
+              <Wallet className="h-3 w-3 xs:h-4 xs:w-4 text-primary" />
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-6 xs:h-8 w-16 xs:w-24" />
               ) : (
-                <div className="text-2xl font-bold">{totals?.deposits || 0}</div>
+                <div className="text-xl xs:text-2xl font-bold">{totals?.deposits || 0}</div>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
-                На сумму: {totals?.depositsAmount.toFixed(2) || 0} ₽
+              <p className="text-[10px] xs:text-xs text-muted-foreground mt-1">
+                На сумму: {totals?.depositsAmount?.toFixed(2) || 0} ₽
               </p>
             </CardContent>
           </Card>

@@ -48,9 +48,9 @@ export default function AuditLog() {
             <CardDescription>
               Все действия администраторов с фильтрами
             </CardDescription>
-            <div className="flex flex-col md:flex-row gap-2 mt-4">
+            <div className="flex flex-col xs:flex-row gap-2 mt-4">
               <Select value={actionFilter} onValueChange={setActionFilter}>
-                <SelectTrigger className="w-full md:w-48">
+                <SelectTrigger className="w-full xs:w-40 md:w-48 text-xs xs:text-sm">
                   <SelectValue placeholder="Тип действия" />
                 </SelectTrigger>
                 <SelectContent>
@@ -61,7 +61,7 @@ export default function AuditLog() {
               </Select>
 
               <Select value={resourceFilter} onValueChange={setResourceFilter}>
-                <SelectTrigger className="w-full md:w-48">
+                <SelectTrigger className="w-full xs:w-40 md:w-48 text-xs xs:text-sm">
                   <SelectValue placeholder="Тип ресурса" />
                 </SelectTrigger>
                 <SelectContent>
@@ -76,6 +76,8 @@ export default function AuditLog() {
               {(actionFilter || resourceFilter) && (
                 <Button
                   variant="outline"
+                  size="sm"
+                  className="text-xs xs:text-sm"
                   onClick={() => {
                     setActionFilter(undefined);
                     setResourceFilter(undefined);
