@@ -66,7 +66,7 @@ export function HourlyActivity() {
           Активность по часам (24ч)
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-hidden">
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={hourlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

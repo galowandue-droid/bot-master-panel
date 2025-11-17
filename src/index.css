@@ -132,7 +132,7 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground;
+  html, body, #root {
+    @apply bg-background text-foreground max-w-full overflow-x-hidden;
   }
 }
