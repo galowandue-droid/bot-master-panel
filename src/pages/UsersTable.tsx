@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { MobileCard, MobileCardRow, MobileCardHeader } from "@/components/ui/mobile-card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 const COLUMN_STORAGE_KEY = "usersTableColumns";
@@ -47,7 +48,7 @@ export default function UsersTable() {
   });
   const itemsPerPage = 25;
 
-
+  const isMobile = useIsMobile();
   const { data: profiles, isLoading } = useProfiles();
   const bulkToggleBlock = useBulkToggleBlockUser();
   const bulkUpdateBalance = useBulkUpdateBalance();
@@ -193,45 +194,47 @@ export default function UsersTable() {
                   <span className="inline xs:hidden">{f === "all" ? "Все" : f === "active" ? "Активн." : f === "blocked" ? "Заблок." : "Баланс"}</span>
                 </Button>
               ))}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Columns3 className="h-4 w-4 mr-2" />
-                    Колонки
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Отображение колонок</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuCheckboxItem checked={visibleColumns.id} onCheckedChange={() => toggleColumn("id")}>
-                    ID
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem checked={visibleColumns.username} onCheckedChange={() => toggleColumn("username")}>
-                    Username
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem checked={visibleColumns.firstName} onCheckedChange={() => toggleColumn("firstName")}>
-                    Имя
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem checked={visibleColumns.telegramId} onCheckedChange={() => toggleColumn("telegramId")}>
-                    Telegram ID
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem checked={visibleColumns.balance} onCheckedChange={() => toggleColumn("balance")}>
-                    Баланс
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem checked={visibleColumns.totalSpent} onCheckedChange={() => toggleColumn("totalSpent")}>
-                    Потрачено
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem checked={visibleColumns.purchases} onCheckedChange={() => toggleColumn("purchases")}>
-                    Покупок
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem checked={visibleColumns.createdAt} onCheckedChange={() => toggleColumn("createdAt")}>
-                    Дата регистрации
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem checked={visibleColumns.blocked} onCheckedChange={() => toggleColumn("blocked")}>
-                    Статус
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {!isMobile && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Columns3 className="h-4 w-4 mr-2" />
+                      Колонки
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Отображение колонок</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem checked={visibleColumns.id} onCheckedChange={() => toggleColumn("id")}>
+                      ID
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.username} onCheckedChange={() => toggleColumn("username")}>
+                      Username
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.firstName} onCheckedChange={() => toggleColumn("firstName")}>
+                      Имя
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.telegramId} onCheckedChange={() => toggleColumn("telegramId")}>
+                      Telegram ID
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.balance} onCheckedChange={() => toggleColumn("balance")}>
+                      Баланс
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.totalSpent} onCheckedChange={() => toggleColumn("totalSpent")}>
+                      Потрачено
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.purchases} onCheckedChange={() => toggleColumn("purchases")}>
+                      Покупок
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.createdAt} onCheckedChange={() => toggleColumn("createdAt")}>
+                      Дата регистрации
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.blocked} onCheckedChange={() => toggleColumn("blocked")}>
+                      Статус
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
 
