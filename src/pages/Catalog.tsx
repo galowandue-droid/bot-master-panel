@@ -126,36 +126,36 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
     <ContextMenu>
       <ContextMenuTrigger>
         <Card ref={setNodeRef} style={style} className="group hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="space-y-1 flex-1">
-                <div className="flex items-center gap-2">
-                  <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="p-3 xs:p-4 md:p-6 pb-2 xs:pb-3">
+            <div className="flex items-start justify-between gap-1 xs:gap-2">
+              <div className="space-y-0.5 xs:space-y-1 flex-1 min-w-0">
+                <div className="flex items-center gap-1 xs:gap-2">
+                  <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing shrink-0">
+                    <GripVertical className="h-3 w-3 xs:h-4 xs:w-4 text-muted-foreground" />
                   </div>
                   <EditableField
                     value={position.name}
                     onSave={async (newName) => {
                       await onUpdate(position.id, { name: newName });
                     }}
-                    className="font-semibold text-lg"
+                    className="font-semibold text-sm xs:text-base md:text-lg"
                   />
                 </div>
-                <Badge variant="secondary" className="text-xs">{categoryName}</Badge>
+                <Badge variant="secondary" className="text-[10px] xs:text-xs h-4 xs:h-5">{categoryName}</Badge>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-0.5 xs:gap-1 shrink-0">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
-                      <Pencil className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-6 w-6 xs:h-8 xs:w-8" onClick={onEdit}>
+                      <Pencil className="h-3 w-3 xs:h-4 xs:w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Редактировать</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onDelete}>
-                      <Trash2 className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-6 w-6 xs:h-8 xs:w-8" onClick={onDelete}>
+                      <Trash2 className="h-3 w-3 xs:h-4 xs:w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Удалить</TooltipContent>
@@ -163,10 +163,10 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            {position.description && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{position.description}</p>}
-            <div className="flex items-center justify-between mb-3">
-              <div className="space-y-1">
+          <CardContent className="p-3 xs:p-4 md:p-6 pt-0">
+            {position.description && <p className="text-xs xs:text-sm text-muted-foreground line-clamp-2 mb-2 xs:mb-3">{position.description}</p>}
+            <div className="flex items-center justify-between mb-2 xs:mb-3">
+              <div className="space-y-0.5 xs:space-y-1">
                 <EditableField
                   value={position.price.toString()}
                   onSave={async (newPrice) => {
@@ -176,14 +176,14 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
                     }
                   }}
                   type="number"
-                  className="text-2xl font-bold text-primary"
+                  className="text-lg xs:text-xl md:text-2xl font-bold text-primary"
                 />
-                <p className="text-xs text-muted-foreground">В наличии: {itemCount}</p>
+                <p className="text-[10px] xs:text-xs text-muted-foreground">В наличии: {itemCount}</p>
               </div>
-              <Badge variant={position.is_visible ? "default" : "secondary"}>{position.is_visible ? "Видим" : "Скрыт"}</Badge>
+              <Badge variant={position.is_visible ? "default" : "secondary"} className="text-[10px] xs:text-xs h-4 xs:h-5">{position.is_visible ? "Видим" : "Скрыт"}</Badge>
             </div>
             <Button 
-              className="w-full" 
+              className="w-full text-xs xs:text-sm h-8 xs:h-9 md:h-10" 
               variant="default"
               onClick={onPurchase}
               disabled={itemCount === 0}
@@ -357,8 +357,8 @@ export default function Catalog() {
         />
 
         <div className="flex h-[calc(100vh-5rem)]">
-          <div className="w-64 border-r bg-muted/10">
-            <div className="p-4 border-b space-y-2">
+          <div className="w-48 xs:w-56 md:w-64 border-r bg-muted/10">
+            <div className="p-2 xs:p-3 md:p-4 border-b space-y-1 xs:space-y-2">
               <Button 
                 onClick={() => { 
                   setSelectedCategory(undefined); 
@@ -366,21 +366,21 @@ export default function Catalog() {
                   setCategoryDialogOpen(true); 
                 }} 
                 size="sm" 
-                className="w-full gap-2"
+                className="w-full gap-1 xs:gap-2 text-xs xs:text-sm h-7 xs:h-8 md:h-9"
               >
-                <Plus className="h-4 w-4" />Новая категория
+                <Plus className="h-3 w-3 xs:h-4 xs:w-4" />Новая категория
               </Button>
               
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground px-1">Режим отображения</p>
-                <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as "list" | "tree")} className="grid grid-cols-2 gap-2">
-                  <ToggleGroupItem value="list" className="flex-col gap-1 h-auto py-2">
-                    <List className="h-4 w-4" />
-                    <span className="text-xs">Плоский список</span>
+              <div className="space-y-1 xs:space-y-2">
+                <p className="text-[10px] xs:text-xs font-medium text-muted-foreground px-1">Режим отображения</p>
+                <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as "list" | "tree")} className="grid grid-cols-2 gap-1 xs:gap-2">
+                  <ToggleGroupItem value="list" className="flex-col gap-0.5 xs:gap-1 h-auto py-1 xs:py-2 text-[10px] xs:text-xs">
+                    <List className="h-3 w-3 xs:h-4 xs:w-4" />
+                    <span>Плоский список</span>
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="tree" className="flex-col gap-1 h-auto py-2">
-                    <GitBranch className="h-4 w-4" />
-                    <span className="text-xs">Дерево категорий</span>
+                  <ToggleGroupItem value="tree" className="flex-col gap-0.5 xs:gap-1 h-auto py-1 xs:py-2 text-[10px] xs:text-xs">
+                    <GitBranch className="h-3 w-3 xs:h-4 xs:w-4" />
+                    <span>Дерево категорий</span>
                   </ToggleGroupItem>
                 </ToggleGroup>
               </div>
@@ -463,30 +463,30 @@ export default function Catalog() {
             </ScrollArea>
           </div>
 
-          <div className="flex-1 p-6 overflow-auto bg-background">
-            <div className="space-y-4 max-w-6xl mx-auto">
-              <div className="flex items-center gap-4 flex-wrap">
-                <ToggleGroup type="single" value={compactMode ? "compact" : "cards"} onValueChange={(v) => v && setCompactMode(v === "compact")}>
-                  <ToggleGroupItem value="cards" className="gap-2">
-                    <LayoutGrid className="h-4 w-4" />
+          <div className="flex-1 p-2 xs:p-3 md:p-6 overflow-auto bg-background">
+            <div className="space-y-2 xs:space-y-3 md:space-y-4 max-w-6xl mx-auto">
+              <div className="flex items-center gap-2 xs:gap-3 md:gap-4 flex-wrap">
+                <ToggleGroup type="single" value={compactMode ? "compact" : "cards"} onValueChange={(v) => v && setCompactMode(v === "compact")} className="text-xs xs:text-sm">
+                  <ToggleGroupItem value="cards" className="gap-1 xs:gap-2 h-7 xs:h-8 md:h-9 px-2 xs:px-3">
+                    <LayoutGrid className="h-3 w-3 xs:h-4 xs:w-4" />
                     Карточки
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="compact" className="gap-2">
-                    <List className="h-4 w-4" />
+                  <ToggleGroupItem value="compact" className="gap-1 xs:gap-2 h-7 xs:h-8 md:h-9 px-2 xs:px-3">
+                    <List className="h-3 w-3 xs:h-4 xs:w-4" />
                     Компактно
                   </ToggleGroupItem>
                 </ToggleGroup>
-                <Button onClick={() => { setSelectedPosition(undefined); setPositionDialogOpen(true); }} className="gap-2"><Plus className="h-4 w-4" />Добавить товар</Button>
+                <Button onClick={() => { setSelectedPosition(undefined); setPositionDialogOpen(true); }} className="gap-1 xs:gap-2 h-7 xs:h-8 md:h-9 text-xs xs:text-sm px-2 xs:px-3 md:px-4"><Plus className="h-3 w-3 xs:h-4 xs:w-4" />Добавить товар</Button>
               </div>
 
               {positionsLoading ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-48 w-full" />)}</div>
+                <div className="grid gap-2 xs:gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-3">{[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-48 w-full" />)}</div>
               ) : filteredPositions?.length === 0 ? (
                 <EmptyState icon={Package} title="Нет товаров" description={selectedCategoryId ? "В этой категории пока нет товаров" : "Добавьте первый товар"} action={{ label: "Добавить товар", onClick: () => setPositionDialogOpen(true) }} />
               ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePositionDragEnd}>
                   <SortableContext items={filteredPositions?.map(p => p.id) || []} strategy={verticalListSortingStrategy}>
-                    <div className={compactMode ? "space-y-2" : "grid gap-4 md:grid-cols-2 lg:grid-cols-3"}>
+                    <div className={compactMode ? "space-y-1 xs:space-y-2" : "grid gap-2 xs:gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-3"}>
                       {filteredPositions?.map(pos => (
                         <SortablePositionCard
                           key={pos.id}
