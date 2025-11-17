@@ -158,7 +158,7 @@ export default function Dashboard() {
 
         {/* Charts Row */}
         {(widgetVisibility.hourlyActivity || widgetVisibility.topProducts) && (
-          <div className="grid gap-3 md:gap-4 lg:grid-cols-2">
+          <div className="grid gap-2 xs:gap-3 md:gap-4 lg:grid-cols-2">
             {widgetVisibility.hourlyActivity && <HourlyActivity />}
             {widgetVisibility.topProducts && <TopProducts />}
           </div>

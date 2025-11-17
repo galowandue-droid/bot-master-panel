@@ -45,14 +45,14 @@ export function HourlyActivity() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+        <CardHeader className="px-3 xs:px-6 pt-3 xs:pt-6 pb-2 xs:pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm xs:text-base">
+            <Clock className="h-4 w-4 xs:h-5 xs:w-5" />
             Активность по часам
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[300px] w-full" />
+        <CardContent className="px-2 xs:px-6 pb-3 xs:pb-6">
+          <Skeleton className="h-[240px] md:h-[300px] w-full" />
         </CardContent>
       </Card>
     );
@@ -60,32 +60,37 @@ export function HourlyActivity() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5 text-primary" />
+      <CardHeader className="px-3 xs:px-6 pt-3 xs:pt-6 pb-2 xs:pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm xs:text-base">
+          <Clock className="h-4 w-4 xs:h-5 xs:w-5 text-primary" />
           Активность по часам (24ч)
         </CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-hidden">
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={hourlyData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+      <CardContent className="overflow-x-hidden px-2 xs:px-6 pb-3 xs:pb-6">
+        <ResponsiveContainer width="100%" height={240} className="md:h-[300px]">
+          <BarChart data={hourlyData} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" className="opacity-50" />
             <XAxis 
               dataKey="hour" 
               stroke="hsl(var(--muted-foreground))"
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: '10px' }}
+              interval="preserveStartEnd"
+              tickMargin={5}
             />
             <YAxis 
               stroke="hsl(var(--muted-foreground))"
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: '10px' }}
+              width={30}
+              tickMargin={5}
             />
             <Tooltip
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '8px',
+                fontSize: '11px'
               }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
+              labelStyle={{ color: 'hsl(var(--foreground))', fontSize: '11px' }}
             />
             <Bar 
               dataKey="count" 
