@@ -92,12 +92,12 @@ export function ReferralHistory({ referrals }: ReferralHistoryProps) {
             {/* Search */}
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 xs:h-4 xs:w-4 text-muted-foreground" />
                 <Input
                   placeholder="Поиск по имени или username..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
+                  className="pl-7 xs:pl-8 text-xs xs:text-sm"
                 />
               </div>
             </div>

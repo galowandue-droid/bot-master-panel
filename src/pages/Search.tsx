@@ -125,25 +125,30 @@ export default function Search() {
           <TabsContent value="users">
             <Card>
               <CardContent className="pt-6 space-y-6">
-                <div className="flex gap-4">
+                <div className="flex gap-2 xs:gap-4">
                   <div className="relative flex-1">
-                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <SearchIcon className="absolute left-2 xs:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 xs:h-4 xs:w-4 text-muted-foreground" />
                     <Input
                       value={userQuery}
                       onChange={(e) => setUserQuery(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleUserSearch()}
-                      placeholder="Введите ID, username или Telegram ID пользователя..."
-                      className="pl-10"
+                      placeholder="ID, username или Telegram ID..."
+                      className="pl-7 xs:pl-10 text-xs xs:text-sm"
                       disabled={searchingUsers}
                     />
                   </div>
-                  <Button onClick={handleUserSearch} disabled={searchingUsers}>
+                  <Button 
+                    onClick={handleUserSearch} 
+                    disabled={searchingUsers}
+                    size="sm"
+                    className="flex-shrink-0"
+                  >
                     {searchingUsers ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 xs:h-4 xs:w-4 xs:mr-2 animate-spin" />
                     ) : (
-                      <SearchIcon className="h-4 w-4 mr-2" />
+                      <SearchIcon className="h-3.5 w-3.5 xs:h-4 xs:w-4 xs:mr-2" />
                     )}
-                    Найти
+                    <span className="hidden xs:inline">Найти</span>
                   </Button>
                 </div>
 
@@ -198,25 +203,30 @@ export default function Search() {
           <TabsContent value="purchases">
             <Card>
               <CardContent className="pt-6 space-y-6">
-                <div className="flex gap-4">
+                <div className="flex gap-2 xs:gap-4">
                   <div className="relative flex-1">
-                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <SearchIcon className="absolute left-2 xs:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 xs:h-4 xs:w-4 text-muted-foreground" />
                     <Input
                       value={purchaseQuery}
                       onChange={(e) => setPurchaseQuery(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handlePurchaseSearch()}
-                      placeholder="Введите ID покупки..."
-                      className="pl-10"
+                      placeholder="ID покупки..."
+                      className="pl-7 xs:pl-10 text-xs xs:text-sm"
                       disabled={searchingPurchases}
                     />
                   </div>
-                  <Button onClick={handlePurchaseSearch} disabled={searchingPurchases}>
+                  <Button 
+                    onClick={handlePurchaseSearch} 
+                    disabled={searchingPurchases}
+                    size="sm"
+                    className="flex-shrink-0"
+                  >
                     {searchingPurchases ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 xs:h-4 xs:w-4 xs:mr-2 animate-spin" />
                     ) : (
-                      <SearchIcon className="h-4 w-4 mr-2" />
+                      <SearchIcon className="h-3.5 w-3.5 xs:h-4 xs:w-4 xs:mr-2" />
                     )}
-                    Найти
+                    <span className="hidden xs:inline">Найти</span>
                   </Button>
                 </div>
 
