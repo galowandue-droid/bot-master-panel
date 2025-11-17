@@ -213,7 +213,6 @@ export default function UsersTable() {
                   <TableHead className="w-12">
                     <Checkbox 
                       checked={allSelected}
-                      indeterminate={someSelected}
                       onCheckedChange={handleSelectAll}
                       aria-label="Выделить всех пользователей"
                     />
