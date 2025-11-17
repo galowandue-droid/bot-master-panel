@@ -128,25 +128,25 @@ export default function Payments() {
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-2 xs:gap-3 md:gap-4 md:grid-cols-3">
               <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Всего получено</CardDescription>
-                  <CardTitle className="text-3xl">{totalRevenue.toLocaleString()} ₽</CardTitle>
+                <CardHeader className="p-3 xs:p-4 md:p-6 pb-2">
+                  <CardDescription className="text-xs xs:text-sm">Всего получено</CardDescription>
+                  <CardTitle className="text-xl xs:text-2xl md:text-3xl">{totalRevenue.toLocaleString()} ₽</CardTitle>
                 </CardHeader>
               </Card>
               
               <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Транзакций</CardDescription>
-                  <CardTitle className="text-3xl">{totalTransactions}</CardTitle>
+                <CardHeader className="p-3 xs:p-4 md:p-6 pb-2">
+                  <CardDescription className="text-xs xs:text-sm">Транзакций</CardDescription>
+                  <CardTitle className="text-xl xs:text-2xl md:text-3xl">{totalTransactions}</CardTitle>
                 </CardHeader>
               </Card>
               
               <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Средний чек</CardDescription>
-                  <CardTitle className="text-3xl">
+                <CardHeader className="p-3 xs:p-4 md:p-6 pb-2">
+                  <CardDescription className="text-xs xs:text-sm">Средний чек</CardDescription>
+                  <CardTitle className="text-xl xs:text-2xl md:text-3xl">
                     {paymentStats?.averageCheck ? Math.round(paymentStats.averageCheck) : 0} ₽
                   </CardTitle>
                 </CardHeader>
@@ -155,16 +155,16 @@ export default function Payments() {
 
             {/* Chart */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-primary" />
+              <CardHeader className="p-3 xs:p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-base xs:text-lg md:text-xl">
+                  <Activity className="h-4 w-4 xs:h-5 xs:w-5 text-primary" />
                   Динамика платежей
                 </CardTitle>
-                <CardDescription>За последние 7 дней</CardDescription>
+                <CardDescription className="text-xs xs:text-sm">За последние 7 дней</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={chartData}>
+              <CardContent className="p-3 xs:p-4 md:p-6 pt-0">
+                <ResponsiveContainer width="100%" height={240}>
+                  <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                     <defs>
                       <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -175,17 +175,21 @@ export default function Payments() {
                     <XAxis 
                       dataKey="date" 
                       stroke="hsl(var(--muted-foreground))"
-                      style={{ fontSize: '12px' }}
+                      style={{ fontSize: '10px' }}
+                      tickMargin={5}
                     />
                     <YAxis 
                       stroke="hsl(var(--muted-foreground))"
-                      style={{ fontSize: '12px' }}
+                      style={{ fontSize: '10px' }}
+                      tickMargin={5}
+                      width={30}
                     />
                     <Tooltip 
                       contentStyle={{
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px',
+                        fontSize: '11px',
                       }}
                     />
                     <Area 
@@ -203,29 +207,29 @@ export default function Payments() {
 
             {/* Payment Methods */}
             <Card>
-              <CardHeader>
-                <CardTitle>Платежные системы</CardTitle>
-                <CardDescription>Статистика по методам оплаты</CardDescription>
+              <CardHeader className="p-3 xs:p-4 md:p-6">
+                <CardTitle className="text-base xs:text-lg md:text-xl">Платежные системы</CardTitle>
+                <CardDescription className="text-xs xs:text-sm">Статистика по методам оплаты</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="p-3 xs:p-4 md:p-6 pt-0">
+                <div className="space-y-2 xs:space-y-3">
                   {depositStats.map((stat) => (
                     <div
                       key={stat.method}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                      className="flex items-center justify-between p-2 xs:p-3 md:p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
                     >
-                      <div className="space-y-1">
-                        <p className="font-medium capitalize">{stat.method}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Badge variant="secondary">{stat.count} платежей</Badge>
-                          <Badge variant="outline">{stat.completed} завершено</Badge>
+                      <div className="space-y-0.5 xs:space-y-1">
+                        <p className="font-medium capitalize text-xs xs:text-sm md:text-base">{stat.method}</p>
+                        <div className="flex items-center gap-1 xs:gap-2 text-[10px] xs:text-xs md:text-sm text-muted-foreground flex-wrap">
+                          <Badge variant="secondary" className="text-[9px] xs:text-xs h-4 xs:h-5 px-1 xs:px-2">{stat.count} платежей</Badge>
+                          <Badge variant="outline" className="text-[9px] xs:text-xs h-4 xs:h-5 px-1 xs:px-2">{stat.completed} завершено</Badge>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-success">
+                        <p className="text-base xs:text-xl md:text-2xl font-bold text-success">
                           {stat.total.toLocaleString()} ₽
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-[10px] xs:text-xs md:text-sm text-muted-foreground">
                           ~{stat.averageCheck} ₽ средний чек
                         </p>
                       </div>

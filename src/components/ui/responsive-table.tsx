@@ -23,11 +23,11 @@ export function ResponsiveTable({
 
   if (showCards) {
     return (
-      <div className={cn("flex flex-col gap-3", className)} {...props}>
+      <div className={cn("flex flex-col gap-2 xs:gap-3", className)} {...props}>
         {data.map((row, index) => (
           <div 
             key={index}
-            className="rounded-lg border border-border bg-card p-4 shadow-sm animate-fade-in"
+            className="rounded-lg border border-border bg-card shadow-sm animate-fade-in"
             style={{ animationDelay: `${index * 50}ms` }}
           >
             {renderCard(row, index)}
