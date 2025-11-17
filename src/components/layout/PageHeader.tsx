@@ -27,8 +27,8 @@ export function PageHeader({
       "sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur-xl shadow-sm",
       className
     )}>
-      <div className="flex flex-wrap items-center gap-3 md:gap-6 px-4 md:px-6 min-h-16 md:min-h-20">
-        <SidebarTrigger className="h-8 w-8 md:h-10 md:w-10" />
+      <div className="flex flex-wrap items-center gap-2 xs:gap-3 md:gap-6 px-3 xs:px-4 md:px-6 min-h-16 md:min-h-20">
+        <SidebarTrigger className="h-7 w-7 xs:h-8 xs:w-8 md:h-10 md:w-10" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 md:gap-3">
             {icon && (
@@ -57,7 +57,7 @@ export function PageHeader({
           )}
         </div>
         {actions && (
-          <div className="flex items-center gap-1.5 md:gap-2 flex-wrap min-w-0 justify-end">
+          <div className="flex items-center gap-1 xs:gap-1.5 md:gap-2 flex-wrap min-w-0 justify-end">
             {actions}
           </div>
         )}
