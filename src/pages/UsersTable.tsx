@@ -234,11 +234,20 @@ export default function UsersTable() {
                 ) : (
                   paginatedUsers?.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell><Checkbox checked={selectedUsers.has(user.id)} onCheckedChange={() => {
-                        const newSet = new Set(selectedUsers);
-                        newSet.has(user.id) ? newSet.delete(user.id) : newSet.add(user.id);
-                        setSelectedUsers(newSet);
-                      }} /></TableCell>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedUsers.has(user.id)} 
+                          onCheckedChange={(checked) => {
+                            const newSet = new Set(selectedUsers);
+                            if (checked) {
+                              newSet.add(user.id);
+                            } else {
+                              newSet.delete(user.id);
+                            }
+                            setSelectedUsers(newSet);
+                          }} 
+                        />
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{user.telegram_id}</TableCell>
                       <TableCell>{user.first_name || "—"}</TableCell>
                       <TableCell>{user.username ? `@${user.username}` : "—"}</TableCell>

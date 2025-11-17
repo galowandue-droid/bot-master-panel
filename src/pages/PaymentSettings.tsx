@@ -180,9 +180,11 @@ export default function PaymentSettings() {
       queryClient.invalidateQueries({ queryKey: ["payment-settings"] });
       toast({ title: "Настройки сохранены" });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Save settings error:', error);
       toast({
         title: "Ошибка при сохранении",
+        description: error?.message || "Проверьте права доступа и подключение",
         variant: "destructive",
       });
     },
