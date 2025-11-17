@@ -2,12 +2,17 @@ import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Package, Users, CreditCard, Settings as SettingsIcon, ChevronRight, ChevronDown, Wrench, Bot, BarChart3, Search, Send, Database, FileText, LogOut, User, ShoppingBag, FolderTree, Gift, Radio, TrendingUp, Shield, Webhook } from "lucide-react";
+import { LayoutDashboard, Package, Users, CreditCard, Settings as SettingsIcon, ChevronRight, ChevronDown, Wrench, Bot, BarChart3, Search, Send, Database, FileText, LogOut, User, ShoppingBag, FolderTree, Gift, Radio, TrendingUp, Shield, Webhook, Star } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { MobileSidebarHeader } from "./MobileSidebarHeader";
+import { SidebarQuickAccess } from "./SidebarQuickAccess";
+import { useSidebarFavorites } from "@/hooks/useSidebarFavorites";
+import { useSidebarRecent } from "@/hooks/useSidebarRecent";
+import { useSidebarSearch } from "@/hooks/useSidebarSearch";
 interface MenuItem {
   title: string;
   url?: string;
@@ -137,6 +142,13 @@ export function AppSidebar() {
     }));
   };
 
+  // Mobile enhancements
+  const [showSearch, setShowSearch] = useState(false);
+  const allMenuItems = [...menuItems, toolsItems];
+  const { favorites, toggleFavorite, isFavorite } = useSidebarFavorites();
+  const { recent } = useSidebarRecent(allMenuItems);
+  const { searchQuery, setSearchQuery, searchResults, hasResults } = useSidebarSearch(allMenuItems);
+
   // Check if any child item is active
   const isGroupActive = (items?: {
     url: string;
@@ -167,13 +179,27 @@ export function AppSidebar() {
     // Single item without children
     if (item.url && !item.items) {
       const isActive = location.pathname === item.url;
+      const itemIsFavorite = isFavorite(item.url);
+      
       return <SidebarMenuItem key={item.title}>
           <SidebarMenuButton asChild>
             <NavLink to={item.url} className={cn("flex items-center gap-3 rounded-lg px-3 transition-colors", isMobile ? "py-3" : "py-2", isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground hover:bg-sidebar-accent/50")}>
               <item.icon className="h-4 w-4" />
               {shouldShowText && <>
-                  <span>{item.title}</span>
-                  {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
+                  <span className="flex-1">{item.title}</span>
+                  {isMobile && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFavorite({ title: item.title, url: item.url, icon: "FileText" });
+                      }}
+                      className="p-1 hover:bg-sidebar-accent rounded transition-colors"
+                    >
+                      <Star className={cn("h-3 w-3", itemIsFavorite && "fill-primary text-primary")} />
+                    </button>
+                  )}
+                  {isActive && <ChevronRight className="h-4 w-4" />}
                 </>}
             </NavLink>
           </SidebarMenuButton>
@@ -198,9 +224,27 @@ export function AppSidebar() {
           <CollapsibleContent className="ml-6 space-y-1 mt-1">
             {item.items?.map(subItem => {
             const isActive = location.pathname === subItem.url;
+            const subItemIsFavorite = isFavorite(subItem.url);
+            
             return <NavLink key={subItem.title} to={subItem.url} className={cn("flex items-center gap-3 rounded-lg px-3 text-sm transition-colors pl-2", isMobile ? "py-3" : "py-2", isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground")}>
                   <subItem.icon className="h-4 w-4" />
-                  {shouldShowText && <span>{subItem.title}</span>}
+                  {shouldShowText && (
+                    <>
+                      <span className="flex-1">{subItem.title}</span>
+                      {isMobile && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleFavorite({ title: subItem.title, url: subItem.url, icon: "FileText" });
+                          }}
+                          className="p-1 hover:bg-sidebar-accent rounded transition-colors"
+                        >
+                          <Star className={cn("h-3 w-3", subItemIsFavorite && "fill-primary text-primary")} />
+                        </button>
+                      )}
+                    </>
+                  )}
                 </NavLink>;
           })}
           </CollapsibleContent>
@@ -208,20 +252,38 @@ export function AppSidebar() {
       </Collapsible>;
   };
   return <Sidebar collapsible="offcanvas" className="border-r border-sidebar-border">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
-              <Bot className="h-5 w-5 text-sidebar-primary-foreground" />
+      {isMobile ? (
+        <MobileSidebarHeader
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          showSearch={showSearch}
+          onToggleSearch={() => setShowSearch(!showSearch)}
+        />
+      ) : (
+        <SidebarHeader className="border-b border-sidebar-border p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
+                <Bot className="h-5 w-5 text-sidebar-primary-foreground" />
+              </div>
+              {shouldShowText && <div>
+                  <p className="text-sm font-semibold text-sidebar-foreground">Admin Panel</p>
+                  <p className="text-xs text-sidebar-foreground/60">Telegram Bot</p>
+                </div>}
             </div>
-            {shouldShowText && <div>
-                <p className="text-sm font-semibold text-sidebar-foreground">Admin Panel</p>
-                <p className="text-xs text-sidebar-foreground/60">Telegram Bot</p>
-              </div>}
+            {shouldShowText && <NotificationCenter />}
           </div>
-          {shouldShowText && !isMobile && <NotificationCenter />}
-        </div>
-      </SidebarHeader>
+        </SidebarHeader>
+      )}
+
+      {isMobile && (
+        <SidebarQuickAccess
+          favorites={favorites}
+          recent={recent}
+          searchResults={searchResults}
+          hasSearch={showSearch && searchQuery.length > 0}
+        />
+      )}
 
       <SidebarContent>
         <SidebarGroup>
