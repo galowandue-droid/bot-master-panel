@@ -48,7 +48,7 @@ export function NotificationCenter() {
             )}
           </div>
           <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "unread")}>
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="w-full overflow-x-auto no-scrollbar sm:grid sm:w-full sm:grid-cols-2">
               <TabsTrigger value="all">Все</TabsTrigger>
               <TabsTrigger value="unread">
                 Непрочитанные{unreadCount > 0 && <span className="ml-1 text-xs">({unreadCount})</span>}

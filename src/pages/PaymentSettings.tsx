@@ -432,18 +432,18 @@ export default function PaymentSettings() {
       <PageContainer>
 
       <Tabs defaultValue="systems" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="w-full overflow-x-auto no-scrollbar md:grid md:w-full md:grid-cols-4">
           <TabsTrigger value="systems">Платежные системы</TabsTrigger>
           <TabsTrigger value="messages">
-            <MessageSquare className="h-4 w-4 mr-2" />
+            <MessageSquare className="h-4 w-4 mr-1 xs:mr-2" />
             Сообщения
           </TabsTrigger>
           <TabsTrigger value="limits">
-            <DollarSign className="h-4 w-4 mr-2" />
+            <DollarSign className="h-4 w-4 mr-1 xs:mr-2" />
             Лимиты и комиссии
           </TabsTrigger>
           <TabsTrigger value="links">
-            <LinkIcon className="h-4 w-4 mr-2" />
+            <LinkIcon className="h-4 w-4 mr-1 xs:mr-2" />
             Кастомные ссылки
           </TabsTrigger>
         </TabsList>
