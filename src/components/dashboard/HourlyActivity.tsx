@@ -4,8 +4,10 @@ import { Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function HourlyActivity() {
+  const isMobile = useIsMobile();
   const { data: hourlyData, isLoading } = useQuery({
     queryKey: ["hourly-activity"],
     queryFn: async () => {
@@ -34,11 +36,13 @@ export function HourlyActivity() {
         }
       });
 
-      return Array.from(hourMap.values()).map(item => ({
+      const allData = Array.from(hourMap.values()).map(item => ({
         hour: `${item.hour}:00`,
         count: item.count,
         revenue: Math.round(item.revenue),
       }));
+
+      return allData;
     },
   });
 
@@ -67,20 +71,20 @@ export function HourlyActivity() {
         </CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-hidden px-2 xs:px-6 pb-3 xs:pb-6">
-        <ResponsiveContainer width="100%" height={240} className="md:h-[300px]">
-          <BarChart data={hourlyData} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
+        <ResponsiveContainer width="100%" height={isMobile ? 180 : 240} className="md:h-[300px]">
+          <BarChart data={hourlyData} margin={{ top: 5, right: 5, left: isMobile ? -15 : -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" className="opacity-50" />
             <XAxis 
               dataKey="hour" 
               stroke="hsl(var(--muted-foreground))"
-              style={{ fontSize: '10px' }}
-              interval="preserveStartEnd"
+              style={{ fontSize: isMobile ? '9px' : '10px' }}
+              interval={isMobile ? 2 : "preserveStartEnd"}
               tickMargin={5}
             />
             <YAxis 
               stroke="hsl(var(--muted-foreground))"
-              style={{ fontSize: '10px' }}
-              width={30}
+              style={{ fontSize: isMobile ? '9px' : '10px' }}
+              width={isMobile ? 25 : 30}
               tickMargin={5}
             />
             <Tooltip
@@ -88,9 +92,9 @@ export function HourlyActivity() {
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '8px',
-                fontSize: '11px'
+                fontSize: isMobile ? '10px' : '11px'
               }}
-              labelStyle={{ color: 'hsl(var(--foreground))', fontSize: '11px' }}
+              labelStyle={{ color: 'hsl(var(--foreground))', fontSize: isMobile ? '10px' : '11px' }}
             />
             <Bar 
               dataKey="count" 

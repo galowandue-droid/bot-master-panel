@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const COLORS = ['hsl(250, 95%, 63%)', 'hsl(280, 89%, 66%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)'];
 
@@ -40,6 +41,7 @@ export default function Analytics() {
     to: new Date(),
   });
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const isMobile = useIsMobile();
   
   const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
   const { statistics, totals, isLoading } = useStatistics(days);
@@ -54,17 +56,23 @@ export default function Analytics() {
     });
   }, [statistics, dateRange]);
 
-  const chartData = useMemo(() => 
-    filteredStatistics?.map((stat) => ({
+  const chartData = useMemo(() => {
+    const allData = filteredStatistics?.map((stat) => ({
       date: format(new Date(stat.date), "dd MMM", { locale: ru }),
       users: stat.new_users,
       purchases: stat.purchases_count,
       revenue: Number(stat.purchases_amount),
       deposits: stat.deposits_count,
       depositsAmount: Number(stat.deposits_amount),
-    })) || [],
-    [filteredStatistics]
-  );
+    })) || [];
+    
+    // На мобильных показываем каждую 2-3 точку если данных больше 15
+    if (isMobile && allData.length > 15) {
+      return allData.filter((_, index) => index % 2 === 0);
+    }
+    
+    return allData;
+  }, [filteredStatistics, isMobile]);
 
   const handleExportData = async () => {
     try {
@@ -265,10 +273,10 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[200px] xs:h-[300px] w-full" />
                 ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={chartData}>
+                  <ResponsiveContainer width="100%" height={isMobile ? 200 : 300}>
+                    <AreaChart data={chartData} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -20 : 0, bottom: 5 }}>
                       <defs>
                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor={COLORS[0]} stopOpacity={0.3}/>
@@ -280,10 +288,25 @@ export default function Analytics() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                      <Legend />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="hsl(var(--muted-foreground))" 
+                        style={{ fontSize: isMobile ? '10px' : '12px' }}
+                        interval={isMobile ? "preserveStartEnd" : "preserveEnd"}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--muted-foreground))" 
+                        style={{ fontSize: isMobile ? '10px' : '12px' }}
+                        width={isMobile ? 35 : 60}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          background: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          fontSize: isMobile ? '11px' : '14px'
+                        }} 
+                      />
+                      {!isMobile && <Legend />}
                       <Area type="monotone" dataKey="revenue" name="Выручка" stroke={COLORS[0]} fillOpacity={1} fill="url(#colorRevenue)" />
                       <Area type="monotone" dataKey="depositsAmount" name="Депозиты" stroke={COLORS[1]} fillOpacity={1} fill="url(#colorDeposits)" />
                     </AreaChart>
@@ -299,14 +322,29 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[200px] xs:h-[300px] w-full" />
                 ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={chartData}>
+                  <ResponsiveContainer width="100%" height={isMobile ? 200 : 300}>
+                    <BarChart data={chartData} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -20 : 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="hsl(var(--muted-foreground))" 
+                        style={{ fontSize: isMobile ? '10px' : '12px' }}
+                        interval={isMobile ? "preserveStartEnd" : "preserveEnd"}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--muted-foreground))" 
+                        style={{ fontSize: isMobile ? '10px' : '12px' }}
+                        width={isMobile ? 35 : 60}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          background: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          fontSize: isMobile ? '11px' : '14px'
+                        }} 
+                      />
                       <Bar dataKey="revenue" name="Выручка" fill={COLORS[0]} radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -323,16 +361,38 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[200px] xs:h-[300px] w-full" />
                 ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={chartData}>
+                  <ResponsiveContainer width="100%" height={isMobile ? 200 : 300}>
+                    <LineChart data={chartData} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -20 : 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                      <Legend />
-                      <Line type="monotone" dataKey="users" name="Новые пользователи" stroke={COLORS[2]} strokeWidth={2} dot={{ r: 4 }} />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="hsl(var(--muted-foreground))" 
+                        style={{ fontSize: isMobile ? '10px' : '12px' }}
+                        interval={isMobile ? "preserveStartEnd" : "preserveEnd"}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--muted-foreground))" 
+                        style={{ fontSize: isMobile ? '10px' : '12px' }}
+                        width={isMobile ? 35 : 60}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          background: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          fontSize: isMobile ? '11px' : '14px'
+                        }} 
+                      />
+                      {!isMobile && <Legend />}
+                      <Line 
+                        type="monotone" 
+                        dataKey="users" 
+                        name="Новые пользователи" 
+                        stroke={COLORS[2]} 
+                        strokeWidth={2} 
+                        dot={isMobile ? false : { r: 4 }} 
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -346,15 +406,30 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[200px] xs:h-[300px] w-full" />
                 ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={chartData}>
+                  <ResponsiveContainer width="100%" height={isMobile ? 200 : 300}>
+                    <BarChart data={chartData} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -20 : 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                      <Legend />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="hsl(var(--muted-foreground))" 
+                        style={{ fontSize: isMobile ? '10px' : '12px' }}
+                        interval={isMobile ? "preserveStartEnd" : "preserveEnd"}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--muted-foreground))" 
+                        style={{ fontSize: isMobile ? '10px' : '12px' }}
+                        width={isMobile ? 35 : 60}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          background: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          fontSize: isMobile ? '11px' : '14px'
+                        }} 
+                      />
+                      {!isMobile && <Legend />}
                       <Bar dataKey="purchases" name="Покупки" fill={COLORS[0]} radius={[8, 8, 0, 0]} />
                       <Bar dataKey="deposits" name="Депозиты" fill={COLORS[1]} radius={[8, 8, 0, 0]} />
                     </BarChart>
