@@ -228,14 +228,13 @@ export default function Analytics() {
                       </span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="p-0 md:w-[620px] max-w-[95vw]" align="start" side="bottom" sideOffset={8}>
-                    <div className="p-3 space-y-3">
+              <PopoverContent className="p-0 w-auto max-w-[400px]" align="start" side="bottom" sideOffset={8}>
+                <div className="p-4 space-y-4">
                       {/* Быстрые пресеты */}
                       <div className="grid grid-cols-4 gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-xs"
                           onClick={() => {
                             setDateRange({ from: new Date(), to: new Date() });
                             setDesktopOpen(false);
@@ -246,7 +245,6 @@ export default function Analytics() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-xs"
                           onClick={() => {
                             setDateRange({ from: subDays(new Date(), 7), to: new Date() });
                             setDesktopOpen(false);
@@ -257,7 +255,6 @@ export default function Analytics() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-xs"
                           onClick={() => {
                             setDateRange({ from: subDays(new Date(), 30), to: new Date() });
                             setDesktopOpen(false);
@@ -268,7 +265,6 @@ export default function Analytics() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-xs"
                           onClick={() => {
                             setDateRange({ from: subDays(new Date(), 90), to: new Date() });
                             setDesktopOpen(false);
@@ -288,47 +284,45 @@ export default function Analytics() {
                       </div>
                       
                       {/* Range Calendar */}
-                      <Calendar
-                        mode="range"
-                        selected={{ from: dateRange.from, to: dateRange.to }}
-                        onSelect={(range) => {
-                          if (range?.from) {
-                            const newRange = { from: range.from, to: range.to || range.from };
-                            setDateRange(newRange);
-                            if (range?.to) {
-                              setDesktopOpen(false);
-                            }
-                          }
-                        }}
-                        locale={ru}
-                        numberOfMonths={2}
-                        pagedNavigation
-                        fixedWeeks
-                        showOutsideDays
-                      />
+                  <Calendar
+                    mode="range"
+                    selected={{ from: dateRange.from, to: dateRange.to }}
+                    onSelect={(range) => {
+                      if (range?.from) {
+                        const newRange = { from: range.from, to: range.to || range.from };
+                        setDateRange(newRange);
+                        if (range?.to) {
+                          setDesktopOpen(false);
+                        }
+                      }
+                    }}
+                    locale={ru}
+                    numberOfMonths={1}
+                    pagedNavigation
+                    fixedWeeks
+                    showOutsideDays
+                  />
 
                       {/* Управление */}
-                      <div className="flex items-center justify-between pt-2 border-t">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs"
-                          onClick={() => {
-                            setDateRange({ from: subDays(new Date(), 30), to: new Date() });
-                            setDesktopOpen(false);
-                          }}
-                        >
-                          Сбросить
-                        </Button>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="text-xs"
-                          onClick={() => setDesktopOpen(false)}
-                        >
-                          Готово
-                        </Button>
-                      </div>
+                  <div className="flex items-center justify-between pt-3 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setDateRange({ from: subDays(new Date(), 30), to: new Date() });
+                        setDesktopOpen(false);
+                      }}
+                    >
+                      Сбросить
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setDesktopOpen(false)}
+                    >
+                      Готово
+                    </Button>
+                  </div>
                     </div>
                   </PopoverContent>
                 </Popover>
