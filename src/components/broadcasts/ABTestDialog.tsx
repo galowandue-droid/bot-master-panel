@@ -1,12 +1,6 @@
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import {
   Form,
   FormControl,
@@ -55,17 +49,14 @@ export const ABTestDialog = ({ open, onOpenChange, broadcastId, existingVariants
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Добавить вариант A/B теста</DialogTitle>
-          <DialogDescription>
-            Создайте альтернативный вариант сообщения для тестирования эффективности
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <ResponsiveDialog 
+      open={open} 
+      onOpenChange={onOpenChange}
+      title="Добавить вариант A/B теста"
+      description="Создайте альтернативный вариант сообщения для тестирования эффективности"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="variant_name"
@@ -131,7 +122,6 @@ export const ABTestDialog = ({ open, onOpenChange, broadcastId, existingVariants
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialog>
   );
 };

@@ -3,6 +3,7 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "@/lib/utils";
 import { useSwipeableTabs } from "@/hooks/use-swipeable-tabs";
+import { SwipeIndicator } from "./swipe-indicator";
 
 interface TabsProps extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root> {
   enableSwipe?: boolean;
@@ -31,14 +32,18 @@ const Tabs = React.forwardRef<
 });
 Tabs.displayName = "Tabs";
 
+interface TabsListProps extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> {
+  showSwipeIndicator?: boolean;
+}
+
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
+  TabsListProps
+>(({ className, showSwipeIndicator = true, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex w-full max-w-full items-center justify-start gap-1 rounded-md bg-muted p-1 text-muted-foreground h-9 xs:h-10 overflow-x-auto no-scrollbar",
+      "inline-flex w-full max-w-full items-center justify-start gap-1 xs:gap-2 rounded-md bg-muted p-1 text-muted-foreground h-9 xs:h-10 overflow-x-auto no-scrollbar",
       className,
     )}
     {...props}
@@ -63,10 +68,14 @@ const TabsTrigger = React.forwardRef<
 ));
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
+interface TabsContentProps extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content> {
+  showSwipeIndicator?: boolean;
+}
+
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+  TabsContentProps
+>(({ className, children, showSwipeIndicator = true, ...props }, ref) => {
   const context = React.useContext(TabsContext);
   const [tabValues, setTabValues] = React.useState<string[]>([]);
 
@@ -89,18 +98,23 @@ const TabsContent = React.forwardRef<
     enabled: context.enableSwipe,
   });
 
+  const currentIndex = tabValues.indexOf(context.value || "");
+
   return (
-    <TabsPrimitive.Content
-      ref={ref}
-      className={cn(
-        "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        className,
-      )}
-      {...swipeHandlers}
-      {...props}
-    >
-      {children}
-    </TabsPrimitive.Content>
+    <>
+      {showSwipeIndicator && <SwipeIndicator currentIndex={currentIndex} totalCount={tabValues.length} />}
+      <TabsPrimitive.Content
+        ref={ref}
+        className={cn(
+          "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 animate-fade-in",
+          className,
+        )}
+        {...swipeHandlers}
+        {...props}
+      >
+        {children}
+      </TabsPrimitive.Content>
+    </>
   );
 });
 TabsContent.displayName = TabsPrimitive.Content.displayName;

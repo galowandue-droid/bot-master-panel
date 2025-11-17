@@ -43,10 +43,10 @@ export default function Settings() {
       <PageContainer className="h-[calc(100vh-4rem)] overflow-auto">
         <div className="max-w-4xl mx-auto">
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="general" className="gap-2"><Settings2 className="h-4 w-4" />Общие</TabsTrigger>
-              <TabsTrigger value="bot" className="gap-2"><MessageCircle className="h-4 w-4" />Бот</TabsTrigger>
-              <TabsTrigger value="notifications" className="gap-2"><Bell className="h-4 w-4" />Уведомления</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-1 xs:grid-cols-3 gap-1">
+              <TabsTrigger value="general" className="gap-1 xs:gap-2 text-xs xs:text-sm px-2 xs:px-3"><Settings2 className="h-3 w-3 xs:h-4 xs:w-4" /><span className="hidden xs:inline">Общие</span><span className="inline xs:hidden">Общ.</span></TabsTrigger>
+              <TabsTrigger value="bot" className="gap-1 xs:gap-2 text-xs xs:text-sm px-2 xs:px-3"><MessageCircle className="h-3 w-3 xs:h-4 xs:w-4" /><span className="hidden xs:inline">Бот</span></TabsTrigger>
+              <TabsTrigger value="notifications" className="gap-1 xs:gap-2 text-xs xs:text-sm px-2 xs:px-3"><Bell className="h-3 w-3 xs:h-4 xs:w-4" /><span className="hidden xs:inline">Уведомления</span><span className="inline xs:hidden">Уведом.</span></TabsTrigger>
             </TabsList>
 
             <TabsContent value="general" className="space-y-6">
