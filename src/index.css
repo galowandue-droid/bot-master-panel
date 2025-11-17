@@ -70,6 +70,57 @@ All colors MUST be HSL.
     --shadow-glow: 0 0 40px hsl(250 95% 63% / 0.4);
     --shadow-card: 0 4px 20px -4px hsl(222 47% 11% / 0.08);
   }
+  
+  /* Mobile optimizations for all devices including iOS */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  
+  html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
+  body {
+    /* Smooth scrolling for iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent text selection on long press (except inputs) */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Allow text selection in inputs and content areas */
+  input,
+  textarea,
+  [contenteditable],
+  .selectable {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  
+  /* Touch-friendly buttons and interactive elements */
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Optimize input fields for mobile */
+  input[type="search"] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-results-button,
+  input[type="search"]::-webkit-search-results-decoration {
+    display: none;
+  }
 
   .dark {
     --background: 222 47% 11%;

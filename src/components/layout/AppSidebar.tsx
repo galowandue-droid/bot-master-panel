@@ -1,5 +1,5 @@
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { LayoutDashboard, Package, Users, CreditCard, Settings as SettingsIcon, ChevronRight, ChevronDown, Wrench, Bot, BarChart3, Search, Send, Database, FileText, LogOut, User, ShoppingBag, FolderTree, Gift, Radio, TrendingUp, Shield, Webhook, Star } from "lucide-react";
@@ -116,10 +116,12 @@ export function AppSidebar() {
   const {
     open,
     openMobile,
-    isMobile
+    isMobile,
+    setOpenMobile
   } = useSidebar();
   const shouldShowText = isMobile ? openMobile : open;
   const location = useLocation();
+  const navigate = useNavigate();
   const {
     signOut
   } = useAuth();
@@ -146,6 +148,19 @@ export function AppSidebar() {
   const allMenuItems = [...menuItems, toolsItems];
   const { favorites, toggleFavorite, isFavorite } = useSidebarFavorites();
   const { searchQuery, setSearchQuery, searchResults, hasResults } = useSidebarSearch(allMenuItems);
+
+  // Handle search submit (Enter key)
+  const handleSearchSubmit = () => {
+    if (searchResults.length > 0) {
+      const firstResult = searchResults[0];
+      navigate(firstResult.url);
+      setSearchQuery("");
+      setShowSearch(false);
+      if (isMobile) {
+        setOpenMobile(false);
+      }
+    }
+  };
 
   // Check if any child item is active
   const isGroupActive = (items?: {
@@ -256,6 +271,7 @@ export function AppSidebar() {
           onSearchChange={setSearchQuery}
           showSearch={showSearch}
           onToggleSearch={() => setShowSearch(!showSearch)}
+          onSearchSubmit={handleSearchSubmit}
         />
       ) : (
         <SidebarHeader className="border-b border-sidebar-border p-4">
