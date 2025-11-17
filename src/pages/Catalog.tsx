@@ -352,11 +352,11 @@ export default function Catalog() {
         icon={<Package className="h-5 w-5 text-primary" />}
         gradient
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 xs:gap-2">
             {isMobile && (
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="md:hidden">
+                  <Button variant="outline" size="sm" className="md:hidden flex-shrink-0 h-9 w-9 p-0">
                     <Menu className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
@@ -365,7 +365,8 @@ export default function Catalog() {
             <PageHeaderSearch 
               placeholder="Поиск товаров..." 
               value={search} 
-              onChange={setSearch} 
+              onChange={setSearch}
+              className="text-xs xs:text-sm"
             />
           </div>
         }
