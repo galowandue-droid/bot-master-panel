@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Package, FolderOpen, Pencil, Trash2, Copy, GripVertical, List, GitBranch, LayoutGrid } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Plus, Package, FolderOpen, Pencil, Trash2, Copy, GripVertical, List, GitBranch, LayoutGrid, Menu } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCategories } from "@/hooks/useCategories";
 import { usePositions } from "@/hooks/usePositions";
@@ -212,6 +214,8 @@ function SortablePositionCard({ position, categoryName, itemCount, onEdit, onDel
 }
 
 export default function Catalog() {
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [positionDialogOpen, setPositionDialogOpen] = useState(false);
@@ -348,16 +352,60 @@ export default function Catalog() {
         icon={<Package className="h-5 w-5 text-primary" />}
         gradient
         actions={
+          <div className="flex items-center gap-2">
+            {isMobile && (
+              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="md:hidden">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+              </Sheet>
+            )}
             <PageHeaderSearch 
               placeholder="Поиск товаров..." 
               value={search} 
               onChange={setSearch} 
             />
-          }
+          </div>
+        }
         />
 
         <div className="flex h-[calc(100vh-5rem)]">
-          <div className="w-48 xs:w-56 md:w-64 border-r bg-muted/10">
+          {/* Mobile sidebar */}
+          {isMobile && (
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+              <SheetContent side="left" className="w-[280px] p-0">
+                <div className="p-3 border-b">
+                  <Button 
+                    onClick={() => { 
+                      setSelectedCategory(undefined); 
+                      setCategoryDialogOpen(true);
+                      setSidebarOpen(false);
+                    }} 
+                    size="sm" 
+                    className="w-full"
+                  >
+                    <Plus className="h-3 w-3 mr-2" />Новая категория
+                  </Button>
+                </div>
+                <ScrollArea className="h-[calc(100vh-8rem)]">
+                  <div className="p-2">
+                    <Button 
+                      variant={!selectedCategoryId ? "default" : "ghost"} 
+                      className="w-full justify-start" 
+                      onClick={() => { setSelectedCategoryId(null); setSidebarOpen(false); }}
+                    >
+                      <Package className="h-4 w-4 mr-2" />Все товары
+                    </Button>
+                  </div>
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+          )}
+
+          {/* Desktop sidebar */}
+          <div className="w-64 border-r bg-muted/10 hidden md:block">
             <div className="p-2 xs:p-3 md:p-4 border-b space-y-1 xs:space-y-2">
               <Button 
                 onClick={() => { 
