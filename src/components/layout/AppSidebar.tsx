@@ -11,7 +11,6 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 import { MobileSidebarHeader } from "./MobileSidebarHeader";
 import { SidebarQuickAccess } from "./SidebarQuickAccess";
 import { useSidebarFavorites } from "@/hooks/useSidebarFavorites";
-import { useSidebarRecent } from "@/hooks/useSidebarRecent";
 import { useSidebarSearch } from "@/hooks/useSidebarSearch";
 interface MenuItem {
   title: string;
@@ -146,7 +145,6 @@ export function AppSidebar() {
   const [showSearch, setShowSearch] = useState(false);
   const allMenuItems = [...menuItems, toolsItems];
   const { favorites, toggleFavorite, isFavorite } = useSidebarFavorites();
-  const { recent } = useSidebarRecent(allMenuItems);
   const { searchQuery, setSearchQuery, searchResults, hasResults } = useSidebarSearch(allMenuItems);
 
   // Check if any child item is active
@@ -279,7 +277,7 @@ export function AppSidebar() {
       {isMobile && (
         <SidebarQuickAccess
           favorites={favorites}
-          recent={recent}
+          recent={[]}
           searchResults={searchResults}
           hasSearch={showSearch && searchQuery.length > 0}
         />
