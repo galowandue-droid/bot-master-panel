@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { retryWithBackoff, withTimeout, createLogger, createErrorResponse } from "../_shared/edge-utils.ts";
+import { validateText, validateUrl, ValidationError } from "../_shared/validation.ts";
 
 const logger = createLogger('send-broadcast');
 
@@ -136,12 +137,52 @@ serve(async (req) => {
       throw new Error('Broadcast not found');
     }
 
+    // Validate broadcast content
+    try {
+      // Validate message
+      validateText(broadcast.message, 1, 4096, 'Message');
+
+      // Validate media URL if present
+      if (broadcast.media_url) {
+        validateUrl(broadcast.media_url);
+      }
+
+      // Validate media caption if present
+      if (broadcast.media_caption) {
+        validateText(broadcast.media_caption, 1, 1024, 'Media caption');
+      }
+    } catch (validationError) {
+      logger.error('Broadcast validation failed', { error: String(validationError) });
+      return new Response(
+        JSON.stringify({ error: validationError instanceof ValidationError ? validationError.message : 'Validation failed' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { data: buttons } = await supabaseClient
       .from('broadcast_buttons')
       .select('*')
       .eq('broadcast_id', broadcast_id)
       .order('row', { ascending: true })
       .order('position', { ascending: true });
+
+    // Validate buttons if present
+    if (buttons && buttons.length > 0) {
+      try {
+        for (const button of buttons) {
+          validateText(button.text, 1, 64, 'Button text');
+          if (button.url) {
+            validateUrl(button.url);
+          }
+        }
+      } catch (validationError) {
+        logger.error('Button validation failed', { error: String(validationError) });
+        return new Response(
+          JSON.stringify({ error: validationError instanceof ValidationError ? validationError.message : 'Validation failed' }), 
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     let targetUsers;
     if (broadcast.segment_id) {

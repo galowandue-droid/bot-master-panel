@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { createLogger, createErrorResponse, logWebhookRequest } from "../_shared/edge-utils.ts";
+import { validateAmount, validateUUID, validateUserExists, ValidationError } from "../_shared/validation.ts";
 
 const logger = createLogger('webhook-heleket');
 
@@ -29,13 +30,57 @@ serve(async (req) => {
     logger.info('Webhook received', { status: payload.status });
     
     if (payload.status === 'completed' || payload.status === 'success') {
-      const userId = payload.user_id || payload.custom_data?.user_id;
-      const amount = parseFloat(payload.amount);
+      const rawUserId = payload.user_id || payload.custom_data?.user_id;
+      const rawAmount = payload.amount;
 
-      if (!userId || !amount) {
-        logger.warn('Missing data');
-        responseStatus = 400;
-        errorMessage = 'Invalid payload: missing user_id or amount';
+      // Validate inputs
+      try {
+        if (!rawUserId || !rawAmount) {
+          throw new ValidationError('Missing user_id or amount');
+        }
+
+        const userId = validateUUID(rawUserId);
+        const amount = validateAmount(rawAmount);
+        
+        // Check user exists
+        await validateUserExists(userId, supabaseClient);
+
+        logger.info('Processing', { user_id: userId, amount });
+
+        await supabaseClient.from('deposits').insert({
+          user_id: userId,
+          amount,
+          payment_method: 'heleket',
+          status: 'completed',
+        });
+
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('balance, telegram_id')
+          .eq('id', userId)
+          .single();
+
+        if (profile) {
+          const newBalance = (profile.balance || 0) + amount;
+          await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', userId);
+          logger.info('Balance updated', { user_id: userId, new_balance: newBalance });
+
+          try {
+            await supabaseClient.functions.invoke('send-notification', {
+              body: {
+                type: 'deposit',
+                telegram_id: profile.telegram_id,
+                data: { amount, payment_method: 'heleket' }
+              }
+            });
+          } catch (notifError) {
+            logger.error('Notification failed', { error: String(notifError) });
+          }
+        }
+      } catch (validationError) {
+        logger.error('Validation failed', { error: String(validationError) });
+        responseStatus = validationError instanceof ValidationError ? 400 : 500;
+        errorMessage = String(validationError);
         
         await logWebhookRequest({
           supabaseClient,
@@ -47,40 +92,7 @@ serve(async (req) => {
           ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || undefined,
         });
         
-        return new Response('Invalid payload', { status: 400 });
-      }
-
-      logger.info('Processing', { user_id: userId, amount });
-
-      await supabaseClient.from('deposits').insert({
-        user_id: userId,
-        amount,
-        payment_method: 'heleket',
-        status: 'completed',
-      });
-
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('balance, telegram_id')
-        .eq('id', userId)
-        .single();
-
-      if (profile) {
-        const newBalance = (profile.balance || 0) + amount;
-        await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', userId);
-        logger.info('Balance updated', { user_id: userId, new_balance: newBalance });
-
-        try {
-          await supabaseClient.functions.invoke('send-notification', {
-            body: {
-              type: 'deposit',
-              telegram_id: profile.telegram_id,
-              data: { amount, payment_method: 'heleket' }
-            }
-          });
-        } catch (notifError) {
-          logger.error('Notification failed', { error: String(notifError) });
-        }
+        return new Response(errorMessage, { status: responseStatus });
       }
     }
 
