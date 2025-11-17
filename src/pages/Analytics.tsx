@@ -137,8 +137,8 @@ export default function Analytics() {
                     <span className="truncate">{format(dateRange.from, "dd MMM yyyy", { locale: ru })} - {format(dateRange.to, "dd MMM yyyy", { locale: ru })}</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <div className="p-3 space-y-2">
+                <PopoverContent className="w-auto p-0" align="start" side="bottom">
+                  <div className="p-2 xs:p-3 space-y-2">
                     <div className="space-y-2">
                       <div className="text-sm font-medium">От</div>
                       <Calendar
@@ -251,10 +251,10 @@ export default function Analytics() {
         </div>
 
         <Tabs defaultValue="revenue" className="space-y-6">
-          <TabsList className="w-full overflow-x-auto no-scrollbar md:grid md:grid-cols-3 md:w-full lg:w-[400px]">
-            <TabsTrigger value="revenue">Выручка</TabsTrigger>
-            <TabsTrigger value="users">Пользователи</TabsTrigger>
-            <TabsTrigger value="conversion">Воронка</TabsTrigger>
+          <TabsList className="grid grid-cols-3 w-full xs:w-auto xs:inline-flex">
+            <TabsTrigger value="revenue" className="text-xs xs:text-sm">Выручка</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs xs:text-sm">Пользователи</TabsTrigger>
+            <TabsTrigger value="conversion" className="text-xs xs:text-sm">Воронка</TabsTrigger>
           </TabsList>
 
           <TabsContent value="revenue" className="space-y-6">

@@ -76,7 +76,7 @@ export default function Roles() {
               <div className="relative mt-4">
                 <Search className="absolute left-2 xs:left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3.5 w-3.5 xs:h-4 xs:w-4" />
                 <Input
-                  placeholder="Поиск по имени, username или telegram ID..."
+                  placeholder="Поиск по имени, username или ID"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-7 xs:pl-10 text-xs xs:text-sm"
@@ -86,15 +86,21 @@ export default function Roles() {
           </Card>
 
           <Tabs defaultValue="all" className="space-y-4">
-            <TabsList className="grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="all">
-                Все ({profiles?.length || 0})
+            <TabsList className="grid w-full grid-cols-3 max-w-md text-xs xs:text-sm">
+              <TabsTrigger value="all" className="px-1 xs:px-3">
+                <span className="hidden xs:inline">Все</span>
+                <span className="inline xs:hidden">Все</span>
+                {" "}({profiles?.length || 0})
               </TabsTrigger>
-              <TabsTrigger value="admins">
-                Админы ({admins.length})
+              <TabsTrigger value="admins" className="px-1 xs:px-3">
+                <span className="hidden xs:inline">Админы</span>
+                <span className="inline xs:hidden">Адм.</span>
+                {" "}({admins.length})
               </TabsTrigger>
-              <TabsTrigger value="users">
-                Пользователи ({regularUsers.length})
+              <TabsTrigger value="users" className="px-1 xs:px-3 truncate">
+                <span className="hidden xs:inline">Пользователи</span>
+                <span className="inline xs:hidden">Польз.</span>
+                {" "}({regularUsers.length})
               </TabsTrigger>
             </TabsList>
 

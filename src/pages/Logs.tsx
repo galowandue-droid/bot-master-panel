@@ -87,8 +87,8 @@ export default function Logs() {
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Поиск по логам..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+              <Search className="absolute left-2 xs:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 xs:h-4 xs:w-4 text-muted-foreground" />
+              <Input placeholder="Поиск по логам..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-7 xs:pl-9 text-xs xs:text-sm" />
             </div>
             <div className="flex gap-2">
               {(["ALL", "INFO", "WARNING", "ERROR"] as const).map(level => (

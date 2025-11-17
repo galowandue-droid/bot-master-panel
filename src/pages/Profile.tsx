@@ -128,14 +128,23 @@ export default function Profile() {
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-2xl">
-      <div className="flex items-center gap-3">
-        <User className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold">Профиль</h1>
-          <p className="text-muted-foreground mt-1">
-            Управление вашим аккаунтом администратора
-          </p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <User className="h-8 w-8 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold">Профиль</h1>
+            <p className="text-muted-foreground mt-1">
+              Управление вашим аккаунтом администратора
+            </p>
+          </div>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => window.history.back()}
+          className="shrink-0"
+        >
+          Назад
+        </Button>
       </div>
 
       <Card>
@@ -237,6 +246,19 @@ export default function Profile() {
           </form>
         </CardContent>
       </Card>
+
+      <div className="flex justify-center">
+        <Button
+          variant="destructive"
+          onClick={async () => {
+            await supabase.auth.signOut();
+            window.location.href = "/auth";
+          }}
+          className="w-full max-w-xs"
+        >
+          Выйти из аккаунта
+        </Button>
+      </div>
     </div>
   );
 }
