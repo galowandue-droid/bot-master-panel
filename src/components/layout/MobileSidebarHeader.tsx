@@ -53,7 +53,7 @@ export function MobileSidebarHeader({
                 placeholder="Поиск по меню..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-10 pr-10 bg-sidebar-accent border-sidebar-border focus:ring-primary"
+                className="pl-10 pr-10 h-10 bg-sidebar-accent border-sidebar-border focus:ring-primary"
               />
               {searchQuery && (
                 <button
