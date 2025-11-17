@@ -322,11 +322,11 @@ export default function UsersTable() {
                       {visibleColumns.username && <TableCell>{user.username ? `@${user.username}` : <span className="text-muted-foreground">—</span>}</TableCell>}
                       {visibleColumns.firstName && <TableCell>{user.first_name || <span className="text-muted-foreground">—</span>}</TableCell>}
                       {visibleColumns.telegramId && <TableCell className="font-mono text-xs">{user.telegram_id}</TableCell>}
-                      {visibleColumns.balance && <TableCell className="text-right">{Number(user.balance).toFixed(2)} ₽</TableCell>}
+                      {visibleColumns.balance && <TableCell className="text-right whitespace-nowrap">{Number(user.balance).toFixed(2)} ₽</TableCell>}
                       {visibleColumns.totalSpent && <TableCell className="text-right text-muted-foreground">—</TableCell>}
                       {visibleColumns.purchases && <TableCell className="text-right text-muted-foreground">—</TableCell>}
                       {visibleColumns.createdAt && <TableCell className="text-sm text-muted-foreground">{new Date(user.created_at).toLocaleDateString('ru-RU')}</TableCell>}
-                      {visibleColumns.blocked && <TableCell><Badge variant={user.is_blocked ? "destructive" : "default"}>{user.is_blocked ? "Заблокирован" : "Активен"}</Badge></TableCell>}
+                      {visibleColumns.blocked && <TableCell><Badge variant={user.is_blocked ? "destructive" : "default"} className="whitespace-nowrap">{user.is_blocked ? "Заблокирован" : "Активен"}</Badge></TableCell>}
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>

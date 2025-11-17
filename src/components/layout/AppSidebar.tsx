@@ -192,15 +192,12 @@ export function AppSidebar() {
                 </> : <span className="sr-only">{item.title} ({itemCount})</span>}
             </SidebarMenuButton>
           </CollapsibleTrigger>
-          <CollapsibleContent className="ml-6 space-y-1 mt-1 relative before:absolute before:left-1 before:top-0 before:bottom-0 before:w-px before:bg-border/40">
+          <CollapsibleContent className="ml-6 space-y-1 mt-1">
             {item.items?.map(subItem => {
             const isActive = location.pathname === subItem.url;
-            return <NavLink key={subItem.title} to={subItem.url} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors pl-6", isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground")}>
+            return <NavLink key={subItem.title} to={subItem.url} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors pl-2", isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground")}>
                   <subItem.icon className="h-4 w-4" />
-                  {open && <>
-                      <span>{subItem.title}</span>
-                      {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
-                    </>}
+                  {open && <span>{subItem.title}</span>}
                 </NavLink>;
           })}
           </CollapsibleContent>

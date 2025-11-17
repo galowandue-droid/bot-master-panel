@@ -383,7 +383,7 @@ export default function Catalog() {
               </div>
             </div>
             
-            <ScrollArea className="h-[calc(100vh-11rem)]">
+            <ScrollArea className="h-[calc(100vh-13rem)]">
               <div className="p-2 space-y-1">
                 <Button 
                   variant={!selectedCategoryId ? "default" : "ghost"} 
